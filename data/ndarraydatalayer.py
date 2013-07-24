@@ -19,4 +19,5 @@ class NdarrayDataLayer(base.DataLayer):
         """Generates the data."""
         for top_blob, source in zip(top, self._sources):
             top_blob.mirror(source)
+        return 0.
 

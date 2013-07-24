@@ -92,8 +92,10 @@ class Layer(object):
         
         Input:
             bottom: the data at the bottom.
-        Output:
             top: the top-layer output.
+        Output:
+            loss: the loss being generated in this layer. Note that if your
+                layer does not generate any loss, you should still return 0.
         """
         raise NotImplementedError
 
@@ -153,11 +155,11 @@ class DataLayer(Layer):
 # pylint: disable=R0921
 class LossLayer(Layer):
     """A Layer that implements loss. The forward pass of the loss layer will
-    do nothing, and the backward pass will compute the loss values based on
+    produce the loss, and the backward pass will compute the gradient based on
     the network output and the training data.
     """
     def forward(self, bottom, top):
-        pass
+        raise NotImplementedError
 
     def backward(self, bottom, top, need_bottom_diff):
         raise NotImplementedError
@@ -167,3 +169,16 @@ class LossLayer(Layer):
 
     def param(self):
         return []
+
+
+class Solver(object):
+    """This is the very basic form of the solver."""
+    def __init__(self, **kwargs):
+        self.spec = kwargs
+
+    def solve(net):
+        """The solve function takes a net as an input, and optimizes its
+        parameters.
+        """
+        raise NotImplementedError
+

@@ -149,12 +149,14 @@ class Net(object):
     
     def execute(self):
         """Execute one round of the networkx."""
-        # the forward pass
+        # the forward pass. We will also accumulate the loss function.
+        loss = 0.
         for _, layer, bottom, top in self._forward_order:
-            layer.forward(bottom, top)
+            loss += layer.forward(bottom, top)
         # the backward pass
         for _, layer, bottom, top, need_bottom_diff in self._backward_order:
             layer.backward(bottom, top, need_bottom_diff)
+        return loss
 
     def update(self):
         """Update the parameters using the diff values provided in the
