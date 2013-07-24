@@ -105,7 +105,7 @@ class Net(object):
         self._backward_order = \
                 [(n, self._layers[n], self._needs[n], self._provides[n],
                   self._graph[n]['need_bottom_diff'])
-                 for n in layerorder
+                 for n in layerorder[::-1]
                  if self._graph[n]['need_backward']]
         # store all the parameters
         self._params = []

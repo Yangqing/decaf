@@ -8,7 +8,7 @@ class InnerProductLayer(base.Layer):
         """Initializes an inner product layer. You need to specify the
         kwarg 'num_output' as the number of output nodes.
         """
-        Layer.__init__(self, **kwargs)
+        base.Layer.__init__(self, **kwargs)
         self._num_output = self.spec.get('num_output', 0)
         if self._num_output <= 0:
             raise InvalidSpecError(

@@ -12,7 +12,7 @@ class NdarrayDataLayer(base.DataLayer):
         The number of arrays should be identical to the number of output
         blobs.
         """
-        DataLayer.__init__(self, **kwargs)
+        base.DataLayer.__init__(self, **kwargs)
         self._sources = self.spec['sources']
 
     def forward(self, bottom, top):
