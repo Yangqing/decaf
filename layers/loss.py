@@ -21,6 +21,7 @@ class SquaredLossLayer(base.LossLayer):
         """
         pass
 
+
 class MultinomialLogisticLossLayer(base.LossLayer):
     """The multinomial logistic loss layer. The input will be the scores
     BEFORE softmax normalization.

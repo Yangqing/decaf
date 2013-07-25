@@ -178,3 +178,18 @@ class Solver(object):
         """
         raise NotImplementedError
 
+
+class Regularizer(object):
+    """This is the class that implements the regularization terms."""
+    def __init__(self, **kwargs):
+        """Initializes a regularizer. A regularizer needs a necessary keyword
+        'weight'.
+        """
+        self.spec = kwargs
+        self._weight = self.spec['weight']
+
+    def reg(self, blob):
+        """Compute the regularization term from the blob's data field, and
+        add the regularization term to its diff directly.
+        """
+        raise NotImplementedError
