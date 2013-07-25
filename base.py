@@ -38,13 +38,13 @@ class Blob(object):
             self.data = np.zeros(shape, dtype=dtype)
         self.diff = None
    
-    def mirror(input_array):
+    def mirror(self, input_array):
         """Create the data as a view of the input array. This is useful to
         save space and avoid duplication for data layers.
         """
         self.data = input_array.view()
 
-    def resize(shape, dtype):
+    def resize(self, shape, dtype):
         """Ensures that the blob has the right data. If not, simply change
         the size of the data matrix.."""
         if self.data.shape == shape and self.data.dtype == dtype:
@@ -66,7 +66,7 @@ class Blob(object):
             self.diff[:] = 0
         else:
             self.diff = np.zeros_like(self.data)
-        return diff
+        return self.diff
 
 
 class Layer(object):
@@ -142,14 +142,13 @@ class DataLayer(Layer):
         
         You should not override this function.
         """
-        raise base.DecafError('You should not reach this.')
-        return None
+        raise DecafError('You should not reach this.')
 
     def update(self):
         """The data layer has no parameter, and the update() function
         should not be called.
         """
-        raise base.DecafError('You should not reach this.')
+        pass
 
 
 # pylint: disable=R0921
@@ -167,16 +166,13 @@ class LossLayer(Layer):
     def update(self):
         pass
 
-    def param(self):
-        return []
-
 
 class Solver(object):
     """This is the very basic form of the solver."""
     def __init__(self, **kwargs):
         self.spec = kwargs
 
-    def solve(net):
+    def solve(self, net):
         """The solve function takes a net as an input, and optimizes its
         parameters.
         """

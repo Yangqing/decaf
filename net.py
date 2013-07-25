@@ -26,7 +26,7 @@ class Net(object):
         self._finished = False
 
 
-    def add_layer(self, layer, needs=(), provides=()):
+    def add_layer(self, layer, needs=[], provides=[]):
         """Add a layer to the current network.
 
         Args:
@@ -35,6 +35,10 @@ class Net(object):
                 needs as its input.
             provides: similar to needs, but the layer's output instead.
         """
+        if type(needs) is str:
+            needs = [needs]
+        if type(provides) is str:
+            provides = [provides]
         if self._finished:
             # Trying to modify an already finished network.
             raise base.DecafError('Modifying an already finished net.')

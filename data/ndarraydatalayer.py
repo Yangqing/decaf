@@ -1,3 +1,5 @@
+"""A simple ndarray data layer that wraps around numpy arrays."""
+
 from decaf import base
 
 class NdarrayDataLayer(base.DataLayer):
@@ -17,6 +19,9 @@ class NdarrayDataLayer(base.DataLayer):
 
     def forward(self, bottom, top):
         """Generates the data."""
+        if len(top) != len(self._sources):
+            raise ValueError('The number of sources and '
+                             'output blobs should be the same.')
         for top_blob, source in zip(top, self._sources):
             top_blob.mirror(source)
         return 0.
