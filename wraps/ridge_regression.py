@@ -1,6 +1,6 @@
 """A code to perform ridge regression."""
 
-from decaf import net
+from decaf import base
 from decaf.layers import core_layers
 from decaf.layers import regularization
 from decaf.opt import core_solvers
@@ -18,7 +18,7 @@ def ridge_regression(features, target, reg_weight=0):
         raise ValueError(
             'features and target should have the same number of data points!')
     # first, construct the network
-    decaf_net = net.Net()
+    decaf_net = base.Net()
     # add data layer
     data_layer = core_layers.NdarrayDataLayer(
         name='data', sources=[features,target])
@@ -49,7 +49,7 @@ def main():
     features = np.vstack((data + np.array([2, 2]),
                           data - np.array([2, 2])))
     target = np.vstack((np.ones((1000, 1)), -np.ones((1000, 1))))
-    weight, bias = ridge_regression(features, target, reg_weight=0.05)
+    weight, bias = ridge_regression(features, target, reg_weight=0.01)
     print 'weight:'
     print weight
     print 'bias:'

@@ -24,5 +24,4 @@ class NdarrayDataLayer(base.DataLayer):
                              'output blobs should be the same.')
         for top_blob, source in zip(top, self._sources):
             top_blob.mirror(source)
-        return 0.
 

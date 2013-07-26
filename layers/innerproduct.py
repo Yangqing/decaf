@@ -46,7 +46,6 @@ class InnerProductLayer(base.Layer):
         blasdot.dot(features, weight, out=output)
         if self._has_bias:
             output += self._bias.data()
-        return 0.
 
     def backward(self, bottom, top, propagate_down):
         """Computes the backward pass."""
@@ -69,7 +68,7 @@ class InnerProductLayer(base.Layer):
                                      np.prod(bottom_diff.shape[1:]))
             np.dot(top_diff, weight_diff.T, out=bottom_diff)
         if self._reg is not None:
-            return self._reg.reg(self._weight)
+            return self._reg.reg(self._weight, features.shape[0])
         else:
             return 0.
 

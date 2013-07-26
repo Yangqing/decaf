@@ -12,14 +12,8 @@ class SquaredLossLayer(base.LossLayer):
         diff = bottom[0].init_diff()
         diff[:] = bottom[0].data()
         diff -= bottom[1].data()
-        loss = np.dot(diff.flat, diff.flat)
+        self._loss = np.dot(diff.flat, diff.flat)
         diff *= 2
-        return loss
-
-    def backward(self, bottom, top, propagate_down):
-        """Everything has been done in forward. Nothing needs to be done here.
-        """
-        pass
 
 
 class MultinomialLogisticLossLayer(base.LossLayer):
@@ -50,14 +44,9 @@ class MultinomialLogisticLossLayer(base.LossLayer):
         if label.ndim == 1:
             # The labels are given as a sparse vector.
             diff[np.arange(diff.shape[0]), label] -= 1.
-            return -prob[np.arange(diff.shape[0]), label].sum()
+            self._loss = -prob[np.arange(diff.shape[0]), label].sum()
         else:
             # The labels are given as a dense matrix.
             diff -= label.data
-            return -np.dot(prob.flat, label.flat)
+            self._loss = -np.dot(prob.flat, label.flat)
 
-
-    def backward(self, bottom, top, propagate_down):
-        """Everything has been done in forward. Nothing needs to be done here.
-        """
-        pass
