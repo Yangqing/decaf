@@ -57,7 +57,7 @@ class Blob(object):
         self._data = None
         self._diff = None
         self._filler = filler
-        if shape is not None and dtype is not None:
+        if shape is not None:
             self.init_data(shape, dtype)
 
    
@@ -90,7 +90,9 @@ class Blob(object):
         self._data += self._diff
 
     def init_data(self, shape, dtype=np.float64):
-        """Initialize the data matrix if necessary."""
+        """Initializes the data if necessary. The filler will be always
+        called even if no reallocation of data takes place.
+        """
         if self.has_data() and self._data.shape == shape and \
            self._data.dtype == dtype:
             self._data[:] = 0
