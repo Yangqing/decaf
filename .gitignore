@@ -6,6 +6,7 @@ a.out
 *.npy
 *.o
 *.pickle
+*.pstats
 *.pyc
 *.so
 *.swp

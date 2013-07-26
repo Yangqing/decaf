@@ -3,6 +3,7 @@
 from decaf import base
 from decaf.layers import core_layers
 from decaf.layers import regularization
+from decaf.layers import fillers
 from decaf.opt import core_solvers
 import numpy as np
 
@@ -26,7 +27,7 @@ def ridge_regression(features, target, reg_weight=0):
     # add inner production layer
     ip_layer = core_layers.InnerProductLayer(
         name='ip', num_output=target.shape[1],
-        reg = regularization.L2Regularizer(weight=reg_weight))
+        reg=regularization.L2Regularizer(weight=reg_weight))
     decaf_net.add_layer(ip_layer, needs=['features'], provides=['output'])
     # add loss layer
     loss_layer = core_layers.SquaredLossLayer(

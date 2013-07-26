@@ -1,7 +1,6 @@
 """Implements the inner product layer."""
 
 from decaf import base
-import numpy as np
 
 class ReLULayer(base.Layer):
     """A layer that implements the inner product."""
@@ -22,7 +21,7 @@ class ReLULayer(base.Layer):
     def backward(self, bottom, top, propagate_down):
         """Computes the backward pass."""
         if not propagate_down:
-            pass
+            return 0.
         top_diff = top[0].diff()
         features = bottom[0].data()
         bottom_diff = bottom[0].init_diff()

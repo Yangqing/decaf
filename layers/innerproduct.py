@@ -16,13 +16,14 @@ class InnerProductLayer(base.Layer):
         base.Layer.__init__(self, **kwargs)
         self._num_output = self.spec.get('num_output', 0)
         if self._num_output <= 0:
-            raise base.InvalidSpecError(
+            raise base.InvalidLayerError(
                 'Incorrect or unspecified num_output for %s' % self.name)
         self._reg = self.spec.get('reg', None)
-        self._weight = base.Blob()
+        self._filler = self.spec.get('filler', None)
+        self._weight = base.Blob(filler=self._filler)
         self._has_bias = self.spec.get('bias', True)
         if self._has_bias:
-            self._bias = base.Blob()
+            self._bias = base.Blob(filler=self._filler)
             self._param = [self._weight, self._bias]
         else:
             self._param = [self._weight]

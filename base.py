@@ -24,6 +24,21 @@ class InvalidNetError(DecafError):
     pass
 
 
+class Filler(object):
+    """This is the class that implements util functions to fill a blob.
+    
+    A filler implements the fill() function that takes a blob as the input,
+    and fills the blob's data() field.
+    """
+
+    def __init__(self, **kwargs):
+        """simply get the spec."""
+        self.spec = kwargs
+
+    def fill(self, mat):
+        raise NotImplementedError
+
+
 # pylint: disable=R0903
 class Blob(object):
     """Blob is the data structure that holds a piece of numpy array as well as
@@ -38,12 +53,13 @@ class Blob(object):
     The diff matrix will not be created unless you explicitly run init_diff,
     as many Blobs do not need the gradients to be computed.
     """
-    def __init__(self, shape=None, dtype=None):
-        if shape is None and dtype is None:
-            self._data = None
-        else:
-            self._data = np.zeros(shape, dtype=dtype)
+    def __init__(self, shape=None, dtype=np.float64, filler=None):
+        self._data = None
         self._diff = None
+        self._filler = filler
+        if shape is not None and dtype is not None:
+            self.init_data(shape, dtype)
+
    
     def mirror(self, input_array, shape=None):
         """Create the data as a view of the input array. This is useful to
@@ -73,13 +89,15 @@ class Blob(object):
         """Update the data field by adding diff to it."""
         self._data += self._diff
 
-    def init_data(self, shape, dtype):
+    def init_data(self, shape, dtype=np.float64):
         """Initialize the data matrix if necessary."""
         if self.has_data() and self._data.shape == shape and \
            self._data.dtype == dtype:
             self._data[:] = 0
         else:
             self._data = np.zeros(shape, dtype)
+        if self._filler is not None:
+            self._filler.fill(self._data)
         return self.data()
 
     def init_diff(self):
@@ -216,6 +234,7 @@ class Solver(object):
 
 class Regularizer(object):
     """This is the class that implements the regularization terms."""
+
     def __init__(self, **kwargs):
         """Initializes a regularizer. A regularizer needs a necessary keyword
         'weight'.
