@@ -76,7 +76,7 @@ class Net(object):
         # backward operation needs to be carried out.
         # This is stored in two parameters:
         #   need_backward: whether the backward pass needs to be carried out.
-        #   need_bottom_diff: whether the gradient w.r.t. to the bottom layer
+        #   propagate_down: whether the gradient w.r.t. to the bottom layer
         #       needs to be carried out.
         for name in topological_order:
             pred_need_backward = any(self._graph[p]['need_backward']
@@ -93,9 +93,9 @@ class Net(object):
                 # needs to compute its bottom diff if any of its predecessors
                 # needs backward operation.
                 if pred_need_backward:
-                    self._graph[name]['need_bottom_diff'] = True
+                    self._graph[name]['propagate_down'] = True
                 else:
-                    self._graph[name]['need_bottom_diff'] = False
+                    self._graph[name]['propagate_down'] = False
             else:
                 # see if a blob needs backward operation.
                 # This is only used so we can verify further layers.
@@ -108,7 +108,7 @@ class Net(object):
                  for n in layerorder]
         self._backward_order = \
                 [(n, self._layers[n], self._needs[n], self._provides[n],
-                  self._graph[n]['need_bottom_diff'])
+                  self._graph[n]['propagate_down'])
                  for n in layerorder[::-1]
                  if self._graph[n]['need_backward']]
         # store all the parameters
@@ -158,8 +158,8 @@ class Net(object):
         for _, layer, bottom, top in self._forward_order:
             loss += layer.forward(bottom, top)
         # the backward pass
-        for _, layer, bottom, top, need_bottom_diff in self._backward_order:
-            layer.backward(bottom, top, need_bottom_diff)
+        for _, layer, bottom, top, propagate_down in self._backward_order:
+            layer.backward(bottom, top, propagate_down)
         return loss
 
     def update(self):
