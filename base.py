@@ -265,9 +265,9 @@ class Net(object):
     """A Net is a directed graph with layer names and layer instances."""
 
     def __init__(self):
-        self._graph = nx.DiGraph()
-        self._blobs = defaultdict(Blob)
-        self._layers = {}
+        self.graph = nx.DiGraph()
+        self.blobs = defaultdict(Blob)
+        self.layers = {}
         self._needs = {}
         self._provides = {}
         # The topological order to execute the layer.
@@ -280,10 +280,10 @@ class Net(object):
         """When pickling, we will first clear all the intermediate blobs,
         since the data they store will not be the parameters of the network.
         """
-        for blob in self._blobs.values():
+        for blob in self.blobs.values():
             blob.clear()
         return self.__dict__
-
+    
     def add_layer(self, layer, needs=None, provides=None):
         """Add a layer to the current network.
 
@@ -304,28 +304,28 @@ class Net(object):
             provides = [provides]
         self._finished = False
         # Add the layer
-        if layer.name in self._layers or layer.name in self._blobs:
+        if layer.name in self.layers or layer.name in self.blobs:
             raise InvalidNetError('A name already exists: %s' % layer.name)
-        self._layers[layer.name] = layer
+        self.layers[layer.name] = layer
         # Add the blobs
         for blobname in needs + provides:
-            if blobname in self._layers:
+            if blobname in self.layers:
                 raise InvalidNetError(
                     'Blob name found as a layer: %s' % blobname)
-        self._needs[layer.name] = [self._blobs[blobname] for blobname in needs]
-        self._provides[layer.name] = [self._blobs[blobname]
+        self._needs[layer.name] = [self.blobs[blobname] for blobname in needs]
+        self._provides[layer.name] = [self.blobs[blobname]
                                       for blobname in provides]
         # create the graph structure
         for blobname in needs:
-            self._graph.add_edge(blobname, layer.name)
+            self.graph.add_edge(blobname, layer.name)
         for blobname in provides:
-            self._graph.add_edge(layer.name, blobname)
+            self.graph.add_edge(layer.name, blobname)
     
     def finish(self):
         """Call this function when you finish the network construction."""
         # validate.
         self._validate()
-        topological_order = nx.topological_sort(self._graph)
+        topological_order = nx.topological_sort(self.graph)
         # For efficiency reasons, we will see for each layer, whether the
         # backward operation needs to be carried out.
         # This is stored in two parameters:
@@ -333,44 +333,44 @@ class Net(object):
         #   propagate_down: whether the gradient w.r.t. to the bottom layer
         #       needs to be carried out.
         for name in topological_order:
-            pred_need_backward = any(self._graph[p]['need_backward']
-                                     for p in self._graph.predecessors(name))
-            if name in self._layers:
+            pred_need_backward = any(self.graph[p]['need_backward']
+                                     for p in self.graph.predecessors(name))
+            if name in self.layers:
                 # see if a layer needs backward operation. A layer needs
                 # backward operation if (1) it has parameters and isn't frozen
                 # or (2) any of its predecessors needs backward operation.
-                layer = self._layers[name]
+                layer = self.layers[name]
                 if (pred_need_backward or
                     (len(layer.param()) > 0 and not layer.freeze)):
-                    self._graph[name]['need_backward'] = True
+                    self.graph[name]['need_backward'] = True
                 else:
-                    self._graph[name]['need_backward'] = False
+                    self.graph[name]['need_backward'] = False
                 # see if a layer needs to compute its bottom diff. A layer
                 # needs to compute its bottom diff if any of its predecessors
                 # needs backward operation.
                 if pred_need_backward:
-                    self._graph[name]['propagate_down'] = True
+                    self.graph[name]['propagate_down'] = True
                 else:
-                    self._graph[name]['propagate_down'] = False
+                    self.graph[name]['propagate_down'] = False
             else:
                 # see if a blob needs backward operation.
                 # This is only used so we can verify further layers.
-                self._graph[name]['need_backward'] = pred_need_backward
+                self.graph[name]['need_backward'] = pred_need_backward
         # create the order to run forward and backward passes
         layerorder = [layername for layername in topological_order
-                      if layername in self._layers]
+                      if layername in self.layers]
         self._forward_order = \
-                [(n, self._layers[n], self._needs[n], self._provides[n])
+                [(n, self.layers[n], self._needs[n], self._provides[n])
                  for n in layerorder]
         self._backward_order = \
-                [(n, self._layers[n], self._needs[n], self._provides[n],
-                  self._graph[n]['propagate_down'])
+                [(n, self.layers[n], self._needs[n], self._provides[n],
+                  self.graph[n]['propagate_down'])
                  for n in layerorder[::-1]
-                 if self._graph[n]['need_backward']]
+                 if self.graph[n]['need_backward']]
         # store all the parameters
         self._params = []
         for name in layerorder:
-            self._params.extend(self._layers[name].param())
+            self._params.extend(self.layers[name].param())
         # Note: Any further finishing code should be inserted here.
         self._finished = True
     
@@ -383,21 +383,21 @@ class Net(object):
         means that every blob node has a layer as its predecessor, and no loop
         exists in the network.
         """
-        if not nx.is_directed_acyclic_graph(self._graph):
+        if not nx.is_directed_acyclic_graph(self.graph):
             raise InvalidNetError('The network is not a DAG.')
-        for blobname in self._blobs:
+        for blobname in self.blobs:
             # check if every blob has predecessors, and each predecessor is
             # a valid layer.
-            predecessors = self._graph.predecessors(blobname)
+            predecessors = self.graph.predecessors(blobname)
             if len(predecessors) != 1:
                 raise InvalidNetError(
                     'Blob %s has no source layer or multiple source layers.'
                     % blobname)
-            if predecessors[0] not in self._layers:
+            if predecessors[0] not in self.layers:
                 # TODO(Yangqing): Can this actually happen?
                 raise InvalidNetError(
                     'Blob %s has a source that is not a layer.' % blobname)
-            successors = self._graph.successors(blobname)
+            successors = self.graph.successors(blobname)
             if len(successors) > 1:
                 # TODO(Yangqing): Maybe we would like to actually allow a blob
                 # to have multiple successors?
