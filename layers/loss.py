@@ -29,6 +29,10 @@ class MultinomialLogisticLossLayer(base.LossLayer):
         base.LossLayer.__init__(self, **kwargs)
         self._prob = base.Blob()
 
+    def __getstate__(self, **kwargs):
+        self._prob.clear()
+        return self.__dict__
+
     def forward(self, bottom, top):
         pred = bottom[0].data()
         prob = self._prob.init_data(

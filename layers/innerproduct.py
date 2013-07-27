@@ -23,7 +23,8 @@ class InnerProductLayer(base.Layer):
         self._weight = base.Blob(filler=self._filler)
         self._has_bias = self.spec.get('bias', True)
         if self._has_bias:
-            self._bias = base.Blob(filler=self._filler)
+            self._bias_filler = self.spec.get('bias_filler', None)
+            self._bias = base.Blob(filler=self._bias_filler)
             self._param = [self._weight, self._bias]
         else:
             self._param = [self._weight]
@@ -67,7 +68,7 @@ class InnerProductLayer(base.Layer):
             if bottom_diff.shape > 2:
                 bottom_diff.shape = (bottom_diff.shape[0],
                                      np.prod(bottom_diff.shape[1:]))
-            np.dot(top_diff, weight_diff.T, out=bottom_diff)
+            np.dot(top_diff, self._weight.data().T, out=bottom_diff)
         if self._reg is not None:
             return self._reg.reg(self._weight, features.shape[0])
         else:

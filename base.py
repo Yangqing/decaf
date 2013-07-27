@@ -60,6 +60,10 @@ class Blob(object):
         if shape is not None:
             self.init_data(shape, dtype)
 
+    def clear(self):
+        """Clears a blob data."""
+        self._data = None
+        self._diff = None
    
     def mirror(self, input_array, shape=None):
         """Create the data as a view of the input array. This is useful to
@@ -115,6 +119,12 @@ class Blob(object):
         else:
             self._diff = np.zeros(self._data.shape, self._data.dtype)
         return self.diff()
+    
+    def __getstate__(self):
+        """When pickling, we will not store the diff field."""
+        dictionary = dict(self.__dict__)
+        dictionary['_diff'] = None
+        return dictionary
 
 
 class Layer(object):
@@ -266,6 +276,14 @@ class Net(object):
         self._params = None
         self._finished = False
 
+    def __getstate__(self):
+        """When pickling, we will first clear all the intermediate blobs,
+        since the data they store will not be the parameters of the network.
+        """
+        for blob in self._blobs.values():
+            blob.clear()
+        return self.__dict__
+
     def add_layer(self, layer, needs=None, provides=None):
         """Add a layer to the current network.
 
@@ -402,6 +420,7 @@ class Net(object):
         for _, layer, bottom, top, propagate_down in self._backward_order:
             loss += layer.backward(bottom, top, propagate_down)
         return loss
+    
 
     def update(self):
         """Update the parameters using the diff values provided in the

@@ -15,6 +15,8 @@ class MNISTDataLayer(ndarraydata.NdarrayDataLayer):
         rootfolder = kwargs['rootfolder']
         dtype = kwargs.get('dtype', np.float64)
         self._load_mnist(rootfolder, is_training, dtype)
+        # normalize data.
+        self._data /= 255.
         ndarraydata.NdarrayDataLayer.__init__(
             self, sources=[self._data, self._label], **kwargs)
 
