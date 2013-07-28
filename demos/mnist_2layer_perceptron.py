@@ -6,6 +6,7 @@ from decaf.layers import regularization
 from decaf.layers import fillers
 from decaf.layers.data import mnist
 from decaf.opt import core_solvers
+from decaf.util import visualize
 import numpy as np
 
 ROOT_FOLDER='/u/vis/x1/common/mnist'
@@ -36,11 +37,11 @@ def main():
         name='ip2', num_output=NUM_CLASS,
         #reg=regularization.L2Regularizer(weight=0.01),
         filler=fillers.GaussianRandFiller(std=0.3))
-    decaf_net.add_layer(ip2_layer, needs=['relu1-out'], provides=['ip2-out'])
+    decaf_net.add_layer(ip2_layer, needs=['relu1-out'], provides=['prediction'])
     # add loss layer
     loss_layer = core_layers.MultinomialLogisticLossLayer(
         name='loss')
-    decaf_net.add_layer(loss_layer, needs=['ip2-out', 'label'])
+    decaf_net.add_layer(loss_layer, needs=['prediction', 'label'])
     # finish.
     decaf_net.finish()
     ####################################
@@ -52,12 +53,26 @@ def main():
         lbfgs_args={'iprint': 1})
     solver.solve(decaf_net)
     # Now let's peek at the accuracy
-    accuracy = (decaf_net._blobs['ip2-out'].data().argmax(1) == \
-                decaf_net._blobs['label'].data()).sum() / \
-            float(decaf_net._blobs['label'].data().size)
+    accuracy = (decaf_net.blobs['prediction'].data().argmax(1) == \
+                decaf_net.blobs['label'].data()).sum() / \
+            float(decaf_net.blobs['label'].data().size)
     print 'Training accuracy:', accuracy
-    with open('mnist_2layer_perceptron.pickle', 'w') as fid:
-        pickle.dump(decaf_net, fid)
+    visualize.draw_net_to_file(decaf_net, 'mnist.png')
+    decaf_net.save('mnist_2layers.decafnet')
+
+    ##############################################
+    # Now, let's try if we are able to load a net.
+    ##############################################
+    prediction_net = base.Net.load('mnist_2layers.decafnet')
+    visualize.draw_net_to_file(prediction_net, 'mnist_test.png')
+    dataset_test = mnist.MNISTDataLayer(
+        name='mnist', rootfolder=ROOT_FOLDER, is_training=False)
+    test_image = base.Blob()
+    test_label = base.Blob()
+    dataset_test.forward([], [test_image, test_label])
+    pred = prediction_net.predict(image=test_image)['prediction']
+    accuracy = (pred.argmax(1) == test_label.data()).sum() / float(test_label.data().size)
+    print 'Testing accuracy:', accuracy
     print 'Done.'
 
 if __name__ == '__main__':

@@ -1,11 +1,14 @@
 a.out
 *.dat
+*.decafnet
 .DS_Store
 *.mat
 *.npy
 *.npy
 *.o
+*.pdf
 *.pickle
+*.png
 *.pstats
 *.pyc
 *.so

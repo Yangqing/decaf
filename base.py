@@ -1,7 +1,7 @@
 """base.py implements the basic data types.
 """
 
-from collections import defaultdict
+import cPickle as pickle
 import networkx as nx
 import numpy as np
 
@@ -69,7 +69,10 @@ class Blob(object):
         """Create the data as a view of the input array. This is useful to
         save space and avoid duplication for data layers.
         """
-        self._data = input_array.view()
+        if isinstance(input_array, Blob):
+            self._data = input_array.data().view()
+        else:
+            self._data = input_array.view()
         if shape is not None:
             self._data.shape = shape
     
@@ -266,24 +269,65 @@ class Net(object):
 
     def __init__(self):
         self.graph = nx.DiGraph()
-        self.blobs = defaultdict(Blob)
+        self.blobs = {}
+        # layers is a dictionary that maps layer names to actual layers.
         self.layers = {}
+        # needs is a dictionary that maps layer names to a list of blob names
+        # that it needs.
         self._needs = {}
+        # provides is a dictionary that maps layer names to a list of blob
+        # names that it provides.
         self._provides = {}
+        # The parameters below will be automaticall inferred 
         # The topological order to execute the layer.
         self._forward_order = None
         self._backward_order = None
+        # input_blobs are all blobs that have no layer producing them - they
+        # have to be provided by the user. We only store the blob names.
+        self._input_blobs = None
+        # output_blibs are all blobs that no layer uses - they will be emitted
+        # by the predict() function. We only store the blob names.
+        self._output_blobs = None
         self._params = None
         self._finished = False
 
-    def __getstate__(self):
-        """When pickling, we will first clear all the intermediate blobs,
-        since the data they store will not be the parameters of the network.
+    def save(self, file, protocol=0, store_full=False):
+        """Saving the necessary 
+        
+        When pickling, we will simply store the network structure, but not
+        any of the inferred knowledge or intermediate blobs.
+        
+        If store_full is True, we will store the full network including the
+        data layers and loss layers. If store_full is False, the data and loss
+        layers are stripped and not stored - this will enable one to just keep
+        necessary layers for future use.
         """
-        for blob in self.blobs.values():
-            blob.clear()
-        return self.__dict__
-    
+        output = []
+        for name, layer in self.layers.iteritems():
+            if (not store_full and
+                (isinstance(layer, DataLayer) or 
+                 isinstance(layer, LossLayer))):
+                # We do not need to store these two layers.
+                continue
+            else:
+                output.append((layer, self._needs[name], self._provides[name]))
+        # finally, pickle the content.
+        if type(file) is str:
+            file = open(file, 'w')
+        pickle.dump(output, file, protocol=protocol)
+
+    @staticmethod
+    def load(file):
+        """Loads a network from file."""
+        self = Net()
+        if type(file) is str:
+            file = open(file, 'r')
+        contents = pickle.load(file)
+        for layer, needs, provides in contents:
+            self.add_layer(layer, needs=needs, provides=provides)
+        self.finish()
+        return self
+
     def add_layer(self, layer, needs=None, provides=None):
         """Add a layer to the current network.
 
@@ -312,9 +356,10 @@ class Net(object):
             if blobname in self.layers:
                 raise InvalidNetError(
                     'Blob name found as a layer: %s' % blobname)
-        self._needs[layer.name] = [self.blobs[blobname] for blobname in needs]
-        self._provides[layer.name] = [self.blobs[blobname]
-                                      for blobname in provides]
+            elif blobname not in self.blobs:
+                self.blobs[blobname] = Blob()
+        self._needs[layer.name] = list(needs)
+        self._provides[layer.name] = list(provides)
         # create the graph structure
         for blobname in needs:
             self.graph.add_edge(blobname, layer.name)
@@ -333,7 +378,7 @@ class Net(object):
         #   propagate_down: whether the gradient w.r.t. to the bottom layer
         #       needs to be carried out.
         for name in topological_order:
-            pred_need_backward = any(self.graph[p]['need_backward']
+            pred_need_backward = any(self.graph.node[p]['need_backward']
                                      for p in self.graph.predecessors(name))
             if name in self.layers:
                 # see if a layer needs backward operation. A layer needs
@@ -342,31 +387,37 @@ class Net(object):
                 layer = self.layers[name]
                 if (pred_need_backward or
                     (len(layer.param()) > 0 and not layer.freeze)):
-                    self.graph[name]['need_backward'] = True
+                    self.graph.node[name]['need_backward'] = True
                 else:
-                    self.graph[name]['need_backward'] = False
+                    self.graph.node[name]['need_backward'] = False
                 # see if a layer needs to compute its bottom diff. A layer
                 # needs to compute its bottom diff if any of its predecessors
                 # needs backward operation.
                 if pred_need_backward:
-                    self.graph[name]['propagate_down'] = True
+                    self.graph.node[name]['propagate_down'] = True
                 else:
-                    self.graph[name]['propagate_down'] = False
+                    self.graph.node[name]['propagate_down'] = False
             else:
                 # see if a blob needs backward operation.
                 # This is only used so we can verify further layers.
-                self.graph[name]['need_backward'] = pred_need_backward
+                self.graph.node[name]['need_backward'] = pred_need_backward
         # create the order to run forward and backward passes
         layerorder = [layername for layername in topological_order
                       if layername in self.layers]
-        self._forward_order = \
-                [(n, self.layers[n], self._needs[n], self._provides[n])
-                 for n in layerorder]
-        self._backward_order = \
-                [(n, self.layers[n], self._needs[n], self._provides[n],
-                  self.graph[n]['propagate_down'])
-                 for n in layerorder[::-1]
-                 if self.graph[n]['need_backward']]
+        self._forward_order = []
+        for n in layerorder:
+            self._forward_order.append(
+                (n, self.layers[n],
+                 [self.blobs[name] for name in self._needs[n]],
+                 [self.blobs[name] for name in self._provides[n]]))
+        self._backward_order = []
+        for n in layerorder[::-1]:
+            if self.graph.node[n]['need_backward']:
+                self._backward_order.append(
+                    (n, self.layers[n],
+                     [self.blobs[name] for name in self._needs[n]],
+                     [self.blobs[name] for name in self._provides[n]],
+                     self.graph.node[n]['propagate_down']))
         # store all the parameters
         self._params = []
         for name in layerorder:
@@ -379,36 +430,53 @@ class Net(object):
         return self._params
 
     def _validate(self):
-        """Validates if a network is executable. A network being executable
-        means that every blob node has a layer as its predecessor, and no loop
-        exists in the network.
+        """Validates if a network is executable.
         """
         if not nx.is_directed_acyclic_graph(self.graph):
             raise InvalidNetError('The network is not a DAG.')
+        self._input_blobs = []
+        self._output_blobs = []
         for blobname in self.blobs:
-            # check if every blob has predecessors, and each predecessor is
-            # a valid layer.
+            # check predecessors
             predecessors = self.graph.predecessors(blobname)
-            if len(predecessors) != 1:
-                raise InvalidNetError(
-                    'Blob %s has no source layer or multiple source layers.'
-                    % blobname)
-            if predecessors[0] not in self.layers:
-                # TODO(Yangqing): Can this actually happen?
+            if len(predecessors) == 0:
+                # If this blob has no predecessors, it should be provided when
+                # you execute the net.
+                self._input_blobs.append(blobname)
+            elif len(predecessors) > 1:
+                raise InvalidNetError('Blob %s has multiple source layers.'
+                                      % blobname)
+            elif predecessors[0] not in self.layers:
+                # TODO(Yangqing): Can this actually happen? If we strictly
+                # follow the add_layers() method then this should not happen,
+                # but we will keep it here just for the sake of safety.
                 raise InvalidNetError(
                     'Blob %s has a source that is not a layer.' % blobname)
+            # check successors
             successors = self.graph.successors(blobname)
+            if len(successors) == 0:
+                # If this blob has no successors, it will be emitted when you
+                # execute the net.
+                self._output_blobs.append(blobname)
             if len(successors) > 1:
                 # TODO(Yangqing): Maybe we would like to actually allow a blob
-                # to have multiple successors?
+                # to have multiple successors? The current problem is that we
+                # need the layers to compute the gradients, and if we allow a
+                # blob to have multiple successors, we need to explicitly make
+                # sure all layers need to not overwrite existing gradients.
+                # Note(Yangqing): The plan right now is to only allow blobs to
+                # have one successor, and use a SplitLayer (to be written) to
+                # split blobs to multiple blobs, and takes the responsibility
+                # of combining multiple gradient values.
                 raise InvalidNetError(
                     'Blob %s has multiple successors.' % blobname)
-        # TODO(Yangqing): maybe add validation for layers as well?
-        # In the end, we will simply return True as a courtesy.
+        # TODO(Yangqing): maybe add validation for layers as well? Leaving
+        # them empty for now.
         return True
     
-    def execute(self):
-        """Execute one round of the networkx."""
+    def forward_backward(self):
+        """Runs the forward and backward passes of the net.
+        """
         # the forward pass. We will also accumulate the loss function.
         if not self._finished:
             # Trying to modify an already finished network.
@@ -420,10 +488,20 @@ class Net(object):
         for _, layer, bottom, top, propagate_down in self._backward_order:
             loss += layer.backward(bottom, top, propagate_down)
         return loss
-    
+
+    def predict(self, **kwargs):
+        """Use the network to perform prediction. Note that your network
+        should have at least one output blob. All input blobs need to be
+        provided using the kwargs.
+        """
+        for name, arr in kwargs.iteritems():
+            self.blobs[name].mirror(arr)
+        for _, layer, bottom, top in self._forward_order:
+            layer.forward(bottom, top)
+        return dict([(name, self.blobs[name].data()) for name in self._output_blobs])
 
     def update(self):
         """Update the parameters using the diff values provided in the
         parameters blob."""
-        for _, layer, _, _ in self._forward_order:
+        for _, layer in self.layers:
             layer.update()
