@@ -2,9 +2,10 @@
 import os
 import pydot
 
-LAYER_STYLE = {'style': 'filled', 'fillcolor': '#DFECF3'}
-BLOB_STYLE = {'style': 'filled', 'fillcolor': '#FEF9E3',
-              'shape': 'box'}
+LAYER_STYLE = {'shape': 'record', 'fillcolor': '#DFECF3',
+               'style': 'filled'}
+BLOB_STYLE = {'shape': 'record', 'fillcolor': '#FEF9E3',
+              'style': 'filled'}
 
 def draw_net(decaf_net, format='png'):
     """Draws a decaf net and returns the image string with the given format.
@@ -14,14 +15,14 @@ def draw_net(decaf_net, format='png'):
     pydot_nodes = {}
     for name, layer in decaf_net.layers.iteritems():
         pydot_nodes[name] = pydot.Node(
-            '%s\n<%s>' % (name, layer.__class__.__name__), **LAYER_STYLE)
+            '%s|<%s>' % (name, layer.__class__.__name__), **LAYER_STYLE)
     for name, blob in decaf_net.blobs.iteritems():
         if blob.has_data():
             shapestr = 'x'.join(str(v) for v in blob.data().shape[1:])
         else:
             shapestr = 'unknown shape'
         pydot_nodes[name] = pydot.Node(
-            '%s\n<%s>' % (name, shapestr),
+            '%s|<%s>' % (name, shapestr),
             **BLOB_STYLE)
     for name in pydot_nodes:
         pydot_graph.add_node(pydot_nodes[name])

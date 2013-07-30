@@ -70,12 +70,23 @@ class Blob(object):
         save space and avoid duplication for data layers.
         """
         if isinstance(input_array, Blob):
-            self._data = input_array.data().view()
+            self._data = input_array.data()
         else:
             self._data = input_array.view()
         if shape is not None:
             self._data.shape = shape
-    
+   
+    def mirror_diff(self, input_array, shape=None):
+        """Create the diff as a view of the input array's diff. This is useful
+        to save space and avoid duplication for data layers.
+        """
+        if isinstance(input_array, Blob):
+            self._diff = input_array.diff()
+        else:
+            self._diff = input_array.view()
+        if shape is not None:
+            self._diff.shape = shape
+
     def has_data(self):
         """Checks if the blob has data."""
         return self._data is not None
@@ -93,8 +104,12 @@ class Blob(object):
         return self._diff.view()
 
     def update(self):
-        """Update the data field by adding diff to it."""
-        self._data += self._diff
+        """Update the data field by SUBTRACTING diff to it.
+        
+        Note that diff is often used to store the gradients, and most often
+        we will perform MINIMIZATION.
+        """
+        self._data -= self._diff
 
     def init_data(self, shape, dtype=np.float64):
         """Initializes the data if necessary. The filler will be always
@@ -503,5 +518,5 @@ class Net(object):
     def update(self):
         """Update the parameters using the diff values provided in the
         parameters blob."""
-        for _, layer in self.layers:
+        for _, layer in self.layers.iteritems():
             layer.update()

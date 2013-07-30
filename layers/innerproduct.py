@@ -33,14 +33,15 @@ class InnerProductLayer(base.Layer):
         """Computes the forward pass."""
         # Get features and output
         features = bottom[0].data()
-        if features.ndim > 2:
-            features.shape = (features.shape[0], np.prod(features.shape[1:]))
+        flat_dim = np.prod(features.shape[:-1])
+        features.shape = (flat_dim, features.shape[-1])
         output = top[0].init_data(
-            (features.shape[0], self._num_output), features.dtype)
+            features.shape[:-1] + (self._num_output,), features.dtype)
+        output.shape = (flat_dim, self._num_output)
         # initialize weights
         if not self._weight.has_data():
             self._weight.init_data(
-                (features.shape[1], self._num_output), features.dtype)
+                (features.shape[-1], self._num_output), features.dtype)
         if self._has_bias and not self._bias.has_data():
             self._bias.init_data((self._num_output), features.dtype)
         # computation
@@ -54,8 +55,10 @@ class InnerProductLayer(base.Layer):
         # get diff
         top_diff = top[0].diff()
         features = bottom[0].data()
-        if features.ndim > 2:
-            features.shape = (features.shape[0], np.prod(features.shape[1:]))
+        flat_dim = np.prod(features.shape[:-1])
+        # convert to 2d shape
+        top_diff.shape = (flat_dim, top_diff.shape[-1])
+        features.shape = (flat_dim, features.shape[-1])
         # compute the gradient
         weight_diff = self._weight.init_diff()
         blasdot.dot(features.T, top_diff, out=weight_diff)
@@ -65,9 +68,7 @@ class InnerProductLayer(base.Layer):
         # If necessary, compute the bottom Blob gradient.
         if propagate_down:
             bottom_diff = bottom[0].init_diff()
-            if bottom_diff.shape > 2:
-                bottom_diff.shape = (bottom_diff.shape[0],
-                                     np.prod(bottom_diff.shape[1:]))
+            bottom_diff.shape = (flat_dim, bottom_diff.shape[-1])
             np.dot(top_diff, self._weight.data().T, out=bottom_diff)
         if self._reg is not None:
             return self._reg.reg(self._weight, features.shape[0])

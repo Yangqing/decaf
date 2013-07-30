@@ -1,0 +1,94 @@
+'''The Cifar dataset 
+'''
+import cPickle as pickle
+from decaf.layers.data import ndarraydata
+import numpy as np
+import os
+
+
+class CifarDataLayer(ndarraydata.NdarrayDataLayer):
+    """The Cifar dataset
+    """
+    # some cifar constants
+    __num_train = 50000
+    __num_batches = 5 # for cifar 10
+    __batchsize = 10000 # for cifar 10
+    __num_test = 10000
+    __image_dim = (32, 32, 3)
+    __num_channels = 3
+    __image_size = 1024
+    __flat_dim = 3072
+    
+    def __init__(self, **kwargs):
+        # get keywords
+        is_training = kwargs.get('is_training', True)
+        is_gray = kwargs.get('is_gray', False)
+        rootfolder = kwargs['rootfolder']
+        dtype = kwargs.get('dtype', np.float64)
+        self._data = None
+        self._label = None
+        self._coarselabel = None
+        # we will automatically determine if the data is cifar-10 or cifar-100
+        if os.path.exists(os.path.join(rootfolder, 'batches.meta')):
+            self.load_cifar10(rootfolder, is_training, dtype)
+        elif os.path.exists(os.path.join(rootfolder, 'meta')):
+            self.load_cifar100(rootfolder, is_training, dtype)
+        else:
+            raise IOError, 'Cannot understand the dataset format.'
+        if is_gray:
+            self._data = self._data.mean(axis=-1)
+        # Initialize as an NdarrayDataLayer
+        ndarraydata.NdarrayDataLayer.__init__(
+            self, sources=[self._data, self._label], **kwargs)
+        
+    @staticmethod
+    def _get_images_from_matrix(mat, dtype):
+        """Converts the order of the loaded matrix so each pixel is stored
+        contiguously
+        """
+        mat = mat.reshape((mat.shape[0],
+                           CifarDataLayer.__num_channels,
+                           CifarDataLayer.__image_size))
+        images = mat.swapaxes(1, 2).reshape(
+            (mat.shape[0],) + CifarDataLayer.__image_dim)
+        print 'debug', dtype
+        return images.astype(dtype)
+    
+    def load_cifar100(self, rootfolder, is_training, dtype):
+        """loads the cifar-100 dataset
+        """
+        if is_training:
+            filename = 'train'
+        else:
+            filename = 'test'
+        with open(rootfolder + os.sep + filename) as fid:
+            batch = pickle.load(fid)
+        self._data = CifarDataLayer._get_images_from_matrix(
+            batch['data'], dtype)
+        self._coarselabel = np.array(batch['coarse_labels'])
+        self._label = np.array(batch['fine_labels'])
+    
+    def load_cifar10(self, rootfolder, is_training, dtype):
+        """loads the cifar-10 dataset
+        """
+        if is_training:
+            self._data = np.empty(
+                (CifarDataLayer.__num_train,) + CifarDataLayer.__image_dim,
+                dtype=dtype)
+            self._label = np.empty(CifarDataLayer.__num_train)
+            # training batches
+            for i in range(CifarDataLayer.__num_batches):
+                with open(os.path.join(rootfolder,
+                        'data_batch_{0}'.format(i+1)),'r') as fid:
+                    batch = pickle.load(fid)
+                start_idx = CifarDataLayer.__batchsize * i
+                end_idx = CifarDataLayer.__batchsize * (i+1)
+                self._data[start_idx:end_idx] = \
+                    CifarDataLayer._get_images_from_matrix(batch['data'], dtype)
+                self._label[start_idx:end_idx] = np.array(batch['labels'])
+        else:
+            with open(os.path.join(rootfolder, 'test_batch'), 'r') as fid:
+                batch = pickle.load(fid)
+            self._data = CifarDataLayer._get_images_from_matrix(
+                batch['data'], dtype)
+            self._label = np.array(batch['labels'])

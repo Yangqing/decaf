@@ -22,13 +22,16 @@ def main():
     dataset = mnist.MNISTDataLayer(
         name='mnist', rootfolder=ROOT_FOLDER, is_training=True)
     decaf_net.add_layer(dataset, provides=['image', 'label'])
+    # flatten the data
+    flatten_layer = core_layers.FlattenLayer(name='flatten')
+    decaf_net.add_layer(flatten_layer, needs=['image'], provides=['image-flat'])
     # add first inner production layer
     ip_layer = core_layers.InnerProductLayer(
         name='ip1', num_output=NUM_NEURONS,
         #reg=regularization.L2Regularizer(weight=0.01),
         filler=fillers.GaussianRandFiller(std=0.1),
         bias_filler=fillers.ConstantFiller(value=0.1))
-    decaf_net.add_layer(ip_layer, needs=['image'], provides=['ip1-out'])
+    decaf_net.add_layer(ip_layer, needs=['image-flat'], provides=['ip1-out'])
     # add ReLU Layer
     relu_layer = core_layers.ReLULayer(name='relu1')
     decaf_net.add_layer(relu_layer, needs=['ip1-out'], provides=['relu1-out'])
@@ -47,7 +50,7 @@ def main():
     ####################################
     # Decaf layer finished construction!
     ####################################
-    #raise RuntimeError
+    visualize.draw_net_to_file(decaf_net, 'mnist_before_train.png')
     # now, try to solve it
     solver = core_solvers.LBFGSSolver(
         lbfgs_args={'iprint': 1})
