@@ -8,19 +8,18 @@
 #include <omp.h>
 
 template <typename Dtype>
-inline void im2col(const Dtype* data_im,
+inline void im2col_mc(const Dtype* data_im,
         const int height,
         const int width,
         const int nchannels,
         const int psize,
         const int stride,
         Dtype* data_col) {
-    // The naive im2col implementation
+    // The naive im2col_mc implementation
     int step_im = width * nchannels;
     int step_col = psize * nchannels;
     int height_col = (height - psize) / stride + 1;
     int width_col = (width - psize) / stride + 1;
-
 #pragma omp parallel for
     for (int idxh = 0; idxh < height_col; ++idxh) {
         Dtype* pointer_col = data_col + idxh * width_col * psize * step_col;
@@ -38,11 +37,11 @@ inline void im2col(const Dtype* data_im,
             }
         }
     }
-} // im2col
+} // im2col_mc
 
 
 template <typename Dtype>
-inline void col2im(Dtype* data_im,
+inline void col2im_mc(Dtype* data_im,
         const int height,
         const int width,
         const int nchannels,
@@ -71,49 +70,49 @@ inline void col2im(Dtype* data_im,
             }
         }
     }
-} // im2col
+} // im2col_mc
 
 
 extern "C" {
 
-void im2col_float(const float* data_im,
+void im2col_mc_float(const float* data_im,
         const int height,
         const int width,
         const int nchannels,
         const int psize,
         const int stride,
         float* data_col) {
-    im2col<float>(data_im, height, width, nchannels, psize, stride, data_col);
+    im2col_mc<float>(data_im, height, width, nchannels, psize, stride, data_col);
 }
 
-void im2col_double(const double* data_im,
+void im2col_mc_double(const double* data_im,
         const int height,
         const int width,
         const int nchannels,
         const int psize,
         const int stride,
         double* data_col) {
-    im2col<double>(data_im, height, width, nchannels, psize, stride, data_col);
+    im2col_mc<double>(data_im, height, width, nchannels, psize, stride, data_col);
 }
 
-void col2im_float(float* data_im,
+void col2im_mc_float(float* data_im,
         const int height,
         const int width,
         const int nchannels,
         const int psize,
         const int stride,
         const float* data_col) {
-    col2im<float>(data_im, height, width, nchannels, psize, stride, data_col);
+    col2im_mc<float>(data_im, height, width, nchannels, psize, stride, data_col);
 }
 
-void col2im_double(double* data_im,
+void col2im_mc_double(double* data_im,
         const int height,
         const int width,
         const int nchannels,
         const int psize,
         const int stride,
         const double* data_col) {
-    col2im<double>(data_im, height, width, nchannels, psize, stride, data_col);
+    col2im_mc<double>(data_im, height, width, nchannels, psize, stride, data_col);
 }
 
 } // extern "C"

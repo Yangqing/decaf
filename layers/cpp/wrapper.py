@@ -7,75 +7,75 @@ import os
 
 # first, let's import the library
 try:
-    _cpputil = np.ctypeslib.load_library('libcpputil.so',
+    _cpp = np.ctypeslib.load_library('libcpputil.so',
             os.path.join(os.path.dirname(__file__)))
-except Exception, e:
-    raise RuntimeError, "I cannot load libcpputil.so. Please compile first."
+except Exception as error:
+    raise error
 
 ################################################################################
-# im2col operation
+# im2col and col2im operation
 ################################################################################
-_cpputil.im2col_float.restype = None
-_cpputil.im2col_float.argtypes = [np.ctypeslib.ndpointer(dtype=np.float32,
-                                                        flags='C'),
-                                  ct.c_int,
-                                  ct.c_int,
-                                  ct.c_int,
-                                  ct.c_int,
-                                  ct.c_int,
-                                  np.ctypeslib.ndpointer(dtype=np.float32,
-                                                        flags='C')]
+_cpp.im2col_sc_float.restype = \
+_cpp.im2col_mc_float.restype = \
+_cpp.im2col_sc_double.restype = \
+_cpp.im2col_mc_double.restype = \
+_cpp.col2im_sc_float.restype = \
+_cpp.col2im_mc_float.restype = \
+_cpp.col2im_sc_double.restype = \
+_cpp.col2im_mc_double.restype = None
 
-_cpputil.im2col_double.restype = None
-_cpputil.im2col_double.argtypes = [np.ctypeslib.ndpointer(dtype=np.float64,
-                                                         flags='C'),
-                                   ct.c_int,
-                                   ct.c_int,
-                                   ct.c_int,
-                                   ct.c_int,
-                                   ct.c_int,
-                                   np.ctypeslib.ndpointer(dtype=np.float64,
-                                                         flags='C')]
+_cpp.im2col_sc_float.argtypes = \
+_cpp.im2col_mc_float.argtypes = \
+_cpp.col2im_sc_float.argtypes = \
+_cpp.col2im_mc_float.argtypes = \
+    [np.ctypeslib.ndpointer(dtype=np.float32, flags='C'),
+     ct.c_int, ct.c_int, ct.c_int, ct.c_int, ct.c_int,
+     np.ctypeslib.ndpointer(dtype=np.float32, flags='C')]
 
-def im2col(*args):
-    """A wrapper of the im2col function."""
+_cpp.im2col_sc_double.argtypes = \
+_cpp.im2col_mc_double.argtypes = \
+_cpp.col2im_sc_double.argtypes = \
+_cpp.col2im_mc_double.argtypes = \
+    [np.ctypeslib.ndpointer(dtype=np.float64, flags='C'),
+     ct.c_int, ct.c_int, ct.c_int, ct.c_int, ct.c_int,
+     np.ctypeslib.ndpointer(dtype=np.float64, flags='C')]
+
+def im2col_sc(*args):
+    """A wrapper of the im2col_sc function."""
     if args[0].dtype == np.float32:
-        return _cpputil.im2col_float(*args)
+        return _cpp.im2col_sc_float(*args)
     elif args[0].dtype == np.float64:
-        return _cpputil.im2col_double(*args)
+        return _cpp.im2col_sc_double(*args)
     else:
         raise TypeError('Unsupported type: ' + str(args[0].dtype))
 
-################################################################################
-# col2im operation
-################################################################################
-_cpputil.col2im_float.restype = None
-_cpputil.col2im_float.argtypes = [np.ctypeslib.ndpointer(dtype=np.float32,
-                                                        flags='C'),
-                                  ct.c_int,
-                                  ct.c_int,
-                                  ct.c_int,
-                                  ct.c_int,
-                                  ct.c_int,
-                                  np.ctypeslib.ndpointer(dtype=np.float32,
-                                                        flags='C')]
-
-_cpputil.col2im_double.restype = None
-_cpputil.col2im_double.argtypes = [np.ctypeslib.ndpointer(dtype=np.float64,
-                                                         flags='C'),
-                                   ct.c_int,
-                                   ct.c_int,
-                                   ct.c_int,
-                                   ct.c_int,
-                                   ct.c_int,
-                                   np.ctypeslib.ndpointer(dtype=np.float64,
-                                                         flags='C')]
-
-def col2im(*args):
-    """A wrapper of the col2im function."""
+def col2im_sc(*args):
+    """A wrapper of the col2im_sc function."""
     if args[0].dtype == np.float32:
-        return _cpputil.col2im_float(*args)
+        return _cpp.col2im_sc_float(*args)
     elif args[0].dtype == np.float64:
-        return _cpputil.col2im_double(*args)
+        return _cpp.col2im_sc_double(*args)
     else:
         raise TypeError('Unsupported type: ' + str(args[0].dtype))
+
+def im2col_mc(*args):
+    """A wrapper of the im2col_mc function."""
+    if args[0].dtype == np.float32:
+        return _cpp.im2col_mc_float(*args)
+    elif args[0].dtype == np.float64:
+        return _cpp.im2col_mc_double(*args)
+    else:
+        raise TypeError('Unsupported type: ' + str(args[0].dtype))
+
+def col2im_mc(*args):
+    """A wrapper of the col2im_mc function."""
+    if args[0].dtype == np.float32:
+        return _cpp.col2im_mc_float(*args)
+    elif args[0].dtype == np.float64:
+        return _cpp.col2im_mc_double(*args)
+    else:
+        raise TypeError('Unsupported type: ' + str(args[0].dtype))
+
+# For convenience, if no mc or sc is specified, we default to mc.
+im2col = im2col_mc
+col2im = col2im_mc
