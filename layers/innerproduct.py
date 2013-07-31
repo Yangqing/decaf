@@ -41,10 +41,6 @@ class InnerProductLayer(base.Layer):
         features = bottom[0].data()
         output = top[0].init_data(
             features.shape[:-1] + (self._num_output,), features.dtype)
-        # convert the data views to 2-dim
-        flat_dim = np.prod(features.shape[:-1])
-        features.shape = (flat_dim, features.shape[-1])
-        output.shape = (flat_dim, self._num_output)
         # initialize weights
         if not self._weight.has_data():
             self._weight.init_data(
@@ -53,7 +49,7 @@ class InnerProductLayer(base.Layer):
             self._bias.init_data((self._num_output), features.dtype)
         # computation
         weight = self._weight.data()
-        blasdot.dot(features, weight, out=output)
+        blasdot.dot_lastdim(features, weight, out=output)
         if self._has_bias:
             output += self._bias.data()
 
@@ -62,21 +58,17 @@ class InnerProductLayer(base.Layer):
         # get diff
         top_diff = top[0].diff()
         features = bottom[0].data()
-        flat_dim = np.prod(features.shape[:-1])
-        # convert to 2d shape
-        top_diff.shape = (flat_dim, top_diff.shape[-1])
-        features.shape = (flat_dim, features.shape[-1])
         # compute the gradient
         weight_diff = self._weight.init_diff()
-        blasdot.dot(features.T, top_diff, out=weight_diff)
+        blasdot.dot_firstdims(features, top_diff, out=weight_diff)
         if self._has_bias:
             bias_diff = self._bias.init_diff()
-            bias_diff[:] = top_diff.sum(0)
+            bias_diff[:] = top_diff.reshape(
+                np.prod(top_diff.shape[:-1]), top_diff.shape[-1]).sum(0)
         # If necessary, compute the bottom Blob gradient.
         if propagate_down:
             bottom_diff = bottom[0].init_diff()
-            bottom_diff.shape = (flat_dim, bottom_diff.shape[-1])
-            np.dot(top_diff, self._weight.data().T, out=bottom_diff)
+            blasdot.dot_lastdim(top_diff, self._weight.data().T, out=bottom_diff)
         if self._reg is not None:
             return self._reg.reg(self._weight, features.shape[0])
         else:

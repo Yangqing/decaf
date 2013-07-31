@@ -38,9 +38,15 @@ class TestBlasdot(unittest.TestCase):
     def testdot_with_out(self):
         for A, B in self.test_matrices:
             result_ref = np.dot(A,B)
+            # c order
             result = np.empty(result_ref.shape, dtype = A.dtype)
             blasdot.dot(A, B, out = result)
             self.assertTrue(result.flags.c_contiguous)
+            np.testing.assert_array_almost_equal(result, result_ref)
+            # f order
+            result = np.empty(result_ref.shape, dtype = A.dtype, order='f')
+            blasdot.dot(A, B, out = result)
+            self.assertTrue(result.flags.f_contiguous)
             np.testing.assert_array_almost_equal(result, result_ref)
     
         

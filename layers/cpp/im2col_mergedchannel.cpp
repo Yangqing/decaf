@@ -5,7 +5,8 @@
 #include <cstring>
 #include <cmath>
 
-#include <omp.h>
+// Note: in testing the code we found that OMP is slower fore relatively small
+// images (which is often the case), so we disabled OMP.
 
 template <typename Dtype>
 inline void im2col_mc(const Dtype* data_im,
@@ -20,7 +21,6 @@ inline void im2col_mc(const Dtype* data_im,
     int step_col = psize * nchannels;
     int height_col = (height - psize) / stride + 1;
     int width_col = (width - psize) / stride + 1;
-#pragma omp parallel for
     for (int idxh = 0; idxh < height_col; ++idxh) {
         Dtype* pointer_col = data_col + idxh * width_col * psize * step_col;
         for (int idxw = 0; idxw < width_col; ++idxw) {
@@ -53,7 +53,6 @@ inline void col2im_mc(Dtype* data_im,
     int step_col = psize * nchannels;
     int height_col = (height - psize) / stride + 1;
     int width_col = (width - psize) / stride + 1;
-#pragma omp parallel for
     for (int idxh = 0; idxh < height_col; ++idxh) {
         const Dtype* pointer_col = data_col + idxh * width_col * psize * step_col;
         for (int idxw = 0; idxw < width_col; ++idxw) {

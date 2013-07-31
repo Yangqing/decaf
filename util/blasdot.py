@@ -55,12 +55,61 @@ def dot(A, B, out=None):
         TypeError, if the type of matrices is wrong.
     '''
     if out == None:
-        out = np.empty((A.shape[0], B.shape[1]), max(A.dtype, B.dtype))
+        out = np.empty((A.shape[0], B.shape[1]), A.dtype, B.dtype)
     # Numpy seems to have bugs dealing with the flags of 1x1 matrices. Thus,
     # if we encounter 1x1 matrices, we manually deal with the calculation.
     if out.size == 1:
         out[:] = np.dot(A.flat, B.flat)
+    elif out.flags.f_contiguous:
+        out = _gemm_f_contiguous(1.0, A, B, out=out)
     else:
         out = _gemm_c_contiguous(1.0, A, B, out=out)
     return out
+
+def dot_lastdim(A, B, out=None):
+    """Performs dot for multi-dimensional matrices A and B, where
+    A.shape[-1] = B.shape[0]. The returned matrix should have shape
+    A.shape[:-1] + B.shape[1:].
+
+    A and B should both be c-contiguous, otherwise the code will report
+    an error.
+    """
+    if out == None:
+        out = np.empty(A.shape[:-1] + B.shape[1:], A.dtype)
+    lda = np.prod(A.shape[:-1])
+    dim = A.shape[-1]
+    ldb = np.prod(B.shape[1:])
+    # using views
+    Aview = A.view()
+    Bview = B.view()
+    outview = out.view()
+    Aview.shape = (lda, dim)
+    Bview.shape = (dim, ldb)
+    outview.shape = (lda, ldb)
+    dot(Aview, Bview, outview)
+    return out
+
+def dot_firstdims(A, B, out=None):
+    """Performs dot for multi-dimensional matrices A and B, where
+    np.prod(A.shape[:-1]) = np.prod(B.shape[:-1]), and the result would be
+    dot(A.T, B) where A and B are treated as 2-dimensional matrices with shape
+    (prod(shape[:-1]), shape[-1]). The returned matrix should have shape
+    (A.shape[-1], B.shape[-1]). The code is often encountered in computing the
+    gradient in e.g. convolutions.
+    
+    A and B should both be c-contiguous, otherwise the code will report
+    an error.
+    """
+    if out == None:
+        out = np.empty((A.shape[-1],B.shape[-1]), A.dtype)
+    lda = A.shape[-1]
+    dim = np.prod(A.shape[:-1])
+    ldb = B.shape[-1]
+    Aview = A.view()
+    Bview = B.view()
+    Aview.shape = (dim, lda)
+    Bview.shape = (dim, ldb)
+    dot(Aview.T, Bview, out)
+    return out
+
 
