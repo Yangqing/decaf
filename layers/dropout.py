@@ -1,14 +1,18 @@
-"""Implements the inner product layer."""
+"""Implements the dropout layer."""
 
 from decaf import base
 from decaf.layers import fillers
 import numpy as np
 
 class DropoutLayer(base.Layer):
-    """A layer that implements the inner product."""
+    """A layer that implements the dropout."""
 
     def __init__(self, **kwargs):
-        """Initializes a ReLU layer.
+        """Initializes a Dropout layer.
+
+        kwargs:
+            name: the layer name.
+            ratio: the ratio to carry out dropout.
         """
         base.Layer.__init__(self, **kwargs)
         self._ratio = self.spec['ratio']
@@ -35,5 +39,5 @@ class DropoutLayer(base.Layer):
         return 0.
 
     def update(self):
-        """ReLU has nothing to update."""
+        """Dropout has nothing to update."""
         pass

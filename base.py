@@ -64,7 +64,7 @@ class Blob(object):
         """Clears a blob data."""
         self._data = None
         self._diff = None
-   
+
     def mirror(self, input_array, shape=None):
         """Create the data as a view of the input array. This is useful to
         save space and avoid duplication for data layers.

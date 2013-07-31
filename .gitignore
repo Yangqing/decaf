@@ -2,6 +2,7 @@ a.out
 no_git_*
 *.dat
 *.decafnet
+*.dot
 .DS_Store
 *.mat
 *.npy

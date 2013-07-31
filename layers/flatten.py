@@ -1,4 +1,4 @@
-"""Implements the inner product layer."""
+"""Implements the flatten layer."""
 
 from decaf import base
 import numpy as np
@@ -7,11 +7,6 @@ class FlattenLayer(base.Layer):
     """A layer that flattens the data to a 1-dim vector (the resulting
     minibatch would be a 2-dim matrix."""
 
-    def __init__(self, **kwargs):
-        """Initializes a ReLU layer.
-        """
-        base.Layer.__init__(self, **kwargs)
-    
     def forward(self, bottom, top):
         """Computes the forward pass."""
         for blob_b, blob_t in zip(bottom, top):

@@ -62,7 +62,7 @@ class ConvolutionLayer(base.Layer):
             pad = 0
         elif self._mode == 'full':
             pad = self._ksize - 1
-        elif self._mode == 'valid':
+        elif self._mode == 'same':
             pad = int(self._ksize / 2)
         else:
             raise ValueError('Unknown mode: %s' % self._mode)

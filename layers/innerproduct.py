@@ -8,10 +8,16 @@ class InnerProductLayer(base.Layer):
     """A layer that implements the inner product."""
 
     def __init__(self, **kwargs):
-        """Initializes an inner product layer. You need to specify the
-        kwarg 'num_output' as the number of output nodes. Optionally, pass
-        in a regularizer with keyword 'reg' will add regularization terms
-        to the weight (but not bias).
+        """Initializes an inner product layer. 
+        
+        kwargs:
+            num_output: the number of outputs.
+            reg: the regularizer to be used to add regularization terms.
+                should be a decaf.base.Regularizer instance. Default None. 
+            filler: a filler to initialize the weights. Should be a
+                decaf.base.Filler instance. Default None.
+            bias: if True, the inner product will contain a bias term.
+                Default True.
         """
         base.Layer.__init__(self, **kwargs)
         self._num_output = self.spec.get('num_output', 0)
@@ -33,10 +39,11 @@ class InnerProductLayer(base.Layer):
         """Computes the forward pass."""
         # Get features and output
         features = bottom[0].data()
-        flat_dim = np.prod(features.shape[:-1])
-        features.shape = (flat_dim, features.shape[-1])
         output = top[0].init_data(
             features.shape[:-1] + (self._num_output,), features.dtype)
+        # convert the data views to 2-dim
+        flat_dim = np.prod(features.shape[:-1])
+        features.shape = (flat_dim, features.shape[-1])
         output.shape = (flat_dim, self._num_output)
         # initialize weights
         if not self._weight.has_data():

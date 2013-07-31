@@ -8,7 +8,8 @@ import numpy as np
 class ConstantFiller(base.Filler):
     """Fills the values with a constant value.
     
-    specs: value
+    kwargs:
+        value: the constant value to fill.
     """
     def fill(self, mat):
         """The fill function."""
@@ -19,22 +20,26 @@ class ConstantFiller(base.Filler):
 class RandFiller(base.Filler):
     """Fill the values with random numbers in [min, max).
     
-    Specs: min, max.
+    kwargs:
+        minval: the min value (default 0).
+        maxval: the max value (default 1).
     """
     def fill(self, mat):
         """The fill function."""
-        min = self.spec.get('min', 0)
-        max = self.spec.get('max', 1)
+        minval = self.spec.get('min', 0)
+        maxval = self.spec.get('max', 1)
         mat[:] = np.random.random_sample(mat.shape)
-        mat *= max - min
-        mat += min
+        mat *= maxval - minval
+        mat += minval
 
 
 # pylint: disable=R0903
 class GaussianRandFiller(base.Filler):
     """Fill the values with random gaussian.
     
-    Specs: mean, std.
+    kwargs:
+        mean: the mean value (default 0).
+        std: the standard deviation (default 1).
     """
     def fill(self, mat):
         """The fill function."""
@@ -48,7 +53,8 @@ class GaussianRandFiller(base.Filler):
 class DropoutFiller(base.Filler):
     """Fill the values with boolean.
 
-    Specs: ratio: the ratio of 1 values.
+    kwargs:
+        ratio: the ratio of 1 values when generating random binaries.
     """
     def fill(self, mat):
         """The fill function."""
