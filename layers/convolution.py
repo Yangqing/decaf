@@ -72,9 +72,8 @@ class ConvolutionLayer(base.Layer):
         """Runs the forward pass."""
         single_data = self._single_data
         bottom_data = bottom[0].data()
-        if bottom_data.ndim == 3:
-            # only one channel
-            bottom_data.shape = bottom_data.shape + (1,)
+        if bottom_data.ndim != 4:
+            raise ValueError('Bottom data should be a 4-dim tensor.')
         if not self._kernels.has_data():
             # initialize the kernels
             self._kernels.init_data(
@@ -107,9 +106,8 @@ class ConvolutionLayer(base.Layer):
         single_data = self._single_data
         top_diff = top[0].diff()
         bottom_data = bottom[0].data()
-        if bottom_data.ndim == 3:
-            # only one channel
-            bottom_data.shape = bottom_data.shape + (1,)
+        if bottom_data.ndim != 4:
+            raise ValueError('Bottom data should be a 4-dim tensor.')
         kernel_diff = self._kernels.init_diff()
         kernel_diff_buffer = np.zeros_like(kernel_diff)
         if propagate_down:

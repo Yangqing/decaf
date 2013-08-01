@@ -18,7 +18,7 @@ class ConstantFiller(base.Filler):
 
 # pylint: disable=R0903
 class RandFiller(base.Filler):
-    """Fill the values with random numbers in [min, max).
+    """Fills the values with random numbers in [min, max).
     
     kwargs:
         minval: the min value (default 0).
@@ -35,7 +35,7 @@ class RandFiller(base.Filler):
 
 # pylint: disable=R0903
 class GaussianRandFiller(base.Filler):
-    """Fill the values with random gaussian.
+    """Fills the values with random gaussian.
     
     kwargs:
         mean: the mean value (default 0).
@@ -51,7 +51,7 @@ class GaussianRandFiller(base.Filler):
 
 # pylint: disable=R0903
 class DropoutFiller(base.Filler):
-    """Fill the values with boolean.
+    """Fills the values with boolean.
 
     kwargs:
         ratio: the ratio of 1 values when generating random binaries.
