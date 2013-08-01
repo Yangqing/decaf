@@ -7,7 +7,14 @@ from scipy import optimize
 _FMIN = optimize.fmin_l_bfgs_b
 
 class LBFGSSolver(base.Solver):
-    """The LBFGS solver."""
+    """The LBFGS solver.
+    
+    This solver heavily relies on scipy's optimize toolbox (specifically,
+    fmin_l_bfgs_b) so we write it differently from the other solvers. When
+    faced with very large-scale problems, the additional memory overhead of
+    LBFGS may make the method inapplicable, in which you may want to use the
+    stochastic solvers.
+    """
     
     def __init__(self, **kwargs):
         """The LBFGS solver. Necessary args is:

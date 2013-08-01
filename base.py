@@ -2,6 +2,7 @@
 """
 
 import cPickle as pickle
+import gzip
 import networkx as nx
 import numpy as np
 
@@ -107,7 +108,8 @@ class Blob(object):
         """Update the data field by SUBTRACTING diff to it.
         
         Note that diff is often used to store the gradients, and most often
-        we will perform MINIMIZATION.
+        we will perform MINIMIZATION. This is why we always do subtraction
+        here.
         """
         self._data -= self._diff
 
@@ -282,7 +284,14 @@ class Regularizer(object):
 class Net(object):
     """A Net is a directed graph with layer names and layer instances."""
 
-    def __init__(self):
+    def __init__(self, name=None):
+        """Initialize a net.
+        Input:
+            name: (optional) a string to help remember what the net does.
+        """
+        if name is None:
+            name = 'decaf_net'
+        self.name = name
         self.graph = nx.DiGraph()
         self.blobs = {}
         # layers is a dictionary that maps layer names to actual layers.
@@ -306,18 +315,17 @@ class Net(object):
         self._params = None
         self._finished = False
 
-    def save(self, file, protocol=0, store_full=False):
+    def save(self, filename, protocol=0, store_full=False):
         """Saving the necessary 
         
         When pickling, we will simply store the network structure, but not
         any of the inferred knowledge or intermediate blobs.
         
-        If store_full is True, we will store the full network including the
         data layers and loss layers. If store_full is False, the data and loss
         layers are stripped and not stored - this will enable one to just keep
         necessary layers for future use.
         """
-        output = []
+        output = [self.name]
         for name, layer in self.layers.iteritems():
             if (not store_full and
                 (isinstance(layer, DataLayer) or 
@@ -327,21 +335,39 @@ class Net(object):
             else:
                 output.append((layer, self._needs[name], self._provides[name]))
         # finally, pickle the content.
-        if type(file) is str:
-            file = open(file, 'w')
+        file = gzip.open(filename, 'wb')
         pickle.dump(output, file, protocol=protocol)
 
     @staticmethod
-    def load(file):
+    def load(filename):
         """Loads a network from file."""
         self = Net()
-        if type(file) is str:
-            file = open(file, 'r')
+        file = gzip.open(filename, 'rb')
         contents = pickle.load(file)
-        for layer, needs, provides in contents:
+        self.name = contents[0]
+        for layer, needs, provides in contents[1:]:
             self.add_layer(layer, needs=needs, provides=provides)
         self.finish()
         return self
+
+    def load_from(self, filename):
+        """Load the parameters from an existing network.
+
+        Unlike load, this function should be called on an already constructed
+        network. What it does is to look into the file, and if there is any
+        layer in the file that has the same name as a layer name defined in
+        the current network, replace the current network's corresponding layer
+        with the layer in the file.
+        """
+        file = gzip.open(filename, 'rb')
+        contents = pickle.load(file)
+        for layer, _, _ in contents[1:]:
+            if layer.name in self.layers:
+                self.layers[layer.name] = layer
+        # after loading, we need to re-parse the layer to fix all reference
+        # issues.
+        self.finish()
+
 
     def add_layer(self, layer, needs=None, provides=None):
         """Add a layer to the current network.
