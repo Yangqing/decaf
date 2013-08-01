@@ -16,14 +16,14 @@ class StochasticSolver(base.Solver):
             base_lr: the base learning rate.
             max_iter: the maximum number of iterations. Default 1000.
             snapshot_interval: the snapshot interval. Default 0.
-            snapshot_folder: the snapshot folder. Should be provided
+            folder: the snapshot folder. Should be provided
                 if snapshot_interval is not zero.
         """
         base.Solver.__init__(self, **kwargs)
         self._max_iter = self.spec.get('max_iter', 1000)
         self._snapshot_interval = self.spec.get('snapshot_interval', 0)
-        if self._snapshot_interval > 0 and 'snapshot_folder' not in self.spec:
-            raise ValueError('You should provide snapshot_folder.')
+        if self._snapshot_interval > 0 and 'folder' not in self.spec:
+            raise ValueError('You should provide a folder to write result to.')
         self._decaf_net = None
         self._iter_idx = None
 
@@ -58,7 +58,7 @@ class StochasticSolver(base.Solver):
         In default, the snapshot function will store the network using the 
         network's save function.
         """
-        folder = self.spec['snapshot_folder']
+        folder = self.spec['folder']
         if is_final:
             subfolder = os.path.join(folder, 'final')
         else:
@@ -91,13 +91,15 @@ class StochasticSolver(base.Solver):
             self.compute_update_value()
             decaf_net.update()
             if (self._snapshot_interval > 0 and self._iter_idx > 0 and
-                self._iter_idx % self._snapshot_interval) == 0:
+                self._iter_idx % self._snapshot_interval == 0):
                 # perform snapshot.
                 self.snapshot()
+            logging.info('Iter %d, loss %f', self._iter_idx, loss)
             self.iter_callback(loss)
             self._iter_idx += 1
         # perform last snapshot.
-        self.snapshot(True)
+        if 'folder' in self.spec:
+            self.snapshot(True)
         logging.info('StochasticSolver: finished.')
 
 
@@ -241,7 +243,7 @@ class AdagradSolver(StochasticSolver):
         for param, accum in zip(self._decaf_net.params(), self._accum):
             diff = param.diff()
             # add the current gradient to the accumulation
-            accum_data = accum
+            accum_data = accum.data()
             accum_buffer = accum.diff()
             accum_buffer[:] = diff
             accum_buffer *= diff

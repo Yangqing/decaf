@@ -2,4 +2,4 @@
 """Imports commonly used solvers."""
 
 from decaf.opt.lbfgs_solver import LBFGSSolver
-from decaf.opt.adagrad_solver import AdagradSolver
+from decaf.opt.stochastic_solver import SGDSolver, AdagradSolver
