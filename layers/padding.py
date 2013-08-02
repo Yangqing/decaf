@@ -25,10 +25,13 @@ class PaddingLayer(base.Layer):
             return
         # Get features and output
         features = bottom[0].data()
+        if features.ndim != 4:
+            raise ValueError('Bottom data should be a 4-dim tensor.')
         pad = self._pad
         newshape = (features.shape[0],
                     features.shape[1] + pad * 2,
-                    features.shape[2] + pad * 2) + features.shape[3:]
+                    features.shape[2] + pad * 2,
+                    features.shape[3])
         output = top[0].init_data(newshape,
                                   features.dtype)
         output[:] = self._value

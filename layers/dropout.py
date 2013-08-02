@@ -13,9 +13,13 @@ class DropoutLayer(base.Layer):
         kwargs:
             name: the layer name.
             ratio: the ratio to carry out dropout.
+            debug_freeze: a debug flag. If set True, the mask will only
+                be generated once when running. You should not use it other
+                than purposes like gradient check.
         """
         base.Layer.__init__(self, **kwargs)
         self._ratio = self.spec['ratio']
+        self._debug_freeze = self.spec.get('debug_freeze', False)
         filler = fillers.DropoutFiller(ratio=self._ratio)
         self._mask = base.Blob(filler=filler)
 
@@ -24,7 +28,8 @@ class DropoutLayer(base.Layer):
         # Get features and output
         features = bottom[0].data()
         output = top[0].init_data(features.shape, features.dtype)
-        self._mask.init_data(features.shape, np.bool)
+        if not self._debug_freeze or not self._mask.has_data():
+            self._mask.init_data(features.shape, np.bool)
         output[:] = features
         output *= self._mask.data()
 

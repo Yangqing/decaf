@@ -11,10 +11,14 @@ def _blobs_to_vec(blobs):
     This method is not memory efficient - do NOT use in codes that require
     speed and memory.
     """
+    if len(blobs) == 0:
+        return np.array(())
     return np.hstack([blob.data().flatten() for blob in blobs])
 
 def _blobs_diff_to_vec(blobs):
     """Similar to _blobs_to_vec, but copying diff."""
+    if len(blobs) == 0:
+        return np.array(())
     return np.hstack([blob.diff().flatten() for blob in blobs])
 
 def _vec_to_blobs(vec, blobs):

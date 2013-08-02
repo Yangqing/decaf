@@ -15,5 +15,7 @@ from decaf.layers.relu import ReLULayer
 from decaf.layers.split import SplitLayer
 from decaf.layers.flatten import FlattenLayer
 from decaf.layers.dropout import DropoutLayer
+from decaf.layers.padding import PaddingLayer
+from decaf.layers.im2col import Im2colLayer
 from decaf.layers.convolution import ConvolutionLayer
 from decaf.layers.deconvolution import DeconvolutionLayer

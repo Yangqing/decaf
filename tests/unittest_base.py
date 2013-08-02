@@ -22,7 +22,7 @@ class TestBlob(unittest.TestCase):
         diff = blob.init_diff()
         diff[:] = 1.
         blob.update()
-        npt.assert_array_almost_equal(blob.data(), blob.diff())
+        npt.assert_array_almost_equal(blob.data(), - blob.diff())
 
     def testUseBlob(self):
         blob_a = base.Blob((4,3))
