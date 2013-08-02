@@ -13,7 +13,7 @@ class L2Regularizer(base.Regularizer):
         #pylint: disable=W0612
         diff = blob.diff()
         diff += self._weight * num_data * 2. * data
-        return np.dot(data.flat, data.flat) * self._weight
+        return np.dot(data.flat, data.flat) * self._weight * num_data
 
 
 # pylint: disable=R0903
@@ -25,4 +25,4 @@ class L1Regularizer(base.Regularizer):
         #pylint: disable=W0612
         diff = blob.diff()
         diff += self._weight * num_data * np.sign(data)
-        return np.abs(data).sum()
+        return np.abs(data).sum() * num_data

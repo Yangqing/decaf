@@ -16,6 +16,7 @@ class InnerProductLayer(base.Layer):
                 should be a decaf.base.Regularizer instance. Default None. 
             filler: a filler to initialize the weights. Should be a
                 decaf.base.Filler instance. Default None.
+            bias_filler: a filler to initialize the bias.
             bias: if True, the inner product will contain a bias term.
                 Default True.
         """

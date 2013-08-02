@@ -74,10 +74,14 @@ class GradChecker(object):
             _vec_to_blobs(x_init, layer.param())
         layer.forward(input_blobs, output_blobs)
         output = _blobs_to_vec(output_blobs)
+        for blob in output_blobs:
+            blob.init_diff()
+        # The layer may have reg terms, so we run a dummy backward
+        additional_loss = layer.backward(input_blobs, output_blobs, False)
         if idx < 0:
-            return np.dot(output, output)
+            return np.dot(output, output) + additional_loss
         else:
-            return output[idx]
+            return output[idx] + additional_loss
 
     @staticmethod
     def _grad(x_init, layer, input_blobs, output_blobs, check_data, idx):
@@ -98,11 +102,12 @@ class GradChecker(object):
             output[:] = 0
             output[idx] = 1.
         _vec_to_blobs_diff(output, output_blobs)
-        layer.backward(input_blobs, output_blobs, True)
         # Now, get the diff
         if check_data:
+            layer.backward(input_blobs, output_blobs, True)
             return _blobs_diff_to_vec(input_blobs)
         else:
+            layer.backward(input_blobs, output_blobs, False)
             return _blobs_diff_to_vec(layer.param())
 
     def check(self, layer, input_blobs, output_blobs):
