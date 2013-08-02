@@ -135,6 +135,7 @@ class SGDSolver(StochasticSolver):
         self.spec['asgd'] = self.spec.get('asgd', False)
         self.spec['asgd_skip'] = self.spec.get('asgd_skip', 1)
         self.spec['power'] = self.spec.get('power', 1)
+        self.spec['min_lr'] = self.spec.get('min_lr', 0.)
         self._momentum = None
         self._asgd = None
 
@@ -169,6 +170,7 @@ class SGDSolver(StochasticSolver):
         learning rate.
         """
         learningrate = self._get_learningrate()
+        logging.info('   learning rate %f', learningrate)
         if self.spec['momentum'] > 0:
             # we need to add momentum terms and keep track of them.
             for momentum, param in zip(self._momentum,

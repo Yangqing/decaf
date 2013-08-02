@@ -12,6 +12,9 @@ class BasicMinibatchLayer(base.DataLayer):
 
     def __init__(self, **kwargs):
         """Initializes the layer.
+
+        kwargs:
+            minibatch: the minibatch size.
         """
         base.DataLayer.__init__(self, **kwargs)
         self._minibatch = self.spec['minibatch']

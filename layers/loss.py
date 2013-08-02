@@ -53,4 +53,3 @@ class MultinomialLogisticLossLayer(base.LossLayer):
             # The labels are given as a dense matrix.
             diff -= label.data
             self._loss = -np.dot(prob.flat, label.flat)
-

@@ -243,6 +243,9 @@ class LossLayer(Layer):
         self._loss = 0
 
     def forward(self, bottom, top):
+        """The forward pass. In your loss layer, you need to compute the loss
+        and store it at self._loss.
+        """
         raise NotImplementedError
 
     def backward(self, bottom, top, propagate_down):

@@ -12,5 +12,8 @@ from decaf.layers.innerproduct import InnerProductLayer
 from decaf.layers.loss import (SquaredLossLayer,
                               MultinomialLogisticLossLayer)
 from decaf.layers.relu import ReLULayer
+from decaf.layers.split import SplitLayer
 from decaf.layers.flatten import FlattenLayer
 from decaf.layers.dropout import DropoutLayer
+from decaf.layers.convolution import ConvolutionLayer
+from decaf.layers.deconvolution import DeconvolutionLayer

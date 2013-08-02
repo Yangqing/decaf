@@ -73,20 +73,20 @@ class DeconvolutionLayer(base.Layer):
                             dtype = bottom_data.dtype)
         if self._mode != 'valid':
             pad_height = self._ksize + (bottom_data.shape[1] - 1) \
-                    * self._stride,
+                    * self._stride
             pad_width = self._ksize + (bottom_data.shape[2] - 1) \
-                    * self._stride,
+                    * self._stride
             padded_data = self._padded.init_data(
                     (pad_height, pad_width, self._num_channels),
                     dtype = bottom_data.dtype)
         top_data = top[0].init_data(
             (bottom_data.shape[0], pad_height - self._border * 2,
              pad_width - self._border * 2, self._num_channels),
-            dtype=bottom.dtype)
+            dtype=bottom_data.dtype)
         # process data individually
         for i in range(bottom_data.shape[0]):
             # first, compute the convolution as a gemm operation
-            blasdot.dot_lastdim(bottom_data[i], self._kernels,
+            blasdot.dot_lastdim(bottom_data[i], self._kernels.data(),
                                 out=self._col.data())
             if self._mode != 'valid':
             # do col2im
@@ -107,32 +107,27 @@ class DeconvolutionLayer(base.Layer):
         bottom_data = bottom[0].data()
         kernel_diff = self._kernels.init_diff()
         kernel_diff_buffer = np.zeros_like(kernel_diff)
+        col_diff = self._col.init_diff()
         if propagate_down:
             bottom_diff = bottom[0].init_diff()
         if self._mode != 'valid':
             pad_diff = self._padded.init_diff()
         for i in range(bottom_data.shape[0]):
-            # although it is a backward layer, we still need to compute
-            # the intermediate results using forward calls.
-            col_data = self._col.data()
-            blasdot.dot_lastdim(bottom_data[i], self._kernels,
-                                out=col_data)
             if self._mode != 'valid':
                 # do padding
                 pad_diff[self._border:-self._border,
                          self._border:-self._border] = top_diff[i]
             else:
                 pad_diff = top_diff[i].view()
-            blasdot.dot_firstdims(col_data, pad_diff,
+            # run im2col
+            wrapper.im2col_mc(pad_diff, pad_diff.shape[0], 
+                              pad_diff.shape[1], self._num_channels,
+                              self._ksize, self._stride,
+                              col_diff)
+            blasdot.dot_firstdims(bottom_data[i], col_diff,
                                  out=kernel_diff_buffer)
             kernel_diff += kernel_diff_buffer
             if propagate_down:
-                col_diff = self._col.init_diff()
-                # run im2col
-                wrapper.im2col_mc(pad_diff, pad_diff.shape[0], 
-                                  pad_diff.shape[1], self._num_channels,
-                                  self._ksize, self._stride,
-                                  col_diff)
                 # compute final gradient
                 blasdot.dot_lastdim(col_diff, self._kernels.data().T,
                                     out=bottom_diff[i])
