@@ -8,9 +8,12 @@ def _gemm_f_contiguous(alpha, A, B, out):
     
     The returned matrix is designed to be F_CONTIGUOUS.
     '''
-    if out.shape != (A.shape[0], B.shape[1]) or out.dtype != A.dtype or \
-            not out.flags.f_contiguous:
-        raise ValueError("Incorrect output data type.")
+    if out.shape != (A.shape[0], B.shape[1]):
+        raise ValueError("Incorrect output shape.")
+    if out.dtype != A.dtype:
+        raise ValueError("Incorrect output dtype.")
+    if not out.flags.f_contiguous:
+        raise ValueError("Output is not f-contiguous.")
     if A.dtype != B.dtype:
         raise TypeError('The data type of the matrices should be the same.')
     if A.dtype == np.float32:

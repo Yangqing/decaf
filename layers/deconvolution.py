@@ -71,14 +71,14 @@ class DeconvolutionLayer(base.Layer):
         self._col.init_data((bottom_data.shape[1], bottom_data.shape[2],
                              self._kernels.data().shape[1]),
                             dtype = bottom_data.dtype)
+        pad_height = self._ksize + (bottom_data.shape[1] - 1) \
+                * self._stride
+        pad_width = self._ksize + (bottom_data.shape[2] - 1) \
+                * self._stride
         if self._mode != 'valid':
-            pad_height = self._ksize + (bottom_data.shape[1] - 1) \
-                    * self._stride
-            pad_width = self._ksize + (bottom_data.shape[2] - 1) \
-                    * self._stride
             padded_data = self._padded.init_data(
-                    (pad_height, pad_width, self._num_channels),
-                    dtype = bottom_data.dtype)
+                (pad_height, pad_width, self._num_channels),
+                dtype = bottom_data.dtype)
         top_data = top[0].init_data(
             (bottom_data.shape[0], pad_height - self._border * 2,
              pad_width - self._border * 2, self._num_channels),
