@@ -6,14 +6,15 @@ from decaf.util import logexp
 import numpy as np
 
 class SquaredLossLayer(base.LossLayer):
-    """The squared loss."""
+    """The squared loss. Following conventions, we actually compute
+    the one-half of the squared loss.
+    """
     def forward(self, bottom, top):
         """Forward emits the loss, and computes the gradient as well."""
         diff = bottom[0].init_diff()
         diff[:] = bottom[0].data()
         diff -= bottom[1].data()
-        self._loss = np.dot(diff.flat, diff.flat)
-        diff *= 2
+        self._loss = np.dot(diff.flat, diff.flat) / 2.
 
 
 class MultinomialLogisticLossLayer(base.LossLayer):

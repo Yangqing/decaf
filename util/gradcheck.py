@@ -81,7 +81,7 @@ class GradChecker(object):
         for blob in output_blobs:
             blob.init_diff()
         # The layer may have reg terms, so we run a dummy backward
-        additional_loss = layer.backward(input_blobs, output_blobs, False)
+        additional_loss = layer.backward(input_blobs, output_blobs, True)
         if idx < 0:
             return np.dot(output, output) + additional_loss
         else:

@@ -1,0 +1,41 @@
+"""Implements the sigmoid layer."""
+
+from decaf import base
+from decaf.util import logexp
+
+class SigmoidLayer(base.Layer):
+    """A layer that implements the sigmoid operation."""
+
+    def __init__(self, **kwargs):
+        """Initializes a ReLU layer.
+        """
+        base.Layer.__init__(self, **kwargs)
+    
+    def forward(self, bottom, top):
+        """Computes the forward pass."""
+        # Get features and top_data
+        bottom_data = bottom[0].data()
+        top_data = top[0].init_data(bottom_data.shape, bottom_data.dtype)
+        # ugly but avoids creating intermediate matrices
+        top_data[:] = bottom_data
+        top_data *= -1
+        logexp.exp(top_data, out=top_data)
+        top_data += 1.
+        top_data **= -1
+
+    def backward(self, bottom, top, propagate_down):
+        """Computes the backward pass."""
+        if propagate_down:
+            top_data = top[0].data()
+            top_diff = top[0].diff()
+            bottom_diff = bottom[0].init_diff()
+            bottom_diff[:] = top_data
+            bottom_diff *= -1.
+            bottom_diff += 1.
+            bottom_diff *= top_data
+            bottom_diff *= top_diff
+        return 0
+
+    def update(self):
+        """ReLU has nothing to update."""
+        pass

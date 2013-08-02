@@ -79,6 +79,7 @@ class StochasticSolver(base.Solver):
     def solve(self, decaf_net):
         """Solves the net."""
         # first, run a pass to initialize all the parameters.
+        logging.info('StochasticSolver: precomputing.')
         self._iter_idx = 0
         self._decaf_net = decaf_net
         initial_loss = decaf_net.forward_backward()

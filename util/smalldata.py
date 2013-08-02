@@ -1,3 +1,4 @@
+from decaf import base
 import os
 from skimage import io
 import numpy as np
@@ -9,11 +10,13 @@ def lena():
     filename = os.path.join(_data_path, 'lena.png')
     return io.imread(filename)
 
-def whitened_images():
+def whitened_images(dtype=np.float64):
     """Returns the whitened images provided in the Sparsenet website:
         http://redwood.berkeley.edu/bruno/sparsenet/
     The returned data will be in the shape (10,512,512,1) to fit
     the blob convension.
     """
     npzdata = np.load(os.path.join(_data_path, 'whitened_images.npz'))
-    return npzdata['images']
+    blob = base.Blob(npzdata['images'].shape, dtype)
+    blob.data().flat = npzdata['images'].flat
+    return blob

@@ -1,9 +1,11 @@
-"""Implements the inner product layer."""
+"""Implements the ReLU layer."""
 
 from decaf import base
 
 class ReLULayer(base.Layer):
-    """A layer that implements the inner product."""
+    """A layer that implements the Regularized Linear Unit (ReLU) operation
+    that converts x to max(x, 0).
+    """
 
     def __init__(self, **kwargs):
         """Initializes a ReLU layer.
