@@ -38,7 +38,6 @@ class ConvolutionLayer(base.Layer):
         self._mode = self.spec['mode']
         self._reg = self.spec.get('reg', None)
         self._filler = self.spec.get('filler', None)
-        self._memory = self.spec.get('memory', 1e7)
         if self._ksize <= 1:
             raise ValueError('Invalid kernel size. Kernel size should > 1.')
         if self._mode == 'same' and self._ksize % 2 == 0:
@@ -123,7 +122,6 @@ class ConvolutionLayer(base.Layer):
                                  out=kernel_diff_buffer)
             kernel_diff += kernel_diff_buffer
             if propagate_down:
-                single_data.mirror_diff(bottom_diff[i:i+1])
                 col_diff = self._col.init_diff()[0]
                 blasdot.dot_lastdim(top_diff[i], self._kernels.data().T,
                                     out=col_diff)
@@ -131,6 +129,8 @@ class ConvolutionLayer(base.Layer):
                 self._im2col_layer.backward([self._padded], [self._col], True)
                 # pad backward
                 self._pad_layer.backward([self._single_data], [self._padded], True)
+                # write gradient back
+                bottom_diff[i] = self._single_data.diff()
         # finally, add the regularization term
         if self._reg is not None:
             return self._reg.reg(self._kernels, bottom_data.shape[0])

@@ -132,7 +132,7 @@ class GradChecker(object):
                     layer, input_blobs, output_blobs, False, i)
                 max_err = max(err, max_err)
                 if err > self._threshold:
-                    return (False, i, err)
+                    return (False, i, err, 'param')
             # restore param
             _vec_to_blobs(param_backup, layer.param())
         # second, check grad w.r.t. input
@@ -144,7 +144,7 @@ class GradChecker(object):
                     layer, input_blobs, output_blobs, True, i)
                 max_err = max(err, max_err)
                 if err > self._threshold:
-                    return (False, i, err)
+                    return (False, i, err, 'input')
             # restore input
             _vec_to_blobs(input_backup, input_blobs)
         return (True, max_err)
