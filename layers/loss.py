@@ -14,7 +14,8 @@ class SquaredLossLayer(base.LossLayer):
         diff = bottom[0].init_diff()
         diff[:] = bottom[0].data()
         diff -= bottom[1].data()
-        self._loss = np.dot(diff.flat, diff.flat) / 2.
+        diff *= 1. / diff.shape[0]
+        self._loss = np.dot(diff.flat, diff.flat) / 2. / diff.shape[0]
 
 
 class MultinomialLogisticLossLayer(base.LossLayer):
@@ -54,3 +55,6 @@ class MultinomialLogisticLossLayer(base.LossLayer):
             # The labels are given as a dense matrix.
             diff -= label.data
             self._loss = -np.dot(prob.flat, label.flat)
+        # finally, scale down by the number of data points
+        diff *= 1. / diff.shape[0]
+        self._loss /= diff.shape[0]

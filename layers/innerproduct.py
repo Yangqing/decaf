@@ -71,7 +71,7 @@ class InnerProductLayer(base.Layer):
             bottom_diff = bottom[0].init_diff()
             blasdot.dot_lastdim(top_diff, self._weight.data().T, out=bottom_diff)
         if self._reg is not None:
-            return self._reg.reg(self._weight, features.shape[0])
+            return self._reg.reg(self._weight)
         else:
             return 0.
 

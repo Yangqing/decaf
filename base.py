@@ -282,62 +282,14 @@ class Regularizer(object):
         self.spec = kwargs
         self._weight = self.spec['weight']
 
-    def reg(self, blob, num_data = 1):
+    def reg(self, blob):
         """Compute the regularization term from the blob's data field, and
         add the regularization term to its diff directly.
 
         Input:
             blob: the blob to work on.
-            num_data: a flexible term to multiply on the weight. This allows
-                 one to define a regularization weight term that is indepen-
-                 dent from the minibatch size.
         """
         raise NotImplementedError
-
-
-class RegularizeLayer(Layer):
-    """A regularize layer does nothing in the forward pass, but during the
-    backward pass, emits the loss introduced by the regularizer. This enables
-    one to attach e.g. sparsity constraints on blobs.
-
-    It is merely a wrapper over the regularizer class. Instead of directly
-    calling the RegularizeLayer, you should call the wrappers corresponding to
-    individual regularizers. See decaf.layers.regularization for examples.
-    """
-
-    def __init__(self, **kwargs):
-        """Initializes the RegularizeLayer.
-        
-        kwargs:
-            reg: a regularizer instance.
-        """
-        Layer.__init__(self, **kwargs)
-        if not isinstance(self.spec['reg'], Regularizer):
-            raise ValueError(
-                'The kwarg "reg" should be a Regularizer instance.')
-
-    def forward(self, bottom, top):
-        """A regularize Layer does nothing during the forward pass. It only
-        mirrors the bottom data.
-        """
-        if len(bottom) != 1 or len(top) != 1:
-            raise ValueError(
-                'RegularizeLayer should have only 1 input and 1 output.')
-        top[0].mirror(bottom[0])
-
-    def backward(self, bottom, top, propagate_down):
-        """A regularize layer backward function simply copies the top diff
-        and then adds the regularization term.
-        """
-        if propagate_down:
-            bottom_diff = bottom[0].init_diff()
-            bottom_diff[:] = top[0].diff()
-            return self.spec['reg'].reg(bottom[0], 1.)
-        else:
-            return 0.
-
-    def update(self):
-        pass
 
 
 class Net(object):
