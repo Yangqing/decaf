@@ -21,6 +21,17 @@ class TestLossGrad(unittest.TestCase):
                                    check_indices = [0])
             print(result)
             self.assertTrue(result[0])
+    
+    def testAutoencoderLossGrad(self):
+        np.random.seed(1701)
+        shapes = [(4,3), (1,10), (4,3,2)]
+        layer = core_layers.AutoencoderLossLayer(name='loss', ratio=0.5)
+        checker = gradcheck.GradChecker(1e-5)
+        for shape in shapes:
+            input_blob = base.Blob(shape, filler=fillers.RandFiller(min=0.05, max=0.95))
+            result = checker.check(layer, [input_blob], [])
+            print(result)
+            self.assertTrue(result[0])
 
     def testMultinomialLogisticLossGrad(self):
         np.random.seed(1701)

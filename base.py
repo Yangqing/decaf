@@ -236,11 +236,15 @@ class LossLayer(Layer):
     does the actual computation of both the loss and the gradients, and the
     backward pass will simply return the loss value. The loss layer should not
     accept any blobs on its top.
+    
+    The loss layer takes a keyword argument 'weight' (defaults to 1) that
+    allows one to adjust the balance between multiple losses.
     """
 
     def __init__(self, **kwargs):
         Layer.__init__(self, **kwargs)
         self._loss = 0
+        self.spec['weight'] = self.spec.get('weight', 1.)
 
     def forward(self, bottom, top):
         """The forward pass. In your loss layer, you need to compute the loss

@@ -11,7 +11,8 @@ from decaf.layers.sampler import (BasicMinibatchLayer,
 # Computation Layers
 from decaf.layers.innerproduct import InnerProductLayer
 from decaf.layers.loss import (SquaredLossLayer,
-                               MultinomialLogisticLossLayer)
+                               MultinomialLogisticLossLayer,
+                               AutoencoderLossLayer)
 from decaf.layers.relu import ReLULayer
 from decaf.layers.split import SplitLayer
 from decaf.layers.flatten import FlattenLayer
