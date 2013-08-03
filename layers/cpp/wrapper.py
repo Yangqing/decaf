@@ -12,6 +12,17 @@ try:
 except Exception as error:
     raise error
 
+def float_double_strategy(float_func, double_func):
+    def _strategy(dtype, *args, **kwargs):
+        if dtype == np.float32:
+            return float_func(*args, **kwargs)
+        elif dtype == np.float64:
+            return double_func(*args, **kwargs)
+        else:
+            raise TypeError('Unsupported type: ' + str(dtype))
+    return _strategy
+
+
 ################################################################################
 # im2col and col2im operation
 ################################################################################
@@ -40,42 +51,65 @@ _cpp.col2im_mc_double.argtypes = \
      ct.c_int, ct.c_int, ct.c_int, ct.c_int, ct.c_int,
      np.ctypeslib.ndpointer(dtype=np.float64, flags='C')]
 
-def im2col_sc(*args):
-    """A wrapper of the im2col_sc function."""
-    if args[0].dtype == np.float32:
-        return _cpp.im2col_sc_float(*args)
-    elif args[0].dtype == np.float64:
-        return _cpp.im2col_sc_double(*args)
-    else:
-        raise TypeError('Unsupported type: ' + str(args[0].dtype))
-
-def col2im_sc(*args):
-    """A wrapper of the col2im_sc function."""
-    if args[0].dtype == np.float32:
-        return _cpp.col2im_sc_float(*args)
-    elif args[0].dtype == np.float64:
-        return _cpp.col2im_sc_double(*args)
-    else:
-        raise TypeError('Unsupported type: ' + str(args[0].dtype))
-
-def im2col_mc(*args):
-    """A wrapper of the im2col_mc function."""
-    if args[0].dtype == np.float32:
-        return _cpp.im2col_mc_float(*args)
-    elif args[0].dtype == np.float64:
-        return _cpp.im2col_mc_double(*args)
-    else:
-        raise TypeError('Unsupported type: ' + str(args[0].dtype))
-
-def col2im_mc(*args):
-    """A wrapper of the col2im_mc function."""
-    if args[0].dtype == np.float32:
-        return _cpp.col2im_mc_float(*args)
-    elif args[0].dtype == np.float64:
-        return _cpp.col2im_mc_double(*args)
-    else:
-        raise TypeError('Unsupported type: ' + str(args[0].dtype))
-
+im2col_sc = float_double_strategy(_cpp.im2col_sc_float,
+                                  _cpp.im2col_sc_double)
+col2im_sc = float_double_strategy(_cpp.col2im_sc_float,
+                                  _cpp.col2im_sc_double)
+im2col_mc = float_double_strategy(_cpp.im2col_mc_float,
+                                  _cpp.im2col_mc_double)
+col2im_mc = float_double_strategy(_cpp.col2im_mc_float,
+                                  _cpp.col2im_mc_double)
 # For convenience, if no mc or sc is specified, we default to mc.
 im2col = im2col_mc
 col2im = col2im_mc
+
+
+
+################################################################################
+# pooling operation
+################################################################################
+_cpp.maxpooling_forward_float.restype = \
+_cpp.maxpooling_backward_float.restype = \
+_cpp.avepooling_forward_float.restype = \
+_cpp.avepooling_backward_float.restype = \
+_cpp.maxpooling_forward_double.restype = \
+_cpp.maxpooling_backward_double.restype = \
+_cpp.avepooling_forward_double.restype = \
+_cpp.avepooling_backward_double.restype = None
+
+_cpp.maxpooling_forward_float.argtypes = \
+_cpp.avepooling_forward_float.argtypes = \
+_cpp.avepooling_backward_float.argtypes = \
+    [np.ctypeslib.ndpointer(dtype=np.float32, flags='C'),
+     np.ctypeslib.ndpointer(dtype=np.float32, flags='C'),
+     ct.c_int, ct.c_int, ct.c_int, ct.c_int, ct.c_int]
+
+_cpp.maxpooling_forward_double.argtypes = \
+_cpp.avepooling_forward_double.argtypes = \
+_cpp.avepooling_backward_double.argtypes = \
+    [np.ctypeslib.ndpointer(dtype=np.float64, flags='C'),
+     np.ctypeslib.ndpointer(dtype=np.float64, flags='C'),
+     ct.c_int, ct.c_int, ct.c_int, ct.c_int, ct.c_int]
+
+_cpp.maxpooling_backward_float.argtypes = \
+    [np.ctypeslib.ndpointer(dtype=np.float32, flags='C'),
+     np.ctypeslib.ndpointer(dtype=np.float32, flags='C'),
+     np.ctypeslib.ndpointer(dtype=np.float32, flags='C'),
+     np.ctypeslib.ndpointer(dtype=np.float32, flags='C'),
+     ct.c_int, ct.c_int, ct.c_int, ct.c_int, ct.c_int]
+_cpp.maxpooling_backward_double.argtypes = \
+    [np.ctypeslib.ndpointer(dtype=np.float64, flags='C'),
+     np.ctypeslib.ndpointer(dtype=np.float64, flags='C'),
+     np.ctypeslib.ndpointer(dtype=np.float64, flags='C'),
+     np.ctypeslib.ndpointer(dtype=np.float64, flags='C'),
+     ct.c_int, ct.c_int, ct.c_int, ct.c_int, ct.c_int]
+
+maxpooling_forward = float_double_strategy(_cpp.maxpooling_forward_float,
+                                           _cpp.maxpooling_forward_double)
+maxpooling_backward = float_double_strategy(_cpp.maxpooling_backward_float,
+                                            _cpp.maxpooling_backward_double)
+avepooling_forward = float_double_strategy(_cpp.avepooling_forward_float,
+                                           _cpp.avepooling_forward_double)
+avepooling_backward = float_double_strategy(_cpp.avepooling_backward_float,
+                                            _cpp.avepooling_backward_double)
+

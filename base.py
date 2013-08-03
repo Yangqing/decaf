@@ -384,7 +384,7 @@ class Net(object):
         layers are stripped and not stored - this will enable one to just keep
         necessary layers for future use.
         """
-        output = [self.name]
+        output = [self.name, {}]
         for name, layer in self.layers.iteritems():
             if (not store_full and
                 (isinstance(layer, DataLayer) or 
@@ -392,7 +392,7 @@ class Net(object):
                 # We do not need to store these two layers.
                 continue
             else:
-                output.append((name, layer, self._needs[name], self._provides[name]))
+                output[1][name] = (layer, self._needs[name], self._provides[name])
         # finally, pickle the content.
         file = gzip.open(filename, 'wb')
         pickle.dump(output, file, protocol=protocol)
@@ -404,7 +404,7 @@ class Net(object):
         file = gzip.open(filename, 'rb')
         contents = pickle.load(file)
         self.name = contents[0]
-        for name, layer, needs, provides in contents[1:]:
+        for layer, needs, provides in contents[1].values():
             self.add_layer(layer, needs=needs, provides=provides)
         self.finish()
         return self
@@ -420,9 +420,9 @@ class Net(object):
         """
         file = gzip.open(filename, 'rb')
         contents = pickle.load(file)
-        for layer, _, _ in contents[1:]:
-            if layer.name in self.layers:
-                self.layers[layer.name] = layer
+        for name in contents[1]:
+            if name in self.layers:
+                self.layers[layer.name] = contents[1][name][0]
         # after loading, we need to re-parse the layer to fix all reference
         # issues.
         self.finish()

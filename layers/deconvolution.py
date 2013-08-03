@@ -90,15 +90,15 @@ class DeconvolutionLayer(base.Layer):
                                 out=self._col.data())
             if self._mode != 'valid':
             # do col2im
-                wrapper.col2im_mc(padded_data, pad_height, pad_width,
-                                  self._num_channels, self._ksize, self._stride,
-                                  self._col.data())
+                wrapper.col2im(padded_data.dtype, padded_data, pad_height,
+                               pad_width, self._num_channels, self._ksize,
+                               self._stride, self._col.data())
                 top_data[i] = padded_data[self._border:-self._border,
                                           self._border:-self._border]
             else:
-                wrapper.col2im_mc(top_data[i], pad_height, pad_width,
-                                  self._num_channels, self._ksize, self._stride,
-                                  self._col.data())
+                wrapper.col2im(top_data.dtype, top_data[i], pad_height, pad_width,
+                               self._num_channels, self._ksize, self._stride,
+                               self._col.data())
         return
 
     def backward(self, bottom, top, propagate_down):
@@ -120,10 +120,9 @@ class DeconvolutionLayer(base.Layer):
             else:
                 pad_diff = top_diff[i].view()
             # run im2col
-            wrapper.im2col_mc(pad_diff, pad_diff.shape[0], 
-                              pad_diff.shape[1], self._num_channels,
-                              self._ksize, self._stride,
-                              col_diff)
+            wrapper.im2col(pad_diff.dtype, pad_diff, pad_diff.shape[0], 
+                           pad_diff.shape[1], self._num_channels,
+                           self._ksize, self._stride, col_diff)
             blasdot.dot_firstdims(bottom_data[i], col_diff,
                                  out=kernel_diff_buffer)
             kernel_diff += kernel_diff_buffer

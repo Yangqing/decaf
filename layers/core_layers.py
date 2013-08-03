@@ -21,3 +21,4 @@ from decaf.layers.sigmoid import SigmoidLayer
 from decaf.layers.im2col import Im2colLayer
 from decaf.layers.convolution import ConvolutionLayer
 from decaf.layers.deconvolution import DeconvolutionLayer
+from decaf.layers.pooling import PoolingLayer
