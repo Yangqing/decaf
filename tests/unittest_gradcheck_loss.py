@@ -9,10 +9,22 @@ class TestLossGrad(unittest.TestCase):
     def setUp(self):
         pass
 
+    def _testWeight(self, layer, input_blobs):
+        layer.forward(input_blobs, [])
+        loss = layer.backward(input_blobs, [], True)
+        layer.spec['weight'] = layer.spec['weight'] / 2
+        layer.forward(input_blobs, [])
+        self.assertAlmostEqual(
+            layer.backward(input_blobs, [], True),
+            loss / 2.)
+        layer.spec['weight'] = layer.spec['weight'] * 2
+
+
     def testSquaredLossGrad(self):
         np.random.seed(1701)
         shapes = [(4,3), (1,10), (4,3,2)]
         layer = core_layers.SquaredLossLayer(name='squared')
+        half_layer = core_layers.SquaredLossLayer(name='squared', weight=0.5)
         checker = gradcheck.GradChecker(1e-6)
         for shape in shapes:
             input_blob = base.Blob(shape, filler=fillers.GaussianRandFiller())
@@ -21,21 +33,28 @@ class TestLossGrad(unittest.TestCase):
                                    check_indices = [0])
             print(result)
             self.assertTrue(result[0])
+            # also, check if weight works.
+            self._testWeight(layer, [input_blob, target_blob])
+
     
     def testAutoencoderLossGrad(self):
         np.random.seed(1701)
         shapes = [(4,3), (1,10), (4,3,2)]
         layer = core_layers.AutoencoderLossLayer(name='loss', ratio=0.5)
+        half_layer = core_layers.SquaredLossLayer(name='squared', weight=0.5)
         checker = gradcheck.GradChecker(1e-5)
         for shape in shapes:
             input_blob = base.Blob(shape, filler=fillers.RandFiller(min=0.05, max=0.95))
             result = checker.check(layer, [input_blob], [])
             print(result)
             self.assertTrue(result[0])
+            # also, check if weight works.
+            self._testWeight(layer, [input_blob])
 
     def testMultinomialLogisticLossGrad(self):
         np.random.seed(1701)
         layer = core_layers.MultinomialLogisticLossLayer(name='loss')
+        half_layer = core_layers.SquaredLossLayer(name='squared', weight=0.5)
         checker = gradcheck.GradChecker(1e-6)
         shape = (10,5)
         # check index input
@@ -46,6 +65,9 @@ class TestLossGrad(unittest.TestCase):
                                check_indices = [0])
         print(result)
         self.assertTrue(result[0])
+        # also, check if weight works.
+        self._testWeight(layer, [input_blob, target_blob])
+        
         # check full input
         target_blob = base.Blob(shape, filler=fillers.RandFiller())
         # normalize target
@@ -55,6 +77,8 @@ class TestLossGrad(unittest.TestCase):
                                check_indices = [0])
         print(result)
         self.assertTrue(result[0])
+        # also, check if weight works.
+        self._testWeight(layer, [input_blob, target_blob])
 
 if __name__ == '__main__':
     unittest.main()
