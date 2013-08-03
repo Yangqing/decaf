@@ -7,7 +7,7 @@ from decaf.layers import fillers
 from decaf.opt import core_solvers
 import numpy as np
 
-def logistic_regression(features, target, reg_weight=0):
+def logistic_regression(features, target, reg_weight=0, lbfgs_args={}):
     """Carry out a logistic regression given features and target values.
     
     If you actually want to do logistic regression, this is probably not what
@@ -26,11 +26,14 @@ def logistic_regression(features, target, reg_weight=0):
     data_layer = core_layers.NdarrayDataLayer(
         name='data', sources=[features,target])
     decaf_net.add_layer(data_layer, provides=['features', 'target'])
+    # flattens the input features
+    flatten_layer = core_layers.FlattenLayer(name='flatten')
+    decaf_net.add_layer(flatten_layer, needs=['features'], provides=['flatten-features'])
     # add inner production layer
     ip_layer = core_layers.InnerProductLayer(
         name='ip', num_output=num_output,
         reg=regularization.L2Regularizer(weight=reg_weight))
-    decaf_net.add_layer(ip_layer, needs=['features'], provides=['output'])
+    decaf_net.add_layer(ip_layer, needs=['flatten-features'], provides=['output'])
     # add loss layer
     loss_layer = core_layers.MultinomialLogisticLossLayer(
         name='loss')
@@ -39,7 +42,7 @@ def logistic_regression(features, target, reg_weight=0):
     decaf_net.finish()
     # now, try to solve it
     solver = core_solvers.LBFGSSolver(
-        lbfgs_args={'iprint': 1})
+        lbfgs_args=lbfgs_args)
     solver.solve(decaf_net)
     # We will violate the locality a little bit.
     param = ip_layer.param()
@@ -51,7 +54,7 @@ def main():
     data = np.random.randn(1000, 2)
     features = np.vstack((data + np.array([2, 2]),
                           data - np.array([2, 2])))
-    target = np.vstack((np.ones((1000, 1)), -np.ones((1000, 1))))
+    target = np.hstack((np.zeros(1000), np.ones(1000))).astype(np.int)
     weight, bias = logistic_regression(features, target, reg_weight=0.01)
     print 'weight:'
     print weight

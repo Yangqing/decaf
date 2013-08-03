@@ -67,17 +67,22 @@ class GradChecker(object):
         self._threshold = threshold
     
     @staticmethod
-    def _func(x_init, layer, input_blobs, output_blobs, check_data, idx):
+    def _func(x_init, layer, input_blobs, output_blobs, check_data, idx,
+             checked_blobs):
         """The function. It returns the output at index idx, or if idx is
         negative, computes an overall loss by taking the squared sum of all
         output values.
         """
         if check_data:
-            _vec_to_blobs(x_init, input_blobs)
+            _vec_to_blobs(x_init, checked_blobs)
         else:
             _vec_to_blobs(x_init, layer.param())
         layer.forward(input_blobs, output_blobs)
-        output = _blobs_to_vec(output_blobs)
+        if len(output_blobs) > 0:
+            output = _blobs_to_vec(output_blobs)
+        else:
+            # a dummy output
+            output = np.array([0])
         for blob in output_blobs:
             blob.init_diff()
         # The layer may have reg terms, so we run a dummy backward
@@ -88,38 +93,43 @@ class GradChecker(object):
             return output[idx] + additional_loss
 
     @staticmethod
-    def _grad(x_init, layer, input_blobs, output_blobs, check_data, idx):
+    def _grad(x_init, layer, input_blobs, output_blobs, check_data, idx,
+              checked_blobs):
         """The coarse gradient."""
         if check_data:
-            _vec_to_blobs(x_init, input_blobs)
+            _vec_to_blobs(x_init, checked_blobs)
         else:
             _vec_to_blobs(x_init, layer.param())
         layer.forward(input_blobs, output_blobs)
-        output = _blobs_to_vec(output_blobs)
         # initialize the diff
         for blob in output_blobs:
             blob.init_diff()
-        output = _blobs_to_vec(output_blobs)
-        if idx < 0:
-            output *= 2.
-        else:
-            output[:] = 0
-            output[idx] = 1.
-        _vec_to_blobs_diff(output, output_blobs)
+        if len(output_blobs) > 0:
+            output = _blobs_to_vec(output_blobs)
+            if idx < 0:
+                output *= 2.
+            else:
+                output[:] = 0
+                output[idx] = 1.
+            _vec_to_blobs_diff(output, output_blobs)
         # Now, get the diff
         if check_data:
             layer.backward(input_blobs, output_blobs, True)
-            return _blobs_diff_to_vec(input_blobs)
+            return _blobs_diff_to_vec(checked_blobs)
         else:
             layer.backward(input_blobs, output_blobs, False)
             return _blobs_diff_to_vec(layer.param())
 
-    def check(self, layer, input_blobs, output_blobs):
+    def check(self, layer, input_blobs, output_blobs, check_indices = None):
         """Checks a layer with given input blobs and output blobs.
         """
         # pre-run to get the input and output shapes.
+        if check_indices is None:
+            checked_blobs = input_blobs
+        else:
+            checked_blobs = [input_blobs[i] for i in check_indices]
         layer.forward(input_blobs, output_blobs)
-        input_backup = _blobs_to_vec(input_blobs)
+        input_backup = _blobs_to_vec(checked_blobs)
         param_backup = _blobs_to_vec(layer.param())
         num_output = _blobs_to_vec(output_blobs).size
         max_err = 0
@@ -129,22 +139,22 @@ class GradChecker(object):
             for i in range(-1, num_output):
                 err = optimize.check_grad(
                     GradChecker._func, GradChecker._grad, x_init,
-                    layer, input_blobs, output_blobs, False, i)
+                    layer, input_blobs, output_blobs, False, i, checked_blobs)
                 max_err = max(err, max_err)
                 if err > self._threshold:
                     return (False, i, err, 'param')
             # restore param
             _vec_to_blobs(param_backup, layer.param())
         # second, check grad w.r.t. input
-        x_init = _blobs_to_vec(input_blobs)
+        x_init = _blobs_to_vec(checked_blobs)
         if len(x_init) > 0:
             for i in range(-1, num_output):
                 err = optimize.check_grad(
                     GradChecker._func, GradChecker._grad, x_init,
-                    layer, input_blobs, output_blobs, True, i)
+                    layer, input_blobs, output_blobs, True, i, checked_blobs)
                 max_err = max(err, max_err)
                 if err > self._threshold:
                     return (False, i, err, 'input')
             # restore input
-            _vec_to_blobs(input_backup, input_blobs)
+            _vec_to_blobs(input_backup, checked_blobs)
         return (True, max_err)

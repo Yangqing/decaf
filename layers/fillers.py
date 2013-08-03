@@ -21,8 +21,8 @@ class RandFiller(base.Filler):
     """Fills the values with random numbers in [min, max).
     
     kwargs:
-        minval: the min value (default 0).
-        maxval: the max value (default 1).
+        min: the min value (default 0).
+        max: the max value (default 1).
     """
     def fill(self, mat):
         """The fill function."""
@@ -32,6 +32,19 @@ class RandFiller(base.Filler):
         mat *= maxval - minval
         mat += minval
 
+# pylint: disable=R0903
+class RandIntFiller(base.Filler):
+    """Fills the values with random numbers in [min, max).
+    
+    kwargs:
+        low: the min value (default 0).
+        high: the max value. Must be given.
+    """
+    def fill(self, mat):
+        """The fill function."""
+        lowval = self.spec.get('low', 0)
+        highval = self.spec['high']
+        mat[:] = np.random.randint(low=lowval, high=highval, size=mat.shape)
 
 # pylint: disable=R0903
 class GaussianRandFiller(base.Filler):
