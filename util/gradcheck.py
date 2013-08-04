@@ -67,6 +67,19 @@ class GradChecker(object):
         self._threshold = threshold
     
     @staticmethod
+    def _func_net(x_init, decaf_net):
+        """function wrapper for a net."""
+        _vec_to_blobs(x_init, decaf_net.params())
+        return decaf_net.forward_backward()
+
+    @staticmethod
+    def _grad_net(x_init, decaf_net):
+        """gradient wrapper for a net."""
+        _vec_to_blobs(x_init, decaf_net.params())
+        _ = decaf_net.forward_backward()
+        return _blobs_diff_to_vec(decaf_net.params())
+
+    @staticmethod
     def _func(x_init, layer, input_blobs, output_blobs, check_data, idx,
              checked_blobs):
         """The function. It returns the output at index idx, or if idx is
@@ -119,6 +132,22 @@ class GradChecker(object):
         else:
             layer.backward(input_blobs, output_blobs, False)
             return _blobs_diff_to_vec(layer.param())
+
+    def check_network(self, decaf_net):
+        """Checks a whole decaf network. Your network should not contain any
+        stochastic components: multiple forward backward passes should produce
+        the same value for the same parameters.
+        """
+        # Run a round to initialize the params.
+        decaf_net.forward_backward()
+        param_backup = _blobs_to_vec(decaf_net.params())
+        x_init = param_backup.copy()
+        err = optimize.check_grad(GradChecker._func_net, GradChecker._grad_net,
+                                  x_init, decaf_net)
+        if err > self._threshold:
+            return (False, err)
+        else:
+            return (True, err)
 
     def check(self, layer, input_blobs, output_blobs, check_indices = None):
         """Checks a layer with given input blobs and output blobs.

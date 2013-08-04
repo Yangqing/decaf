@@ -77,12 +77,9 @@ class AutoencoderLossLayer(base.LossLayer):
                 out=data_mean)
         neg_data_mean = 1. - data_mean
         ratio = self.spec['ratio']
-        log_mean = logexp.log(data_mean)
-        log_neg_mean = logexp.log(neg_data_mean)
-        loss = (ratio - 1.) * log_neg_mean.sum() - ratio * log_mean.sum() \
-               + ((ratio * np.log(ratio) + (1. - ratio) * np.log(1. - ratio))
-                  * data_mean.size)
-        data_diff = (1.-ratio) / neg_data_mean - ratio / data_mean
+        loss = (ratio * np.log(ratio / data_mean).sum() + 
+                (1. - ratio) * np.log((1. - ratio) / neg_data_mean).sum())
+        data_diff = (1. - ratio) / neg_data_mean - ratio / data_mean
         data_diff *= self.spec['weight'] / data.shape[0]
         diff += data_diff
         self._loss = loss * self.spec['weight']
