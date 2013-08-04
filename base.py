@@ -2,6 +2,7 @@
 """
 
 import cPickle as pickle
+from collections import defaultdict
 import gzip
 import logging
 import networkx as nx
@@ -260,6 +261,38 @@ class LossLayer(Layer):
         pass
 
 
+class SplitLayer(Layer):
+    """A layer that splits a blob to multiple blobs."""
+
+    def __init__(self, **kwargs):
+        """Initializes a Split layer.
+        """
+        Layer.__init__(self, **kwargs)
+    
+    def forward(self, bottom, top):
+        """Computes the forward pass.
+
+        The output will simply mirror the input data.
+        """
+        if len(bottom) != 1:
+            raise ValueError(
+                'SplitLayer only accepts one input as its bottom.')
+        for output in top:
+            output.mirror(bottom[0])
+
+    def backward(self, bottom, top, propagate_down):
+        """Computes the backward pass."""
+        if propagate_down:
+            diff = bottom[0].init_diff()
+            for single_top in top:
+                diff[:] += single_top.diff()
+        return 0.
+
+    def update(self):
+        """Split has nothing to update."""
+        pass
+
+
 class Solver(object):
     """This is the very basic form of the solver."""
     def __init__(self, **kwargs):
@@ -311,7 +344,7 @@ class Net(object):
         if name is None:
             name = 'decaf_net'
         self.name = name
-        self.graph = nx.DiGraph()
+        self._graph = nx.DiGraph()
         self.blobs = {}
         # layers is a dictionary that maps layer names to actual layers.
         self.layers = {}
@@ -323,7 +356,7 @@ class Net(object):
         self._provides = {}
         # The parameters below will be automaticall inferred 
         # The counts for blobs
-        self._need_count = {}
+        self._need_count = defaultdict(int)
         # The topological order to execute the layer.
         self._forward_order = None
         self._backward_order = None
@@ -352,7 +385,7 @@ class Net(object):
                 (isinstance(layer, DataLayer) or 
                  isinstance(layer, LossLayer) or
                  name.startwith(_DECAF_INSERTED_PREFIX))):
-                # We do not need to store these two layers.
+                # We do not need to store these layers.
                 continue
             else:
                 output[1][name] = (layer, self._needs[name], self._provides[name])
@@ -385,7 +418,7 @@ class Net(object):
         contents = pickle.load(file)
         for name in contents[1]:
             if name in self.layers:
-                self.layers[layer.name] = contents[1][name][0]
+                self.layers[name] = contents[1][name][0]
         # after loading, we need to re-parse the layer to fix all reference
         # issues.
         self.finish()
@@ -427,17 +460,19 @@ class Net(object):
                 self.blobs[blobname] = Blob()
         #TODO: fix (this is not finished but it is too late)
         for name in needs: 
-            self.need_count[name] = self._need_count.get(name, 0) + 1
+            self._need_count[name] += 1
         self._needs[layer.name] = list(needs)
         self._provides[layer.name] = list(provides)
         self._actual_needs = None
-        self._actual_provides = None
     
     def finish(self):
         """Call this function when you finish the network construction."""
-        # validate.
-        self._validate()
-        topological_order = nx.topological_sort(self.graph)
+        # validate and generate the graph
+        self._generate_graph()
+        try:
+            topological_order = nx.topological_sort(self._graph)
+        except nx.NetworkXUnfeasible as error:
+            raise DecafError(error)
         # For efficiency reasons, we will see for each layer, whether the
         # backward operation needs to be carried out.
         # This is stored in two parameters:
@@ -445,46 +480,50 @@ class Net(object):
         #   propagate_down: whether the gradient w.r.t. to the bottom layer
         #       needs to be carried out.
         for name in topological_order:
-            pred_need_backward = any(self.graph.node[p]['need_backward']
-                                     for p in self.graph.predecessors(name))
+            # whether the predecessor needs backward operation.
+            pred_need_backward = any(self._graph.node[p]['need_backward']
+                                     for p in self._graph.predecessors(name))
             if name in self.layers:
                 # see if a layer needs backward operation. A layer needs
                 # backward operation if (1) it has parameters and isn't frozen
                 # or (2) any of its predecessors needs backward operation.
                 layer = self.layers[name]
                 if (pred_need_backward or
-                    (len(layer.param()) > 0 and not layer.freeze)):
-                    self.graph.node[name]['need_backward'] = True
+                    (len(layer.param()) and not layer.freeze)):
+                    self._graph.node[name]['need_backward'] = True
                 else:
-                    self.graph.node[name]['need_backward'] = False
+                    self._graph.node[name]['need_backward'] = False
                 # see if a layer needs to compute its bottom diff. A layer
                 # needs to compute its bottom diff if any of its predecessors
                 # needs backward operation.
                 if pred_need_backward:
-                    self.graph.node[name]['propagate_down'] = True
+                    self._graph.node[name]['propagate_down'] = True
                 else:
-                    self.graph.node[name]['propagate_down'] = False
+                    self._graph.node[name]['propagate_down'] = False
             else:
                 # see if a blob needs backward operation.
                 # This is only used so we can verify further layers.
-                self.graph.node[name]['need_backward'] = pred_need_backward
+                self._graph.node[name]['need_backward'] = pred_need_backward
         # create the order to run forward and backward passes
-        layerorder = [layername for layername in topological_order
-                      if layername in self.layers]
+        layerorder = [name for name in topological_order
+                      if name in self.layers]
+        logging.info('Layer order: %s', str(layerorder))
         self._forward_order = []
         for n in layerorder:
             self._forward_order.append(
                 (n, self.layers[n],
-                 [self.blobs[name] for name in self._needs[n]],
+                 [self.blobs[name] for name in self._actual_needs[n]],
                  [self.blobs[name] for name in self._provides[n]]))
+        logging.info('Forward layer details: %s', str(self._forward_order))
         self._backward_order = []
         for n in layerorder[::-1]:
-            if self.graph.node[n]['need_backward']:
+            if self._graph.node[n]['need_backward']:
                 self._backward_order.append(
                     (n, self.layers[n],
                      [self.blobs[name] for name in self._needs[n]],
                      [self.blobs[name] for name in self._provides[n]],
-                     self.graph.node[n]['propagate_down']))
+                     self._graph.node[n]['propagate_down']))
+        logging.info('Backward layer details: %s', str(self._backward_order))
         # store all the parameters
         self._params = []
         for name in layerorder:
@@ -496,8 +535,9 @@ class Net(object):
         """Return a list of parameters used in the network."""
         return self._params
 
-    def _validate(self):
-        """Validates if a network is executable.
+    def _generate_graph(self):
+        """Validates if a network is executable, and generates the networkx 
+        graph that reflects the execution order.
         """
         # first, get input and output blobs.
         provided_blobs = set(sum(self._provides.values(), []))
@@ -511,28 +551,57 @@ class Net(object):
         if len(self._output_blobs):
             logging.info('This layer produces output blobs: %s',
                          str(self._output_blobs))
-        
         # TODO: get the actual needs and provides maps.
-        # For any blob that is needed by multiple layers, we will provide
-        temp_need_idx = 0
-        # UNFINISHED!!!
-        # TODO: construct the graph.
-        if not nx.is_directed_acyclic_graph(self.graph):
-            raise InvalidNetError('The network is not a DAG.')
-        self._input_blobs = []
-        self._output_blobs = []
-        return True
-    
-    def forward_backward(self):
+        # For any blob that is needed by multiple layers, we will insert a split
+        # layer to avoid gradient overwriting.
+        for name, count in self._need_count.iteritems:
+            if count > 1:
+                split_provides = ['_'.join(_DECAF_INSERTED_PREFIX, name, str(i))
+                                  for i in range(count)]
+                self.add_layer(SplitLayer(name=_DECAF_INSERTED_PREFIX + name),
+                               needs=[name],
+                               provides=split_provides)
+        # compute actual_needed
+        temp_need_idx = defaultdict(int)
+        for layername, blobnames in self._needs:
+            actual_needs = []
+            for blobname in blobnames:
+                if self._need_count[blobname] > 1:
+                    # instead of connecting it to the original blob, we connect
+                    # it to the new splitted blob.
+                    actual_needs.append('_'.join(_DECAF_INSERTED_PREFIX, name,
+                                                 temp_need_idx[blobname]))
+                    temp_need_idx[blobname] += 1
+                else:
+                    actual_needs.append(blobname)
+            self._actual_needs[layername] = actual_needs
+        # Now, create the graph
+        self._graph = nx.DiGraph()
+        for layername, blobnames in self._actual_needs:
+            for blobname in blobnames:
+                self.graph.add_edge(blobname, layername)
+        for layername, blobname in self._provides:
+            self.graph.add_edge(layername, blobname)
+        # Done creating graph!
+        return        
+                        
+    def forward_backward(self, previous_net = None):
         """Runs the forward and backward passes of the net.
         """
         # the forward pass. We will also accumulate the loss function.
         if not self._finished:
             # Trying to modify an already finished network.
             raise DecafError('Call finish() before you use the network.')
-        if len(self._input_blobs) > 0:
+        if len(self._input_blobs):
             raise DecafError('Cannot run forward_backward on a network with'
                              ' input blobs. Did you mean predict()?')
+        if len(self._output_blobs):
+            # If the network has output blobs, it usually shouldn't be used
+            # to run forward-backward: such blobs won't be used and cause waste
+            # of computation. Maybe the user is missing a few loss layers? We
+            # will print the warning but still carry on.
+            logging.warning('Have multiple unused blobs in the net. Do you'
+                            ' actually mean running a forward backward pass?')
         loss = 0.
         for _, layer, bottom, top in self._forward_order:
             layer.forward(bottom, top)
@@ -553,7 +622,8 @@ class Net(object):
             self.blobs[name].mirror(arr)
         for _, layer, bottom, top in self._forward_order:
             layer.forward(bottom, top)
-        return dict([(name, self.blobs[name].data()) for name in self._output_blobs])
+        return dict([(name, self.blobs[name].data())
+                     for name in self._output_blobs])
 
     def update(self):
         """Update the parameters using the diff values provided in the

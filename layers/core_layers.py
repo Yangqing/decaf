@@ -1,6 +1,9 @@
 # pylint: disable=W0611
 """Imports commonly used layers."""
 
+# Utility layers
+from decaf.base import SplitLayer
+
 # Data Layers
 from decaf.layers.data.ndarraydata import NdarrayDataLayer
 from decaf.layers.data.cifar import CifarDataLayer
@@ -14,7 +17,6 @@ from decaf.layers.loss import (SquaredLossLayer,
                                MultinomialLogisticLossLayer,
                                AutoencoderLossLayer)
 from decaf.layers.relu import ReLULayer
-from decaf.layers.split import SplitLayer
 from decaf.layers.flatten import FlattenLayer
 from decaf.layers.dropout import DropoutLayer
 from decaf.layers.padding import PaddingLayer

@@ -19,7 +19,6 @@ class DropoutLayer(base.Layer):
         """
         base.Layer.__init__(self, **kwargs)
         self._ratio = self.spec['ratio']
-        self._debug_freeze = self.spec.get('debug_freeze', False)
         filler = fillers.DropoutFiller(ratio=self._ratio)
         self._mask = base.Blob(filler=filler)
 
@@ -28,7 +27,7 @@ class DropoutLayer(base.Layer):
         # Get features and output
         features = bottom[0].data()
         output = top[0].init_data(features.shape, features.dtype)
-        if not self._debug_freeze or not self._mask.has_data():
+        if not (self.spec.get('debug_freeze', False) and self._mask.has_data()):
             self._mask.init_data(features.shape, np.bool)
         output[:] = features
         output *= self._mask.data()

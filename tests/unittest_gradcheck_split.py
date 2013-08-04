@@ -1,5 +1,5 @@
 from decaf import base
-from decaf.layers import core_layers, fillers, regularization
+from decaf.layers import fillers
 from decaf.util import gradcheck
 import numpy as np
 import unittest
@@ -16,7 +16,7 @@ class TestSplitGrad(unittest.TestCase):
         shapes = [(5,4), (5,1), (1,5), (1,5,5), (1,5,5,3), (1,5,5,1)]
         for shape in shapes:
             input_blob = base.Blob(shape, filler=fillers.GaussianRandFiller())
-            layer = core_layers.SplitLayer(name='split')
+            layer = base.SplitLayer(name='split')
             result = checker.check(layer, [input_blob], output_blobs)
             print(result)
             self.assertTrue(result[0])

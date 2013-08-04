@@ -76,7 +76,7 @@ class GradChecker(object):
     def _grad_net(x_init, decaf_net):
         """gradient wrapper for a net."""
         _vec_to_blobs(x_init, decaf_net.params())
-        _ = decaf_net.forward_backward()
+        decaf_net.forward_backward()
         return _blobs_diff_to_vec(decaf_net.params())
 
     @staticmethod

@@ -1,7 +1,7 @@
 """Implements the convolution layer."""
 
 from decaf import base
-from decaf.layers import im2col, innerproduct, padding 
+from decaf.layers import im2col, padding 
 from decaf.util import blasdot
 import numpy as np
 
