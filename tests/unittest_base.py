@@ -1,4 +1,5 @@
 from decaf import base
+import logging
 import numpy as np
 import numpy.testing as npt
 import unittest
@@ -34,5 +35,24 @@ class TestBlob(unittest.TestCase):
         self.assertEqual(output.shape, (3,4))
 
 
+class TestNet(unittest.TestCase):
+    def setUp(self):
+        pass
+
+    def testSplit(self):
+        """This tests if a net is able to insert split layers correctly."""
+        decaf_net = base.Net()
+        decaf_net.add_layer(base.Layer(name='a'), provides='data')
+        decaf_net.add_layer(base.Layer(name='b'), needs='data')
+        decaf_net.add_layer(base.Layer(name='c'), needs='data')
+        decaf_net.finish()
+        self.assertEqual(len(decaf_net.layers), 4)
+        self.assertEqual(len(decaf_net.blobs), 3)
+        self.assertTrue(any(isinstance(layer, base.SplitLayer)
+                             for layer in decaf_net.layers.values()))
+        #from decaf.util import visualize
+        #visualize.draw_net_to_file(decaf_net, 'test.png')
+
 if __name__ == '__main__':
+    logging.getLogger().setLevel(logging.INFO)
     unittest.main()

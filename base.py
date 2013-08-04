@@ -330,7 +330,7 @@ class Regularizer(object):
         raise NotImplementedError
 
 
-_DECAF_INSERTED_PREFIX = '_decaf'
+_DECAF_PREFIX = '_decaf'
 
 
 class Net(object):
@@ -344,7 +344,7 @@ class Net(object):
         if name is None:
             name = 'decaf_net'
         self.name = name
-        self._graph = nx.DiGraph()
+        self.graph = nx.DiGraph()
         self.blobs = {}
         # layers is a dictionary that maps layer names to actual layers.
         self.layers = {}
@@ -384,7 +384,7 @@ class Net(object):
             if (not store_full and
                 (isinstance(layer, DataLayer) or 
                  isinstance(layer, LossLayer) or
-                 name.startwith(_DECAF_INSERTED_PREFIX))):
+                 name.startwith(_DECAF_PREFIX))):
                 # We do not need to store these layers.
                 continue
             else:
@@ -470,7 +470,7 @@ class Net(object):
         # validate and generate the graph
         self._generate_graph()
         try:
-            topological_order = nx.topological_sort(self._graph)
+            topological_order = nx.topological_sort(self.graph)
         except nx.NetworkXUnfeasible as error:
             raise DecafError(error)
         # For efficiency reasons, we will see for each layer, whether the
@@ -481,8 +481,8 @@ class Net(object):
         #       needs to be carried out.
         for name in topological_order:
             # whether the predecessor needs backward operation.
-            pred_need_backward = any(self._graph.node[p]['need_backward']
-                                     for p in self._graph.predecessors(name))
+            pred_need_backward = any(self.graph.node[p]['need_backward']
+                                     for p in self.graph.predecessors(name))
             if name in self.layers:
                 # see if a layer needs backward operation. A layer needs
                 # backward operation if (1) it has parameters and isn't frozen
@@ -490,20 +490,20 @@ class Net(object):
                 layer = self.layers[name]
                 if (pred_need_backward or
                     (len(layer.param()) and not layer.freeze)):
-                    self._graph.node[name]['need_backward'] = True
+                    self.graph.node[name]['need_backward'] = True
                 else:
-                    self._graph.node[name]['need_backward'] = False
+                    self.graph.node[name]['need_backward'] = False
                 # see if a layer needs to compute its bottom diff. A layer
                 # needs to compute its bottom diff if any of its predecessors
                 # needs backward operation.
                 if pred_need_backward:
-                    self._graph.node[name]['propagate_down'] = True
+                    self.graph.node[name]['propagate_down'] = True
                 else:
-                    self._graph.node[name]['propagate_down'] = False
+                    self.graph.node[name]['propagate_down'] = False
             else:
                 # see if a blob needs backward operation.
                 # This is only used so we can verify further layers.
-                self._graph.node[name]['need_backward'] = pred_need_backward
+                self.graph.node[name]['need_backward'] = pred_need_backward
         # create the order to run forward and backward passes
         layerorder = [name for name in topological_order
                       if name in self.layers]
@@ -514,16 +514,16 @@ class Net(object):
                 (n, self.layers[n],
                  [self.blobs[name] for name in self._actual_needs[n]],
                  [self.blobs[name] for name in self._provides[n]]))
-        logging.info('Forward layer details: %s', str(self._forward_order))
+        logging.info('Forward order details: %s', str(self._forward_order))
         self._backward_order = []
         for n in layerorder[::-1]:
-            if self._graph.node[n]['need_backward']:
+            if self.graph.node[n]['need_backward']:
                 self._backward_order.append(
                     (n, self.layers[n],
-                     [self.blobs[name] for name in self._needs[n]],
+                     [self.blobs[name] for name in self._actual_needs[n]],
                      [self.blobs[name] for name in self._provides[n]],
-                     self._graph.node[n]['propagate_down']))
-        logging.info('Backward layer details: %s', str(self._backward_order))
+                     self.graph.node[n]['propagate_down']))
+        logging.info('Backward order details: %s', str(self._backward_order))
         # store all the parameters
         self._params = []
         for name in layerorder:
@@ -554,34 +554,38 @@ class Net(object):
         # TODO: get the actual needs and provides maps.
         # For any blob that is needed by multiple layers, we will insert a split
         # layer to avoid gradient overwriting.
-        for name, count in self._need_count.iteritems:
+        for name, count in self._need_count.iteritems():
             if count > 1:
-                split_provides = ['_'.join(_DECAF_INSERTED_PREFIX, name, str(i))
+                split_provides = ['_'.join([_DECAF_PREFIX, name, str(i)])
                                   for i in range(count)]
-                self.add_layer(SplitLayer(name=_DECAF_INSERTED_PREFIX + name),
-                               needs=[name],
-                               provides=split_provides)
+                self.add_layer(
+                    SplitLayer(name='_'.join([_DECAF_PREFIX, name, 'split'])),
+                    needs=[name], provides=split_provides)
         # compute actual_needed
         temp_need_idx = defaultdict(int)
-        for layername, blobnames in self._needs:
+        self._actual_needs = {}
+        for layername, blobnames in self._needs.iteritems():
             actual_needs = []
             for blobname in blobnames:
-                if self._need_count[blobname] > 1:
+                if (self._need_count[blobname] > 1 and 
+                    not layername.startswith(_DECAF_PREFIX)):
                     # instead of connecting it to the original blob, we connect
                     # it to the new splitted blob.
-                    actual_needs.append('_'.join(_DECAF_INSERTED_PREFIX, name,
-                                                 temp_need_idx[blobname]))
+                    actual_needs.append(
+                        '_'.join([_DECAF_PREFIX, name,
+                                  str(temp_need_idx[blobname])]))
                     temp_need_idx[blobname] += 1
                 else:
                     actual_needs.append(blobname)
             self._actual_needs[layername] = actual_needs
         # Now, create the graph
-        self._graph = nx.DiGraph()
-        for layername, blobnames in self._actual_needs:
+        self.graph = nx.DiGraph()
+        for layername, blobnames in self._actual_needs.iteritems():
             for blobname in blobnames:
                 self.graph.add_edge(blobname, layername)
-        for layername, blobname in self._provides:
-            self.graph.add_edge(layername, blobname)
+        for layername, blobnames in self._provides.iteritems():
+            for blobname in blobnames:
+                self.graph.add_edge(layername, blobname)
         # Done creating graph!
         return        
                         
