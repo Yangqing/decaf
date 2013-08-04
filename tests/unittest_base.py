@@ -50,8 +50,8 @@ class TestNet(unittest.TestCase):
         self.assertEqual(len(decaf_net.blobs), 3)
         self.assertTrue(any(isinstance(layer, base.SplitLayer)
                              for layer in decaf_net.layers.values()))
-        #from decaf.util import visualize
-        #visualize.draw_net_to_file(decaf_net, 'test.png')
+        from decaf.util import visualize
+        visualize.draw_net_to_file(decaf_net, 'test.png')
 
 if __name__ == '__main__':
     logging.getLogger().setLevel(logging.INFO)

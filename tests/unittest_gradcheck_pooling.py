@@ -13,7 +13,7 @@ class TestPoolingGrad(unittest.TestCase):
         np.random.seed(1701)
         output_blob = base.Blob()
         checker = gradcheck.GradChecker(1e-4)
-        shapes = [(1,7,7,1), (2,7,7,1), (1,7,7,3), (1,16,16,1), (1,16,16,3)]
+        shapes = [(1,7,7,1), (2,7,7,1), (1,7,7,3), (1,13,13,1), (1,13,13,2)]
         params = [(3,2,'max'), (3,2,'ave'),(3,3,'max'), (3,3,'ave'),
                   (5,3,'max'), (5,3,'ave'),(5,5,'max'), (5,5,'ave')]
         for shape in shapes:

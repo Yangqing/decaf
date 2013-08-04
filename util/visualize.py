@@ -1,48 +1,68 @@
 """Functions that could be used to visualize patches
 """
-
+from decaf import base
 from matplotlib import cm, pyplot
 import numpy as np
 import os
 import pydot
 
 LAYER_STYLE = {'shape': 'record', 'fillcolor': '#DFECF3',
-               'style': 'filled'}
+               'style': 'filled,bold'}
 BLOB_STYLE = {'shape': 'record', 'fillcolor': '#FEF9E3',
-              'style': 'filled'}
+              'style': 'rounded,filled'}
 
-def draw_net(decaf_net, format='png'):
+def draw_net(decaf_net, format='png', internal=False):
     """Draws a decaf net and returns the image string with the given format.
     The format is defaulted to 'png'.
     """
     pydot_graph = pydot.Dot(graph_type='digraph')
     pydot_nodes = {}
     for name, layer in decaf_net.layers.iteritems():
+        if not internal and name.startswith(base.DECAF_PREFIX):
+            continue
         pydot_nodes[name] = pydot.Node(
-            '%s|<%s>' % (name, layer.__class__.__name__), **LAYER_STYLE)
+            '{%s|%s}' % (name, layer.__class__.__name__), **LAYER_STYLE)
     for name, blob in decaf_net.blobs.iteritems():
+        if not internal and name.startswith(base.DECAF_PREFIX):
+            continue
         if blob.has_data():
             shapestr = 'x'.join(str(v) for v in blob.data().shape[1:])
+            dtypestr = str(blob.data().dtype)
         else:
             shapestr = 'unknown shape'
+            dtypestr = 'unknown dtype'
         pydot_nodes[name] = pydot.Node(
-            '%s|<%s>' % (name, shapestr),
-            **BLOB_STYLE)
+            '{%s|%s|%s}' % (name, shapestr, dtypestr), **BLOB_STYLE)
     for name in pydot_nodes:
         pydot_graph.add_node(pydot_nodes[name])
-    print decaf_net.graph.edges()
-    for parent, child in decaf_net.graph.edges():
-        pydot_graph.add_edge(
-            pydot.Edge(pydot_nodes[parent], pydot_nodes[child]))
+    if internal:
+        # all edges will be written.
+        for parent, child in decaf_net.graph.edges():
+            pydot_graph.add_edge(
+                pydot.Edge(pydot_nodes[parent], pydot_nodes[child]))
+    else:
+        # only write explicit edges
+        for layername, blobnames in decaf_net.provides.iteritems():
+            if layername.startswith(base.DECAF_PREFIX):
+                continue
+            for blobname in blobnames:
+                pydot_graph.add_edge(
+                    pydot.Edge(pydot_nodes[layername], pydot_nodes[blobname]))
+        for layername, blobnames in decaf_net.needs.iteritems():
+            if layername.startswith(base.DECAF_PREFIX):
+                continue
+            for blobname in blobnames:
+                pydot_graph.add_edge(
+                    pydot.Edge(pydot_nodes[blobname], pydot_nodes[layername]))
     return pydot_graph.create(format=format)
 
-def draw_net_to_file(decaf_net, filename):
+def draw_net_to_file(decaf_net, filename, internal=False):
     """Draws a decaf net, and saves it to file using the format given as the
     file extension.
     """
     format = os.path.splitext(filename)[-1][1:]
     with open(filename, 'w') as fid:
-        fid.write(draw_net(decaf_net, format))
+        fid.write(draw_net(decaf_net, format, internal=internal))
 
 
 class PatchVisualizer(object):

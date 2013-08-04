@@ -330,7 +330,7 @@ class Regularizer(object):
         raise NotImplementedError
 
 
-_DECAF_PREFIX = '_decaf'
+DECAF_PREFIX = '_decaf'
 
 
 class Net(object):
@@ -350,10 +350,10 @@ class Net(object):
         self.layers = {}
         # needs is a dictionary that maps layer names to a list of blob names
         # that it needs.
-        self._needs = {}
+        self.needs = {}
         # provides is a dictionary that maps layer names to a list of blob
         # names that it provides.
-        self._provides = {}
+        self.provides = {}
         # The parameters below will be automaticall inferred 
         # The counts for blobs
         self._need_count = defaultdict(int)
@@ -384,11 +384,11 @@ class Net(object):
             if (not store_full and
                 (isinstance(layer, DataLayer) or 
                  isinstance(layer, LossLayer) or
-                 name.startwith(_DECAF_PREFIX))):
+                 name.startwith(DECAF_PREFIX))):
                 # We do not need to store these layers.
                 continue
             else:
-                output[1][name] = (layer, self._needs[name], self._provides[name])
+                output[1][name] = (layer, self.needs[name], self.provides[name])
         # finally, pickle the content.
         file = gzip.open(filename, 'wb')
         pickle.dump(output, file, protocol=protocol)
@@ -458,11 +458,10 @@ class Net(object):
                     'Blob name found as a layer name: %s' % blobname)
             elif blobname not in self.blobs:
                 self.blobs[blobname] = Blob()
-        #TODO: fix (this is not finished but it is too late)
         for name in needs: 
             self._need_count[name] += 1
-        self._needs[layer.name] = list(needs)
-        self._provides[layer.name] = list(provides)
+        self.needs[layer.name] = list(needs)
+        self.provides[layer.name] = list(provides)
         self._actual_needs = None
     
     def finish(self):
@@ -507,23 +506,23 @@ class Net(object):
         # create the order to run forward and backward passes
         layerorder = [name for name in topological_order
                       if name in self.layers]
-        logging.info('Layer order: %s', str(layerorder))
+        logging.debug('Layer order: %s', str(layerorder))
         self._forward_order = []
         for n in layerorder:
             self._forward_order.append(
                 (n, self.layers[n],
                  [self.blobs[name] for name in self._actual_needs[n]],
-                 [self.blobs[name] for name in self._provides[n]]))
-        logging.info('Forward order details: %s', str(self._forward_order))
+                 [self.blobs[name] for name in self.provides[n]]))
+        logging.debug('Forward order details: %s', str(self._forward_order))
         self._backward_order = []
         for n in layerorder[::-1]:
             if self.graph.node[n]['need_backward']:
                 self._backward_order.append(
                     (n, self.layers[n],
                      [self.blobs[name] for name in self._actual_needs[n]],
-                     [self.blobs[name] for name in self._provides[n]],
+                     [self.blobs[name] for name in self.provides[n]],
                      self.graph.node[n]['propagate_down']))
-        logging.info('Backward order details: %s', str(self._backward_order))
+        logging.debug('Backward order details: %s', str(self._backward_order))
         # store all the parameters
         self._params = []
         for name in layerorder:
@@ -540,7 +539,7 @@ class Net(object):
         graph that reflects the execution order.
         """
         # first, get input and output blobs.
-        provided_blobs = set(sum(self._provides.values(), []))
+        provided_blobs = set(sum(self.provides.values(), []))
         self._input_blobs = [name for name in self.blobs
                              if name not in provided_blobs]
         if len(self._input_blobs):
@@ -551,39 +550,42 @@ class Net(object):
         if len(self._output_blobs):
             logging.info('This layer produces output blobs: %s',
                          str(self._output_blobs))
-        # TODO: get the actual needs and provides maps.
         # For any blob that is needed by multiple layers, we will insert a split
         # layer to avoid gradient overwriting.
-        for name, count in self._need_count.iteritems():
+        for blobname, count in self._need_count.iteritems():
             if count > 1:
-                split_provides = ['_'.join([_DECAF_PREFIX, name, str(i)])
+                split_provides = ['_'.join([DECAF_PREFIX, blobname, str(i)])
                                   for i in range(count)]
                 self.add_layer(
-                    SplitLayer(name='_'.join([_DECAF_PREFIX, name, 'split'])),
-                    needs=[name], provides=split_provides)
+                    SplitLayer(name='_'.join([DECAF_PREFIX, blobname, 'split'])),
+                    needs=[blobname], provides=split_provides)
+                logging.debug('Insert SplitLayer from [%s] to %s', blobname, str(split_provides))
         # compute actual_needed
         temp_need_idx = defaultdict(int)
         self._actual_needs = {}
-        for layername, blobnames in self._needs.iteritems():
+        for layername, blobnames in self.needs.iteritems():
             actual_needs = []
             for blobname in blobnames:
                 if (self._need_count[blobname] > 1 and 
-                    not layername.startswith(_DECAF_PREFIX)):
+                    not layername.startswith(DECAF_PREFIX)):
                     # instead of connecting it to the original blob, we connect
                     # it to the new splitted blob.
                     actual_needs.append(
-                        '_'.join([_DECAF_PREFIX, name,
+                        '_'.join([DECAF_PREFIX, blobname,
                                   str(temp_need_idx[blobname])]))
                     temp_need_idx[blobname] += 1
                 else:
                     actual_needs.append(blobname)
-            self._actual_needs[layername] = actual_needs
+            self._actual_needs[layername] = list(actual_needs)
+            logging.debug('Layer %s, needs %s, actual needs %s', layername, str(blobnames), str(actual_needs))
         # Now, create the graph
         self.graph = nx.DiGraph()
         for layername, blobnames in self._actual_needs.iteritems():
+            logging.debug('Adding edges from %s to %s (needs)', str(blobnames), layername)
             for blobname in blobnames:
                 self.graph.add_edge(blobname, layername)
-        for layername, blobnames in self._provides.iteritems():
+        for layername, blobnames in self.provides.iteritems():
+            logging.debug('Adding edges from %s to %s (provides)', layername, str(blobnames))
             for blobname in blobnames:
                 self.graph.add_edge(layername, blobname)
         # Done creating graph!
