@@ -384,7 +384,7 @@ class Net(object):
             if (not store_full and
                 (isinstance(layer, DataLayer) or 
                  isinstance(layer, LossLayer) or
-                 name.startwith(DECAF_PREFIX))):
+                 name.startswith(DECAF_PREFIX))):
                 # We do not need to store these layers.
                 continue
             else:
@@ -614,8 +614,8 @@ class Net(object):
         # the backward pass
         for name, layer, bottom, top, propagate_down in self._backward_order:
             layer_loss = layer.backward(bottom, top, propagate_down)
-            if layer_loss > 0:
-                logging.debug('layer %s produces loss %f.', name, layer_loss)
+            # if layer_loss > 0:
+            #     logging.debug('layer %s produces loss %f.', name, layer_loss)
             loss += layer_loss
         return loss
 

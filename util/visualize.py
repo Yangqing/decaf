@@ -87,7 +87,7 @@ class PatchVisualizer(object):
             pyplot.imshow(patch)
         return patch
     
-    def show_multiple(self, patches, ncols = None, bg_func = np.mean):
+    def show_multiple(self, patches, ncols = None, bg_func = np.min):
         """Visualize multiple patches. In the passed in patches matrix, each row
         is a patch, in the shape of either n*n or n*n*3, either in a flattened
         format (so patches would be an 2-D array), or a multi-dimensional tensor
@@ -125,7 +125,7 @@ class PatchVisualizer(object):
         pyplot.axis('off')
         return image
     
-    def show_channels(self, patch, bg_func = np.mean):
+    def show_channels(self, patch, bg_func = np.min):
         """ This function shows the channels of a patch. The incoming patch
         should have shape [w, h, num_channels], and each channel will be
         visualized as a separate gray patch.
