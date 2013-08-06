@@ -2,6 +2,7 @@
 
 from decaf import base
 from decaf.util import logexp
+import numexpr
 
 class SigmoidLayer(base.Layer):
     """A layer that implements the sigmoid operation."""
@@ -16,12 +17,14 @@ class SigmoidLayer(base.Layer):
         # Get features and top_data
         bottom_data = bottom[0].data()
         top_data = top[0].init_data(bottom_data.shape, bottom_data.dtype)
+        numexpr.evaluate('1. / (exp(-bottom_data) + 1.)', out=top_data)
+        # DEPRECATED
         # ugly but avoids creating intermediate matrices
-        top_data[:] = bottom_data
-        top_data *= -1
-        logexp.exp(top_data, out=top_data)
-        top_data += 1.
-        top_data **= -1
+        #top_data[:] = bottom_data
+        #top_data *= -1
+        #logexp.exp(top_data, out=top_data)
+        #top_data += 1.
+        #top_data **= -1
 
     def backward(self, bottom, top, propagate_down):
         """Computes the backward pass."""
@@ -29,11 +32,12 @@ class SigmoidLayer(base.Layer):
             top_data = top[0].data()
             top_diff = top[0].diff()
             bottom_diff = bottom[0].init_diff()
-            bottom_diff[:] = top_data
-            bottom_diff *= -1.
-            bottom_diff += 1.
-            bottom_diff *= top_data
-            bottom_diff *= top_diff
+            numexpr.evaluate('top_data * top_diff * (1. - top_data)', out=bottom_diff)
+            #bottom_diff[:] = top_data
+            #bottom_diff *= -1.
+            #bottom_diff += 1.
+            #bottom_diff *= top_data
+            #bottom_diff *= top_diff
         return 0
 
     def update(self):

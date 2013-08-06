@@ -1,5 +1,5 @@
 CC = g++
-CCFLAGS = -fPIC -O3 -Wall -pedantic -ffast-math -msse -msse2 -fopenmp
+CCFLAGS = -fPIC -O3 -Wall -ffast-math -pedantic -msse -msse2 -fopenmp
 LINKFLAGS = -shared -s -Wl -lgomp
 INPUT = im2col_splitchannel.cpp im2col_mergedchannel.cpp fastpool.cpp
 TARGET = libcpputil.so

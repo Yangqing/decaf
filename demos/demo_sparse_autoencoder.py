@@ -122,7 +122,7 @@ solver = core_solvers.LBFGSSolver(
 solver.solve(decaf_net)
 # let's get the weight matrix and show it.
 weight = decaf_net.layers['ip'].param()[0].data()
-visualize.show_multiple(weight.T)
+#visualize.show_multiple(weight.T)
 decaf_net.save('sparse-autoencoder.decafnet')
-pyplot.show()
+#pyplot.show()
 
