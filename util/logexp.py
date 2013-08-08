@@ -29,6 +29,6 @@ def log(mat, out=None):
         out = np.empty_like(mat)
     # pylint: disable=E1101
     np.clip(mat, np.finfo(mat.dtype).tiny, np.inf, out=out)
-    pyvml.Log(out, out)
+    pyvml.Ln(out, out)
     return out
 

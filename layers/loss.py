@@ -60,6 +60,7 @@ class MultinomialLogisticLossLayer(base.LossLayer):
         diff *= self.spec['weight'] / diff.shape[0]
         self._loss *= self.spec['weight'] / diff.shape[0]
 
+
 class AutoencoderLossLayer(base.LossLayer):
     """The sparse autoencoder loss term.
     

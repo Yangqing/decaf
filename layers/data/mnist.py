@@ -10,7 +10,13 @@ class MNISTDataLayer(ndarraydata.NdarrayDataLayer):
     IMAGE_DIM = (28,28)
     
     def __init__(self, **kwargs):
-        """Initialize the mnist dataset."""
+        """Initialize the mnist dataset.
+        
+        kwargs:
+            is_training: whether to load the training data. Default True.
+            rootfolder: the folder that stores the mnist data.
+            dtype: the data type. Default numpy.float64.
+        """
         is_training = kwargs.get('is_training', True)
         rootfolder = kwargs['rootfolder']
         dtype = kwargs.get('dtype', np.float64)

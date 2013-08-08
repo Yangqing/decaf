@@ -20,6 +20,14 @@ class CifarDataLayer(ndarraydata.NdarrayDataLayer):
     __flat_dim = 3072
     
     def __init__(self, **kwargs):
+        """Initializes the cifar layer.
+
+        kwargs:
+            is_training: whether to load the training data. Default True.
+            is_gray: whether to load gray image. Default False.
+            rootfolder: the folder that stores the mnist data.
+            dtype: the data type. Default numpy.float64.
+        """
         # get keywords
         is_training = kwargs.get('is_training', True)
         is_gray = kwargs.get('is_gray', False)
@@ -51,7 +59,6 @@ class CifarDataLayer(ndarraydata.NdarrayDataLayer):
                            CifarDataLayer.__image_size))
         images = mat.swapaxes(1, 2).reshape(
             (mat.shape[0],) + CifarDataLayer.__image_dim)
-        print 'debug', dtype
         return images.astype(dtype)
     
     def load_cifar100(self, rootfolder, is_training, dtype):
