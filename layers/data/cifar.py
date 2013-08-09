@@ -45,6 +45,8 @@ class CifarDataLayer(ndarraydata.NdarrayDataLayer):
             raise IOError, 'Cannot understand the dataset format.'
         if is_gray:
             self._data = self._data.mean(axis=-1)
+        # Normalize data to [0, 1)
+        self._data /= 255.
         # Initialize as an NdarrayDataLayer
         ndarraydata.NdarrayDataLayer.__init__(
             self, sources=[self._data, self._label], **kwargs)

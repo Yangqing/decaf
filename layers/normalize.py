@@ -38,7 +38,8 @@ class MeanNormalizeLayer(base.Layer):
 
 
 class ResponseNormalizeLayer(base.Layer):
-    """A layer that normalizes the last dimension.
+    """A layer that normalizes the last dimension. For a vector x, it is normalized as
+    x / (smooth + std(x)).
     """
     def __init__(self, **kwargs):
         """Initalizes the layer. 
@@ -58,13 +59,8 @@ class ResponseNormalizeLayer(base.Layer):
         # Create 2-dimenisonal views of the features and outputs.
         features.shape = (np.prod(features.shape[:-1]), features.shape[-1])
         output.shape = features.shape
-        self._std = features.std(axis=1)
-        # numerical stability
-        self._std += np.finfo(self._std.dtype).eps
-        if 'smooth' in self.spec:
-            self._stdsmooth = self._std + self.spec['smooth']
-        else:
-            self._stdsmooth = self._std
+        self._stdsmooth = features.std(axis=1) + \
+                self.spec.get('smooth', np.finfo(self._std.dtype).eps)
         output[:] = features
         output /= self._stdsmooth[:, np.newaxis]
     

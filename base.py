@@ -448,8 +448,10 @@ class Net(object):
             raise InvalidNetError('A name already exists: %s' % layer.name)
         self.layers[layer.name] = layer
         # Add the blobs
+        # TODO: the current check may be slow, consider rewriting.
+        already_provided = sum(self.provides.values(), [])
         for blobname in provides:
-            if blobname in self.blobs:
+            if blobname in already_provided:
                 raise InvalidNetError(
                     'Blob %s already provided by another layer.' % blobname)
         for blobname in needs + provides:
