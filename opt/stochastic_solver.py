@@ -123,6 +123,7 @@ class SGDSolver(StochasticSolver):
             min_lr: the minimun learning rate. Default 0. If weight decay
                 results in a learning rate smaller than min_lr, it is set to
                 min_lr.
+            max_lr: the maximum learning rate. Default Inf.
             gamma: the gamma parameter, see lr_policy.
             power: the power parameter, see lr_policy. Default 1.
             momentum: the momentum value. Should be in the range [0,1).
@@ -136,6 +137,7 @@ class SGDSolver(StochasticSolver):
         self.spec['asgd'] = self.spec.get('asgd', False)
         self.spec['asgd_skip'] = self.spec.get('asgd_skip', 1)
         self.spec['power'] = self.spec.get('power', 1)
+        self.spec['max_lr'] = self.spec.get('max_lr', float('inf'))
         self.spec['min_lr'] = self.spec.get('min_lr', 0.)
         self._momentum = None
         self._asgd = None
@@ -151,7 +153,7 @@ class SGDSolver(StochasticSolver):
         elif policy == 'inv':
             learningrate = base_lr / ((1 + self.spec['gamma'] * self._iter_idx)
                                       ** self.spec['power'])
-        return max(learningrate, self.spec['min_lr'])
+        return min(max(learningrate, self.spec['min_lr']), self.spec['max_lr'])
     
     def initialize_status(self):
         """Initializes the status."""
