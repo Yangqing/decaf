@@ -1,6 +1,9 @@
+# pylint: disable=C0103
+"""Efficient dot functions by calling the basic blas functions from scipy."""
+
 import numpy as np
 from scipy.linalg import blas
-
+# TODO: maybe add the backward compatibility to old scipy versions.
 
 def _gemm_f_contiguous(alpha, A, B, out):
     '''A gemm function that uses scipy fblas functions, avoiding matrix copy
@@ -79,9 +82,9 @@ def dot_lastdim(A, B, out=None):
     """
     if out == None:
         out = np.empty(A.shape[:-1] + B.shape[1:], A.dtype)
-    lda = np.prod(A.shape[:-1])
+    lda = A.size / A.shape[-1]
     dim = A.shape[-1]
-    ldb = np.prod(B.shape[1:])
+    ldb = B.size / B.shape[1]
     # using views
     Aview = A.view()
     Bview = B.view()
@@ -94,7 +97,7 @@ def dot_lastdim(A, B, out=None):
 
 def dot_firstdims(A, B, out=None):
     """Performs dot for multi-dimensional matrices A and B, where
-    np.prod(A.shape[:-1]) = np.prod(B.shape[:-1]), and the result would be
+    prod(A.shape[:-1]) = prod(B.shape[:-1]), and the result would be
     dot(A.T, B) where A and B are treated as 2-dimensional matrices with shape
     (prod(shape[:-1]), shape[-1]). The returned matrix should have shape
     (A.shape[-1], B.shape[-1]). The code is often encountered in computing the
@@ -104,9 +107,9 @@ def dot_firstdims(A, B, out=None):
     an error.
     """
     if out == None:
-        out = np.empty((A.shape[-1],B.shape[-1]), A.dtype)
+        out = np.empty((A.shape[-1], B.shape[-1]), A.dtype)
     lda = A.shape[-1]
-    dim = np.prod(A.shape[:-1])
+    dim = A.size / A.shape[-1]
     ldb = B.shape[-1]
     Aview = A.view()
     Bview = B.view()

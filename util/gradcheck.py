@@ -142,6 +142,7 @@ class GradChecker(object):
         decaf_net.forward_backward()
         param_backup = _blobs_to_vec(decaf_net.params())
         x_init = param_backup.copy()
+        # pylint: disable=E1101
         err = optimize.check_grad(GradChecker._func_net, GradChecker._grad_net,
                                   x_init, decaf_net)
         if err > self._threshold:
@@ -166,6 +167,7 @@ class GradChecker(object):
         x_init = _blobs_to_vec(layer.param())
         if len(x_init) > 0:
             for i in range(-1, num_output):
+                # pylint: disable=E1101
                 err = optimize.check_grad(
                     GradChecker._func, GradChecker._grad, x_init,
                     layer, input_blobs, output_blobs, False, i, checked_blobs)
@@ -178,6 +180,7 @@ class GradChecker(object):
         x_init = _blobs_to_vec(checked_blobs)
         if len(x_init) > 0:
             for i in range(-1, num_output):
+                # pylint: disable=E1101
                 err = optimize.check_grad(
                     GradChecker._func, GradChecker._grad, x_init,
                     layer, input_blobs, output_blobs, True, i, checked_blobs)

@@ -1,22 +1,25 @@
+"""A module to wrap over vml functions. Requires mkl runtime."""
+
 import ctypes as ct
 import logging
 import numpy as np
 
-_vml_2vecs = ['Sqr', 'Mul', 'Abs', 'Inv', 'Sqrt', 'InvSqrt', 'Cbrt', 'InvCbrt',
+_VML_2VECS = ['Sqr', 'Mul', 'Abs', 'Inv', 'Sqrt', 'InvSqrt', 'Cbrt', 'InvCbrt',
              'Pow2o3', 'Pow3o2', 'Exp', 'Expm1', 'Ln', 'Log10', 'Log1p', 'Cos',
              'Sin', 'Tan', 'Acos', 'Asin', 'Atan', 'Cosh', 'Sinh', 'Tanh',
              'Acosh', 'Asinh', 'Atanh', 'Erf', 'Erfc', 'CdfNorm', 'ErfInv',
              'ErfcInv', 'CdfNormInv']
-_vml_3vecs = ['Add','Sub', 'Div', 'Pow', 'Hypot', 'Atan2']
+_VML_3VECS = ['Add', 'Sub', 'Div', 'Pow', 'Hypot', 'Atan2']
 
 
-def vml_dtype_wrapper(name):
+def vml_dtype_wrapper(func_name):
     """For a function that has two input types, this function creates a
     wrapper that directs to the correct function.
     """
-    float_func = getattr(_dll, 'vs' + name)
-    double_func = getattr(_dll, 'vd' + name)
+    float_func = getattr(_DLL, 'vs' + func_name)
+    double_func = getattr(_DLL, 'vd' + func_name)
     def _wrapped_func(*args):
+        """A function that calls vml functions with checked dtypes."""
         dtype = args[0].dtype
         size = args[0].size
         if not all(arg.dtype == dtype for arg in args):
@@ -37,25 +40,25 @@ def vml_dtype_wrapper(name):
 
 def _set_dll_funcs():
     """Set the restypes and argtypes of the functions."""
-    for name in _vml_2vecs + _vml_3vecs:
-        getattr(_dll, 'vs' + name).restype = None
-        getattr(_dll, 'vd' + name).restype = None
-    for name in _vml_2vecs:
-        getattr(_dll, 'vs' + name).argtypes = [
+    for func_name in _VML_2VECS + _VML_3VECS:
+        getattr(_DLL, 'vs' + func_name).restype = None
+        getattr(_DLL, 'vd' + func_name).restype = None
+    for func_name in _VML_2VECS:
+        getattr(_DLL, 'vs' + func_name).argtypes = [
             ct.c_int,
             np.ctypeslib.ndpointer(dtype=np.float32),
             np.ctypeslib.ndpointer(dtype=np.float32)]
-        getattr(_dll, 'vd' + name).argtypes = [
+        getattr(_DLL, 'vd' + func_name).argtypes = [
             ct.c_int,
             np.ctypeslib.ndpointer(dtype=np.float64),
             np.ctypeslib.ndpointer(dtype=np.float64)]
-    for name in _vml_3vecs:
-        getattr(_dll, 'vs' + name).argtypes = [
+    for func_name in _VML_3VECS:
+        getattr(_DLL, 'vs' + func_name).argtypes = [
             ct.c_int,
             np.ctypeslib.ndpointer(dtype=np.float32),
             np.ctypeslib.ndpointer(dtype=np.float32),
             np.ctypeslib.ndpointer(dtype=np.float32)]
-        getattr(_dll, 'vd' + name).argtypes = [
+        getattr(_DLL, 'vd' + func_name).argtypes = [
             ct.c_int,
             np.ctypeslib.ndpointer(dtype=np.float64),
             np.ctypeslib.ndpointer(dtype=np.float64),
@@ -65,16 +68,16 @@ def _set_dll_funcs():
 # The main pyvml routine.
 #################################################
 try:
-    _dll = ct.CDLL('libmkl_rt.so')
+    _DLL = ct.CDLL('libmkl_rt.so')
 except OSError:
     logging.error('Unable to load the mkl library. Using fallback options.')
     # implement necessary fallback options.
     # Yangqing's note: I am not writing all the fallbacks, only the necessary
     # ones are provided.
+    # pylint: disable=C0103
     Exp = lambda x, y: np.exp(x, out=y)
     Log = lambda x, y: np.log(x, out=y)
-    raise NotImpelementedError
 else:
     _set_dll_funcs()
-    for name in _vml_2vecs + _vml_3vecs:
+    for name in _VML_2VECS + _VML_3VECS:
         globals()[name] = vml_dtype_wrapper(name)

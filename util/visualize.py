@@ -1,5 +1,5 @@
-"""Functions that could be used to visualize patches
-"""
+"""Functions that could be used to visualize patches."""
+
 from decaf import base
 from matplotlib import cm, pyplot
 import numpy as np
@@ -145,17 +145,15 @@ class PatchVisualizer(object):
 _default_visualizer = PatchVisualizer()
 
 
-"""Utility functions that directly points to functions in the default visualizer
+# Wrappers to utility functions that directly points to functions in the
+# default visualizer.
 
-These functions won't return the image that gets visualized, and will simply
-show them onscreen.
-"""
 def show_single(*args, **kwargs):
-    _default_visualizer.show_single(*args, **kwargs)
+    return _default_visualizer.show_single(*args, **kwargs)
 
 def show_multiple(*args, **kwargs):
-    _default_visualizer.show_multiple(*args, **kwargs)
+    return _default_visualizer.show_multiple(*args, **kwargs)
 
 def show_channels(*args, **kwargs):
-    _default_visualizer.show_channels(*args, **kwargs)
+    return _default_visualizer.show_channels(*args, **kwargs)
 
