@@ -84,7 +84,7 @@ def dot_lastdim(A, B, out=None):
         out = np.empty(A.shape[:-1] + B.shape[1:], A.dtype)
     lda = A.size / A.shape[-1]
     dim = A.shape[-1]
-    ldb = B.size / B.shape[1]
+    ldb = B.size / B.shape[0]
     # using views
     Aview = A.view()
     Bview = B.view()
