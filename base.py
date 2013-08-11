@@ -568,12 +568,12 @@ class Net(object):
         self._input_blobs = [name for name in self.blobs
                              if name not in provided_blobs]
         if len(self._input_blobs):
-            logging.info('This layer needs input blobs: %s',
+            logging.info('This network needs input blobs: %s',
                          str(self._input_blobs))
         self._output_blobs = [name for name in self.blobs
                               if name not in self._need_count]
         if len(self._output_blobs):
-            logging.info('This layer produces output blobs: %s',
+            logging.info('This network produces output blobs: %s',
                          str(self._output_blobs))
         # For any blob that is needed by multiple layers, we will insert a split
         # layer to avoid gradient overwriting.
