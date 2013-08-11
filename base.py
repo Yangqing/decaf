@@ -465,7 +465,30 @@ class Net(object):
         self.needs[layer.name] = list(needs)
         self.provides[layer.name] = list(provides)
         self._actual_needs = None
-    
+
+    @staticmethod
+    def _make_output_name(layer):
+        return '%s_%s_out' % (DECAF_PREFIX, layer.name)
+
+    def add_layers(self, layers, needs, provides):
+        """A wrapper that adds multiple layers as a chain to the graph. Each
+        layer in the layers list should have only one blob as its input
+        (except the first layer, whose input is given by needs), and only one
+        blob as its output (except the last layer, likewise).
+        """
+        if len(layers) == 1:
+            self.add_layer(layers[0], needs, provides)
+        else:
+            # add the first layer
+            self.add_layer(layers[0], needs=needs,
+                           provides=Net._make_output_name(layers[0]))
+            for i in range(1, len(layers) - 1):
+                self.add_layer(layers[i],
+                               needs=Net._make_output_name(layers[i-1]),
+                               provides=Net._make_output_name(layers[i]))
+            self.add_layer(layers[-1], needs=Net._make_output_name(layers[-2]),
+                           provides=provides)
+
     def finish(self):
         """Call this function when you finish the network construction."""
         # validate and generate the graph

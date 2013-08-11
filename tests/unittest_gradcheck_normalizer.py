@@ -21,6 +21,19 @@ class TestNormalizer(unittest.TestCase):
             result = checker.check(layer, [input_blob], [output_blob])
             print(result)
             self.assertTrue(result[0])
+    
+    def testResponseNormalizeLayer(self):
+        np.random.seed(1701)
+        output_blob = base.Blob()
+        checker = gradcheck.GradChecker(1e-5)
+        shapes = [(1,5,5,1), (1,5,5,3), (5,5), (1,5)]
+        for shape in shapes:
+            input_blob = base.Blob(shape, filler=fillers.RandFiller(min=0.1, max=1.))
+            layer = core_layers.ResponseNormalizeLayer(
+                name='normalize')
+            result = checker.check(layer, [input_blob], [output_blob])
+            print(result)
+            self.assertTrue(result[0])
 
 if __name__ == '__main__':
     unittest.main()
