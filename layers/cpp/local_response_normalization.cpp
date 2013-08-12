@@ -14,12 +14,12 @@ inline void lrn_forward(const Dtype* bottom, Dtype* top, Dtype* scale,
     int padded_channels = channels + size - 1;
     int pre_pad = (size - 1) / 2;
     Dtype * padded_square = new Dtype[padded_channels];
+    memset(padded_square, 0, sizeof(Dtype) * padded_channels);
     for (int data_id = 0; data_id < num_data; ++data_id) {
         const Dtype* bottom_datum = bottom + data_id * channels;
         Dtype* top_datum = top + data_id * channels;
         Dtype* scale_datum = scale + data_id * channels;
         // first, compute x_i^2
-        memset(padded_square, 0, sizeof(Dtype) * padded_channels);
         for (int i = 0; i < channels; ++i) {
             padded_square[i+pre_pad] = bottom_datum[i] * bottom_datum[i] 
                     * alpha / size; 
@@ -45,10 +45,10 @@ inline void lrn_backward(const Dtype* bottom, const Dtype* top, Dtype* bottom_di
         const Dtype* top_diff, const Dtype* scale, const int num_data,
         const int channels, const int size, const Dtype alpha,
         const Dtype beta) {
-    //TODO: finish the backward pass.
     int padded_channels = channels + size - 1;
     int pre_pad = size - (size + 1) / 2;
     Dtype * padded_ratio = new Dtype[padded_channels];
+    memset(padded_ratio, 0, sizeof(Dtype) * padded_channels);
     // the ratio 2*alpha*beta/size
     Dtype cache_ratio = 2. * alpha * beta / size;
     for (int data_id = 0; data_id < num_data; ++data_id) {
@@ -57,8 +57,7 @@ inline void lrn_backward(const Dtype* bottom, const Dtype* top, Dtype* bottom_di
         const Dtype* top_diff_datum = top_diff + data_id * channels;
         const Dtype* scale_datum = scale + data_id * channels;
         Dtype* bottom_diff_datum = bottom_diff + data_id * channels;
-        // first, compute y_i / s_i
-        memset(padded_ratio, 0, sizeof(Dtype) * padded_channels);
+        // first, compute diff_i * y_i / s_i
         for (int i = 0; i < channels; ++i) {
             padded_ratio[i + pre_pad] = top_diff_datum[i] * top_datum[i] 
                 / scale_datum[i];

@@ -6,8 +6,8 @@ import numpy as np
 import os
 
 
-class CifarDataLayer(ndarraydata.NdarrayDataLayer):
-    """The Cifar dataset
+class CIFARDataLayer(ndarraydata.NdarrayDataLayer):
+    """The CIFAR dataset
     """
     # some cifar constants
     __num_train = 50000
@@ -57,10 +57,10 @@ class CifarDataLayer(ndarraydata.NdarrayDataLayer):
         contiguously
         """
         mat = mat.reshape((mat.shape[0],
-                           CifarDataLayer.__num_channels,
-                           CifarDataLayer.__image_size))
+                           CIFARDataLayer.__num_channels,
+                           CIFARDataLayer.__image_size))
         images = mat.swapaxes(1, 2).reshape(
-            (mat.shape[0],) + CifarDataLayer.__image_dim)
+            (mat.shape[0],) + CIFARDataLayer.__image_dim)
         return images.astype(dtype)
     
     def load_cifar100(self, rootfolder, is_training, dtype):
@@ -72,32 +72,33 @@ class CifarDataLayer(ndarraydata.NdarrayDataLayer):
             filename = 'test'
         with open(rootfolder + os.sep + filename) as fid:
             batch = pickle.load(fid)
-        self._data = CifarDataLayer._get_images_from_matrix(
+        self._data = CIFARDataLayer._get_images_from_matrix(
             batch['data'], dtype)
-        self._coarselabel = np.array(batch['coarse_labels'])
-        self._label = np.array(batch['fine_labels'])
+        self._coarselabel = np.array(batch['coarse_labels']).astype(np.int)
+        self._label = np.array(batch['fine_labels']).astype(np.int)
     
     def load_cifar10(self, rootfolder, is_training, dtype):
         """loads the cifar-10 dataset
         """
         if is_training:
             self._data = np.empty(
-                (CifarDataLayer.__num_train,) + CifarDataLayer.__image_dim,
+                (CIFARDataLayer.__num_train,) + CIFARDataLayer.__image_dim,
                 dtype=dtype)
-            self._label = np.empty(CifarDataLayer.__num_train)
+            self._label = np.empty(CIFARDataLayer.__num_train, dtype=np.int)
             # training batches
-            for i in range(CifarDataLayer.__num_batches):
+            for i in range(CIFARDataLayer.__num_batches):
                 with open(os.path.join(rootfolder,
                         'data_batch_{0}'.format(i+1)),'r') as fid:
                     batch = pickle.load(fid)
-                start_idx = CifarDataLayer.__batchsize * i
-                end_idx = CifarDataLayer.__batchsize * (i+1)
+                start_idx = CIFARDataLayer.__batchsize * i
+                end_idx = CIFARDataLayer.__batchsize * (i+1)
                 self._data[start_idx:end_idx] = \
-                    CifarDataLayer._get_images_from_matrix(batch['data'], dtype)
+                    CIFARDataLayer._get_images_from_matrix(batch['data'], dtype)
                 self._label[start_idx:end_idx] = np.array(batch['labels'])
         else:
             with open(os.path.join(rootfolder, 'test_batch'), 'r') as fid:
                 batch = pickle.load(fid)
-            self._data = CifarDataLayer._get_images_from_matrix(
+            self._data = CIFARDataLayer._get_images_from_matrix(
                 batch['data'], dtype)
-            self._label = np.array(batch['labels'])
+            self._label = np.array(batch['labels']).astype(np.int)
+

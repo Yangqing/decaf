@@ -6,7 +6,7 @@ from decaf.base import SplitLayer
 
 # Data Layers
 from decaf.layers.data.ndarraydata import NdarrayDataLayer
-from decaf.layers.data.cifar import CifarDataLayer
+from decaf.layers.data.cifar import CIFARDataLayer
 from decaf.layers.data.mnist import MNISTDataLayer
 from decaf.layers.sampler import (BasicMinibatchLayer,
                                   RandomPatchLayer)

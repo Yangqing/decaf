@@ -5,9 +5,11 @@ INPUT = im2col_splitchannel.cpp im2col_mergedchannel.cpp fastpool.cpp \
 		local_response_normalization.cpp
 TARGET = libcpputil.so
 
-all:
+all: $(INPUT)
 	$(CC) -c $(CCFLAGS) $(INPUT)
 	$(CC) $(LINKFLAGS) -o $(TARGET) *.o
+speedtest_lrn: speedtest_lrn.cpp local_response_normalization.cpp
+	$(CC) $(CCFLAGS) -lgomp -o speedtest_lrn speedtest_lrn.cpp local_response_normalization.cpp
 clean:
 	rm *.so
 	rm *.o
