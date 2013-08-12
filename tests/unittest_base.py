@@ -10,6 +10,7 @@ class TestBlob(unittest.TestCase):
         pass
 
     def testBlobInit(self):
+        """testBlobInit checks if blobs can be successfully initialized."""
         blob = base.Blob()
         self.assertFalse(blob.has_data())
         self.assertFalse(blob.has_diff())
@@ -19,6 +20,7 @@ class TestBlob(unittest.TestCase):
         self.assertEqual(blob.data().shape, (1,1))
     
     def testBlobUpdate(self):
+        """testBlobUpdate checks if blob update() succeeds."""
         blob = base.Blob((4,3))
         diff = blob.init_diff()
         diff[:] = 1.
@@ -26,6 +28,7 @@ class TestBlob(unittest.TestCase):
         npt.assert_array_almost_equal(blob.data(), - blob.diff())
 
     def testUseBlob(self):
+        """testUseBlob checks if simple blob usages work."""
         blob_a = base.Blob((4,3))
         blob_b = base.Blob((3,4))
         output = np.dot(blob_a.data(), blob_b.data())
@@ -40,7 +43,8 @@ class TestNet(unittest.TestCase):
         pass
 
     def testSplit(self):
-        """This tests if a net is able to insert split layers correctly."""
+        """testSplit tests if a net is able to insert split layers correctly.
+        """
         decaf_net = base.Net()
         decaf_net.add_layer(base.Layer(name='a'), provides='data')
         decaf_net.add_layer(base.Layer(name='b'), needs='data')

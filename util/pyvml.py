@@ -76,7 +76,7 @@ except OSError:
     # ones are provided.
     # pylint: disable=C0103
     Exp = lambda x, y: np.exp(x, out=y)
-    Log = lambda x, y: np.log(x, out=y)
+    Ln = lambda x, y: np.log(x, out=y)
 else:
     _set_dll_funcs()
     for name in _VML_2VECS + _VML_3VECS:
