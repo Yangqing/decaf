@@ -173,7 +173,7 @@ class SGDSolver(StochasticSolver):
         learning rate.
         """
         learningrate = self._get_learningrate()
-        logging.info('   learning rate %f', learningrate)
+        logging.debug('learning rate %f', learningrate)
         if self.spec['momentum'] > 0:
             # we need to add momentum terms and keep track of them.
             for momentum, param in zip(self._momentum,
