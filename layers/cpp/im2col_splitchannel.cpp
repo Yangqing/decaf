@@ -1,6 +1,8 @@
 #include <cstring>
 #include <cmath>
 
+#include "im2col.h"
+
 // Note: in testing the code we found that OMP is slower fore relatively small
 // images (which is often the case), so we disabled OMP.
 
@@ -72,6 +74,7 @@ inline void col2im_sc(Dtype* data_im,
         }
     }
 } // col2im_sc
+
 
 extern "C" {
 

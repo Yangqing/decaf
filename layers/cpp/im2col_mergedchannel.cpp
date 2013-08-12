@@ -1,9 +1,10 @@
-// The fast pooling code implemented in C
 // author: Yangqing Jia (jiayq@eecs.berkeley.edu)
 // Copyright 2012
 
 #include <cstring>
 #include <cmath>
+
+#include "im2col.h"
 
 // Note: in testing the code we found that OMP is slower fore relatively small
 // images (which is often the case), so we disabled OMP.

@@ -2,13 +2,13 @@
 #include <cmath>
 #include <algorithm>
 
-#define EQUAL_THRESHOLD 1e-8
+#include "fastpool.h"
 
 using std::max;
 using std::min;
 
 template <typename Dtype>
-void maxpooling_forward(
+inline void maxpooling_forward(
         const Dtype* image, Dtype* pooled, const int height, const int width,
         const int nchannels, const int psize, const int stride) {
     int pooled_height = (height - psize) / stride + 1;
@@ -41,7 +41,7 @@ void maxpooling_forward(
 
 
 template <typename Dtype>
-void maxpooling_backward(
+inline void maxpooling_backward(
         const Dtype* image, const Dtype* pooled, Dtype* image_grad,
         const Dtype* pooled_grad, const int height, const int width,
         const int nchannels, const int psize, const int stride) {
@@ -80,7 +80,7 @@ void maxpooling_backward(
 
 
 template <typename Dtype>
-void avepooling_forward(
+inline void avepooling_forward(
         const Dtype* image, Dtype* pooled, const int height, const int width,
         const int nchannels, const int psize, const int stride) {
     int pooled_height = (height - psize) / stride + 1;
@@ -116,7 +116,7 @@ void avepooling_forward(
 }
 
 template <typename Dtype>
-void avepooling_backward(
+inline void avepooling_backward(
         Dtype* image_grad, const Dtype* pooled_grad, const int height, 
         const int width, const int nchannels, const int psize,
         const int stride) {
@@ -216,7 +216,6 @@ void avepooling_backward_double(
     avepooling_backward<double>(image_grad, pooled_grad, height,width,
             nchannels, psize, stride);
 }
-
 
 } // extern "C"
 

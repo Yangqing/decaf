@@ -35,5 +35,29 @@ class TestNormalizer(unittest.TestCase):
             print(result)
             self.assertTrue(result[0])
 
+    def testLocalResponseNormalizeLayer(self):
+        np.random.seed(1701)
+        output_blob = base.Blob()
+        checker = gradcheck.GradChecker(1e-6)
+        shapes = [(1,10), (5,10)]
+        alphas = [1.0, 2.0]
+        betas = [0.75, 1.0]
+        for shape in shapes:
+            for alpha in alphas:
+                for beta in betas:
+                    input_blob = base.Blob(shape, filler=fillers.RandFiller())
+                    # odd size
+                    layer = core_layers.LocalResponseNormalizeLayer(
+                        name='normalize', alpha=alpha, beta=beta, size=5)
+                    result = checker.check(layer, [input_blob], [output_blob])
+                    print(result)
+                    self.assertTrue(result[0])
+                    # even size
+                    layer = core_layers.LocalResponseNormalizeLayer(
+                        name='normalize', alpha=alpha, beta=beta, size=6)
+                    result = checker.check(layer, [input_blob], [output_blob])
+                    print(result)
+                    self.assertTrue(result[0])
+
 if __name__ == '__main__':
     unittest.main()

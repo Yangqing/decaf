@@ -21,7 +21,9 @@ from decaf.layers.innerproduct import InnerProductLayer
 from decaf.layers.loss import (SquaredLossLayer,
                                MultinomialLogisticLossLayer,
                                AutoencoderLossLayer)
-from decaf.layers.normalize import MeanNormalizeLayer, ResponseNormalizeLayer
+from decaf.layers.normalize import (MeanNormalizeLayer,
+                                    ResponseNormalizeLayer,
+                                    LocalResponseNormalizeLayer)
 from decaf.layers.padding import PaddingLayer
 from decaf.layers.pooling import PoolingLayer
 from decaf.layers.relu import ReLULayer
