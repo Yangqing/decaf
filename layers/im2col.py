@@ -45,7 +45,7 @@ class Im2colLayer(base.Layer):
         output = top[0].init_data(newshape,
                                   features.dtype)
         for i in range(num):
-            wrapper.im2col(features.dtype, features[i], height, width,
+            wrapper.im2col(features[i], height, width,
                            channels, self._psize, self._stride, output[i])
 
     def backward(self, bottom, top, propagate_down):
@@ -57,7 +57,7 @@ class Im2colLayer(base.Layer):
         num, height, width, channels, newshape = self._analyze_shape(features)
         bottom_diff = bottom[0].init_diff()
         for i in range(num):
-            wrapper.col2im(bottom_diff.dtype, bottom_diff[i], height, width, 
+            wrapper.col2im(bottom_diff[i], height, width, 
                            channels, self._psize, self._stride, top_diff[i])
         return 0.
 

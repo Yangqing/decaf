@@ -13,10 +13,10 @@ except Exception as error:
     raise error
 
 def float_double_strategy(float_func, double_func):
-    def _strategy(dtype, *args, **kwargs):
-        if dtype == np.float32:
+    def _strategy(*args, **kwargs):
+        if args[0].dtype == np.float32:
             return float_func(*args, **kwargs)
-        elif dtype == np.float64:
+        elif args[0].dtype == np.float64:
             return double_func(*args, **kwargs)
         else:
             raise TypeError('Unsupported type: ' + str(dtype))
@@ -113,3 +113,41 @@ avepooling_forward = float_double_strategy(_cpp.avepooling_forward_float,
 avepooling_backward = float_double_strategy(_cpp.avepooling_backward_float,
                                             _cpp.avepooling_backward_double)
 
+################################################################################
+# local contrast normalization operation
+################################################################################
+_cpp.lrn_forward_float.restype = \
+_cpp.lrn_forward_double.restype = \
+_cpp.lrn_backward_float.restype = \
+_cpp.lrn_backward_double.restype = None
+
+_cpp.lrn_forward_float.argtypes = \
+    [np.ctypeslib.ndpointer(dtype=np.float32, flags='C'),
+     np.ctypeslib.ndpointer(dtype=np.float32, flags='C'),
+     np.ctypeslib.ndpointer(dtype=np.float32, flags='C'),
+     ct.c_int, ct.c_int, ct.c_int, ct.c_float, ct.c_float]
+
+_cpp.lrn_forward_double.argtypes = \
+    [np.ctypeslib.ndpointer(dtype=np.float64, flags='C'),
+     np.ctypeslib.ndpointer(dtype=np.float64, flags='C'),
+     np.ctypeslib.ndpointer(dtype=np.float64, flags='C'),
+     ct.c_int, ct.c_int, ct.c_int, ct.c_double, ct.c_double]
+
+_cpp.lrn_backward_float.argtypes = \
+    [np.ctypeslib.ndpointer(dtype=np.float32, flags='C'),
+     np.ctypeslib.ndpointer(dtype=np.float32, flags='C'),
+     np.ctypeslib.ndpointer(dtype=np.float32, flags='C'),
+     np.ctypeslib.ndpointer(dtype=np.float32, flags='C'),
+     np.ctypeslib.ndpointer(dtype=np.float32, flags='C'),
+     ct.c_int, ct.c_int, ct.c_int, ct.c_float, ct.c_float]
+
+_cpp.lrn_backward_double.argtypes = \
+    [np.ctypeslib.ndpointer(dtype=np.float64, flags='C'),
+     np.ctypeslib.ndpointer(dtype=np.float64, flags='C'),
+     np.ctypeslib.ndpointer(dtype=np.float64, flags='C'),
+     np.ctypeslib.ndpointer(dtype=np.float64, flags='C'),
+     np.ctypeslib.ndpointer(dtype=np.float64, flags='C'),
+     ct.c_int, ct.c_int, ct.c_int, ct.c_double, ct.c_double]
+
+lrn_forward = float_double_strategy(_cpp.lrn_forward_float, _cpp.lrn_forward_double)
+lrn_backward = float_double_strategy(_cpp.lrn_backward_float, _cpp.lrn_backward_double)
