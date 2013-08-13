@@ -40,7 +40,7 @@ class Im2colLayer(base.Layer):
         # Get features and output
         features = bottom[0].data()
         output = top[0].init_data(self._get_new_shape(features),
-                                  features.dtype)
+                                  features.dtype, setdata=False)
         for i in range(features.shape[0]):
             wrapper.im2col_forward(features[i], output[i], self._psize, self._stride)
 
@@ -50,7 +50,7 @@ class Im2colLayer(base.Layer):
             return 0.
         top_diff = top[0].diff()
         features = bottom[0].data()
-        bottom_diff = bottom[0].init_diff()
+        bottom_diff = bottom[0].init_diff(setzero=False)
         for i in range(features.shape[0]):
             wrapper.im2col_backward(bottom_diff[i], top_diff[i],
                                     self._psize, self._stride)

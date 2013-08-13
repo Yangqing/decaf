@@ -11,7 +11,7 @@ class SquaredLossLayer(base.LossLayer):
     """
     def forward(self, bottom, top):
         """Forward emits the loss, and computes the gradient as well."""
-        diff = bottom[0].init_diff()
+        diff = bottom[0].init_diff(setzero=False)
         diff[:] = bottom[0].data()
         diff -= bottom[1].data()
         self._loss = np.dot(diff.flat, diff.flat) / 2. / diff.shape[0] \
@@ -39,12 +39,12 @@ class MultinomialLogisticLossLayer(base.LossLayer):
     def forward(self, bottom, top):
         pred = bottom[0].data()
         prob = self._prob.init_data(
-            pred.shape, pred.dtype)
+            pred.shape, pred.dtype, setdata=False)
         prob[:] = pred
         prob -= prob.max(axis=1)[:, np.newaxis]
         logexp.exp(prob, out=prob)
         prob /= prob.sum(axis=1)[:, np.newaxis]
-        diff = bottom[0].init_diff()
+        diff = bottom[0].init_diff(setzero=False)
         diff[:] = prob
         logexp.log(prob, out=prob)
         label = bottom[1].data()

@@ -41,7 +41,8 @@ class InnerProductLayer(base.Layer):
         # Get features and output
         features = bottom[0].data()
         output = top[0].init_data(
-            features.shape[:-1] + (self._num_output,), features.dtype)
+            features.shape[:-1] + (self._num_output,), features.dtype,
+            setdata=False)
         # initialize weights
         if not self._weight.has_data():
             self._weight.init_data(
@@ -60,15 +61,15 @@ class InnerProductLayer(base.Layer):
         top_diff = top[0].diff()
         features = bottom[0].data()
         # compute the gradient
-        weight_diff = self._weight.init_diff()
+        weight_diff = self._weight.init_diff(setzero=False)
         blasdot.dot_firstdims(features, top_diff, out=weight_diff)
         if self._has_bias:
-            bias_diff = self._bias.init_diff()
+            bias_diff = self._bias.init_diff(setzero=False)
             bias_diff[:] = top_diff.reshape(
                 np.prod(top_diff.shape[:-1]), top_diff.shape[-1]).sum(0)
         # If necessary, compute the bottom Blob gradient.
         if propagate_down:
-            bottom_diff = bottom[0].init_diff()
+            bottom_diff = bottom[0].init_diff(setzero=False)
             blasdot.dot_lastdim(top_diff, self._weight.data().T, out=bottom_diff)
         if self._reg is not None:
             return self._reg.reg(self._weight)

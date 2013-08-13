@@ -16,7 +16,7 @@ class MeanNormalizeLayer(base.Layer):
     def forward(self, bottom, top):
         """Computes the backward pass."""
         features = bottom[0].data()
-        output = top[0].init_data(features.shape, features.dtype)
+        output = top[0].init_data(features.shape, features.dtype, setdata=False)
         # Create 2-dimenisonal views of the features and outputs.
         features.shape = (features.size / features.shape[-1], features.shape[-1])
         output.shape = features.shape
@@ -27,7 +27,7 @@ class MeanNormalizeLayer(base.Layer):
         """Computes the backward pass."""
         if propagate_down:
             top_diff = top[0].diff()
-            bottom_diff = bottom[0].init_diff()
+            bottom_diff = bottom[0].init_diff(setzero=False)
             top_diff.shape = (top_diff.size / top_diff.shape[-1], top_diff.shape[-1])
             bottom_diff.shape = top_diff.shape
             bottom_diff[:] = top_diff
@@ -61,7 +61,7 @@ class ResponseNormalizeLayer(base.Layer):
         """Computes the forward pass."""
         # Get features and output
         features = bottom[0].data()
-        output = top[0].init_data(features.shape, features.dtype)
+        output = top[0].init_data(features.shape, features.dtype, setdata=False)
         # Create 2-dimenisonal views of the features and outputs.
         features.shape = (features.size / features.shape[-1], features.shape[-1])
         output.shape = features.shape
@@ -78,7 +78,7 @@ class ResponseNormalizeLayer(base.Layer):
             features = bottom[0].data()
             output = top[0].data()
             top_diff = top[0].diff()
-            bottom_diff = bottom[0].init_diff()
+            bottom_diff = bottom[0].init_diff(setzero=False)
             scale = self._scale
             # Create 2-dimenisonal views of the features and outputs.
             features.shape = (features.size / features.shape[-1],

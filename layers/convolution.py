@@ -94,7 +94,8 @@ class ConvolutionLayer(base.Layer):
                      self._col.data().shape[1],
                      self._col.data().shape[2],
                      self._num_kernels),
-                    bottom_data.dtype)
+                    bottom_data.dtype,
+                    setdata=False)
             # inner product
             blasdot.dot_lastdim(self._col.data()[0], self._kernels.data(),
                                 out=top_data[i])

@@ -26,7 +26,7 @@ class DropoutLayer(base.Layer):
         """Computes the forward pass."""
         # Get features and output
         features = bottom[0].data()
-        output = top[0].init_data(features.shape, features.dtype)
+        output = top[0].init_data(features.shape, features.dtype, setdata=False)
         if not (self.spec.get('debug_freeze', False) and self._mask.has_data()):
             self._mask.init_data(features.shape, np.bool)
         output[:] = features
@@ -37,7 +37,7 @@ class DropoutLayer(base.Layer):
         if not propagate_down:
             return 0.
         top_diff = top[0].diff()
-        bottom_diff = bottom[0].init_diff()
+        bottom_diff = bottom[0].init_diff(setzero=False)
         bottom_diff[:] = top_diff
         bottom_diff *= self._mask.data()
         return 0.
