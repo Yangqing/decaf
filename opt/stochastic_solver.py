@@ -1,7 +1,7 @@
 """Implements the stochastic solvers."""
 import cPickle as pickle
 from decaf import base
-import gzip
+from decaf.util.timer import Timer
 import logging
 import numpy as np
 import os
@@ -88,6 +88,7 @@ class StochasticSolver(base.Solver):
         logging.info('StochasticSolver: initial loss: %f.', initial_loss)
         self.initialize_status()
         # the main iteration
+        timer = Timer()
         logging.info('StochasticSolver: started.')
         for _ in range(self._max_iter):
             loss = decaf_net.forward_backward()
@@ -97,13 +98,15 @@ class StochasticSolver(base.Solver):
                 self._iter_idx % self._snapshot_interval == 0):
                 # perform snapshot.
                 self.snapshot()
-            logging.info('Iter %d, loss %f', self._iter_idx, loss)
+            logging.info('Iter %d, loss %f, elapsed %s', self._iter_idx, loss,
+                         timer.lap())
             self.iter_callback(loss)
             self._iter_idx += 1
         # perform last snapshot.
         if 'folder' in self.spec:
             self.snapshot(True)
-        logging.info('StochasticSolver: finished.')
+        logging.info('StochasticSolver: finished. Total time %s.',
+                     timer.total())
 
 
 class SGDSolver(StochasticSolver):
@@ -208,11 +211,12 @@ class SGDSolver(StochasticSolver):
             self, is_final=is_final)
         if self.spec['momentum'] > 0:
             # we need to store momentum as well
-            with gzip.open(os.path.join(subfolder, 'momentum'), 'wb') as fid:
-                pickle.dump(self._momentum, fid, protocol=pickle.HIGHEST_PROTOCOL)
+            with open(os.path.join(subfolder, 'momentum'), 'wb') as fid:
+                pickle.dump(self._momentum, fid,
+                            protocol=pickle.HIGHEST_PROTOCOL)
         if self.spec['asgd']:
             # let's store the accumulated asgd values.
-            with gzip.open(os.path.join(subfolder, 'asgd'), 'wb') as fid:
+            with open(os.path.join(subfolder, 'asgd'), 'wb') as fid:
                 pickle.dump(self._asgd, fid, protocol=pickle.HIGHEST_PROTOCOL)
 
 
@@ -264,7 +268,7 @@ class AdagradSolver(StochasticSolver):
     def snapshot(self, is_final = False):
         """perform snapshot."""
         subfolder = StochasticSolver.snapshot(self, is_final=is_final)
-        with gzip.open(os.path.join(subfolder, 'adagrad_accum'), 'wb') as fid:
+        with open(os.path.join(subfolder, 'adagrad_accum'), 'wb') as fid:
             pickle.dump(self._accum, fid, protocol=pickle.HIGHEST_PROTOCOL)
         return subfolder
 

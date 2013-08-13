@@ -1,5 +1,4 @@
-"""Util.py implements some python-generic utilities.
-"""
+"""Implement a timer that can be used to easily record time."""
 
 import time
 

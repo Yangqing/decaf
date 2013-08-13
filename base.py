@@ -3,7 +3,6 @@
 
 import cPickle as pickle
 from collections import defaultdict
-import gzip
 import logging
 import networkx as nx
 import numpy as np
@@ -404,14 +403,14 @@ class Net(object):
             else:
                 output[1][name] = (layer, self.needs[name], self.provides[name])
         # finally, pickle the content.
-        file = gzip.open(filename, 'wb')
+        file = open(filename, 'wb')
         pickle.dump(output, file, protocol=pickle.HIGHEST_PROTOCOL)
 
     @staticmethod
     def load(filename):
         """Loads a network from file."""
         self = Net()
-        file = gzip.open(filename, 'rb')
+        file = open(filename, 'rb')
         contents = pickle.load(file)
         self.name = contents[0]
         for layer, needs, provides in contents[1].values():
@@ -428,7 +427,7 @@ class Net(object):
         the current network, replace the current network's corresponding layer
         with the layer in the file.
         """
-        file = gzip.open(filename, 'rb')
+        file = open(filename, 'rb')
         contents = pickle.load(file)
         for name in contents[1]:
             if name in self.layers:
