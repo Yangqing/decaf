@@ -26,7 +26,7 @@ int main(int argc, char** argv) {
 
     clock_t start = clock();
     for (int i = 0; i < ITER; ++i) {
-        lrn_forward_float(bottom_data, top_data, scale, N, D, SIZE, ALPHA, BETA);
+        lrn_forward(sizeof(float), bottom_data, top_data, scale, N, D, SIZE, ALPHA, BETA);
     }
     clock_t duration = clock() - start;
 
@@ -35,7 +35,7 @@ int main(int argc, char** argv) {
     
     start = clock();
     for (int i = 0; i < ITER; ++i) {
-        lrn_backward_float(bottom_data, top_data, bottom_diff, top_diff,
+        lrn_backward(sizeof(float), bottom_data, top_data, bottom_diff, top_diff,
                 scale, N, D, SIZE, ALPHA, BETA);
     }
     duration = clock() - start;

@@ -126,9 +126,8 @@ class LocalResponseNormalizeLayer(base.Layer):
         if self._size > features.shape[-1]:
             raise base.DecafError('Incorrect size: should be smaller than '
                                   'the number of input channels.')
-        wrapper.lrn_forward(
-            features, output, scale, features.size / features.shape[-1],
-            features.shape[-1], self._size, self._alpha, self._beta)
+        wrapper.lrn_forward(features, output, scale,
+                            self._size, self._alpha, self._beta)
     
     def backward(self, bottom, top, propagate_down):
         """Computes the backward pass."""
@@ -140,7 +139,6 @@ class LocalResponseNormalizeLayer(base.Layer):
             scale = self._scale.data()
             wrapper.lrn_backward(
                 features, output, bottom_diff, top_diff, scale,
-                features.size / features.shape[-1], features.shape[-1],
                 self._size, self._alpha, self._beta)
         return 0.
 

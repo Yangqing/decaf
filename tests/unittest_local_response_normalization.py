@@ -36,15 +36,13 @@ class TestLRN(unittest.TestCase):
             output = np.random.rand(5, 10).astype(dtype)
             scale = np.random.rand(5, 10).astype(dtype)
             # odd size
-            wrapper.lrn_forward(features, output, scale, features.shape[0],
-                                features.shape[-1], 5, 1.5, 0.75)
+            wrapper.lrn_forward(features, output, scale, 5, 1.5, 0.75)
             output_ref, scale_ref = self.reference_forward_implementation(
                 features, 5, 1.5, 0.75)
             np.testing.assert_array_almost_equal(output, output_ref)
             np.testing.assert_array_almost_equal(scale, scale_ref)
             # even size
-            wrapper.lrn_forward(features, output, scale, features.shape[0],
-                                features.shape[-1], 6, 1.5, 0.75)
+            wrapper.lrn_forward(features, output, scale, 6, 1.5, 0.75)
             output_ref, scale_ref = self.reference_forward_implementation(
                 features, 6, 1.5, 0.75)
             np.testing.assert_array_almost_equal(output, output_ref)

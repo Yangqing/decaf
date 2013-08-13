@@ -123,40 +123,30 @@ avepooling_backward = float_double_strategy(_DLL.avepooling_backward_float,
 ################################################################################
 # local contrast normalization operation
 ################################################################################
-_DLL.lrn_forward_float.restype = \
-_DLL.lrn_forward_double.restype = \
-_DLL.lrn_backward_float.restype = \
-_DLL.lrn_backward_double.restype = None
+_DLL.lrn_forward.restype = \
+_DLL.lrn_backward.restype = None
 
-_DLL.lrn_forward_float.argtypes = \
-    [np.ctypeslib.ndpointer(dtype=np.float32, flags='C'),
-     np.ctypeslib.ndpointer(dtype=np.float32, flags='C'),
-     np.ctypeslib.ndpointer(dtype=np.float32, flags='C'),
-     ct.c_int, ct.c_int, ct.c_int, ct.c_float, ct.c_float]
+def lrn_forward(bottom, top, scale, size, alpha, beta):
+    _DLL.lrn_forward(ct.c_int(bottom.itemsize),
+                     bottom.ctypes.data_as(ct.c_void_p),
+                     top.ctypes.data_as(ct.c_void_p),
+                     scale.ctypes.data_as(ct.c_void_p),
+                     ct.c_int(bottom.size / bottom.shape[-1]),
+                     ct.c_int(bottom.shape[-1]),
+                     ct.c_int(size),
+                     ct.c_double(alpha),
+                     ct.c_double(beta))
 
-_DLL.lrn_forward_double.argtypes = \
-    [np.ctypeslib.ndpointer(dtype=np.float64, flags='C'),
-     np.ctypeslib.ndpointer(dtype=np.float64, flags='C'),
-     np.ctypeslib.ndpointer(dtype=np.float64, flags='C'),
-     ct.c_int, ct.c_int, ct.c_int, ct.c_double, ct.c_double]
 
-_DLL.lrn_backward_float.argtypes = \
-    [np.ctypeslib.ndpointer(dtype=np.float32, flags='C'),
-     np.ctypeslib.ndpointer(dtype=np.float32, flags='C'),
-     np.ctypeslib.ndpointer(dtype=np.float32, flags='C'),
-     np.ctypeslib.ndpointer(dtype=np.float32, flags='C'),
-     np.ctypeslib.ndpointer(dtype=np.float32, flags='C'),
-     ct.c_int, ct.c_int, ct.c_int, ct.c_float, ct.c_float]
-
-_DLL.lrn_backward_double.argtypes = \
-    [np.ctypeslib.ndpointer(dtype=np.float64, flags='C'),
-     np.ctypeslib.ndpointer(dtype=np.float64, flags='C'),
-     np.ctypeslib.ndpointer(dtype=np.float64, flags='C'),
-     np.ctypeslib.ndpointer(dtype=np.float64, flags='C'),
-     np.ctypeslib.ndpointer(dtype=np.float64, flags='C'),
-     ct.c_int, ct.c_int, ct.c_int, ct.c_double, ct.c_double]
-
-lrn_forward = float_double_strategy(_DLL.lrn_forward_float,
-                                    _DLL.lrn_forward_double)
-lrn_backward = float_double_strategy(_DLL.lrn_backward_float,
-                                     _DLL.lrn_backward_double)
+def lrn_backward(bottom, top, bottom_diff, top_diff, scale, size, alpha, beta):
+    _DLL.lrn_backward(ct.c_int(bottom.itemsize),
+                     bottom.ctypes.data_as(ct.c_void_p),
+                     top.ctypes.data_as(ct.c_void_p),
+                     bottom_diff.ctypes.data_as(ct.c_void_p),
+                     top_diff.ctypes.data_as(ct.c_void_p),
+                     scale.ctypes.data_as(ct.c_void_p),
+                     ct.c_int(bottom.size / bottom.shape[-1]),
+                     ct.c_int(bottom.shape[-1]),
+                     ct.c_int(size),
+                     ct.c_double(alpha),
+                     ct.c_double(beta))

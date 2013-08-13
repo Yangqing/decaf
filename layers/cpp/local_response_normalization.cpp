@@ -1,4 +1,5 @@
 #include <cmath>
+#include <cstdlib>
 #include <cstring>
 
 #include "local_response_normalization.h"
@@ -7,7 +8,7 @@
 // response normalized output, saving the intermediate scale values in scale.
 // See Alex Krizhevsky's cudaconv documentation for more details.
 template <typename Dtype>
-inline void lrn_forward(const Dtype* bottom, Dtype* top, Dtype* scale,
+inline void _lrn_forward(const Dtype* bottom, Dtype* top, Dtype* scale,
         const int num_data, const int channels, const int size,
         const Dtype alpha, const Dtype beta) {
     // Iterates over the data.
@@ -41,7 +42,7 @@ inline void lrn_forward(const Dtype* bottom, Dtype* top, Dtype* scale,
 
 
 template <typename Dtype>
-inline void lrn_backward(const Dtype* bottom, const Dtype* top, Dtype* bottom_diff,
+inline void _lrn_backward(const Dtype* bottom, const Dtype* top, Dtype* bottom_diff,
         const Dtype* top_diff, const Dtype* scale, const int num_data,
         const int channels, const int size, const Dtype alpha,
         const Dtype beta) {
@@ -79,34 +80,42 @@ inline void lrn_backward(const Dtype* bottom, const Dtype* top, Dtype* bottom_di
 
 extern "C" {
 
-void lrn_forward_float(const float* bottom, float* top, float* scale,
-        const int num_data, const int channels, const int size,
-        const float alpha, const float beta) {
-    lrn_forward<float>(bottom, top, scale, num_data, channels, size, alpha,
-            beta);
-}
-
-void lrn_forward_double(const double* bottom, double* top, double* scale,
+void lrn_forward(const int len, const void* bottom, void* top, void* scale,
         const int num_data, const int channels, const int size,
         const double alpha, const double beta) {
-    lrn_forward<double>(bottom, top, scale, num_data, channels, size, alpha,
-            beta);
+    switch(len) {
+    case sizeof(float):
+        _lrn_forward<float>((const float*)bottom, (float*)top, (float*)scale,
+                num_data, channels, size, (float)alpha, (float)beta);
+        break;
+    case sizeof(double):
+        _lrn_forward<double>((const double*)bottom, (double*)top, (double*)scale,
+                num_data, channels, size, alpha, beta);
+        break;
+    default:
+        exit(EXIT_FAILURE);
+    } // switch(size)
 }
 
-void lrn_backward_float(const float* bottom, const float* top,
-        float* bottom_diff, const float* top_diff, const float* scale,
-        const int num_data, const int channels, const int size,
-        const float alpha, const float beta) {
-    lrn_backward<float>(bottom, top, bottom_diff, top_diff, scale, num_data,
-            channels, size, alpha, beta);
-}
-
-void lrn_backward_double(const double* bottom, const double* top,
-        double* bottom_diff, const double* top_diff, const double* scale,
+void lrn_backward(const int len, const void* bottom, const void* top,
+        void* bottom_diff, const void* top_diff, const void* scale,
         const int num_data, const int channels, const int size,
         const double alpha, const double beta) {
-    lrn_backward<double>(bottom, top, bottom_diff, top_diff, scale, num_data,
-            channels, size, alpha, beta);
+    switch(len) {
+    case sizeof(float):
+        _lrn_backward<float>((const float*)bottom, (const float*)top,
+                (float*)bottom_diff, (const float*)top_diff, 
+                (const float*)scale, num_data, channels, size, (float)alpha,
+                (float)beta);
+        break;
+    case sizeof(double):
+        _lrn_backward<double>((const double*)bottom, (const double*)top,
+                (double*)bottom_diff, (const double*)top_diff, 
+                (const double*)scale, num_data, channels, size, alpha, beta);
+        break;
+    default:
+        exit(EXIT_FAILURE);
+    } // switch(size)
 }
 
 } // extern "C"
