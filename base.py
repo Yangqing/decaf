@@ -133,7 +133,7 @@ class Blob(object):
             self._data[:] = 0
         return self.data()
 
-    def init_diff(self, setzero=False):
+    def init_diff(self, setzero=True):
         """Initialize the diff in the same format as data.
         
         Returns diff for easy access.
