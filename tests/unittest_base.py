@@ -27,6 +27,15 @@ class TestBlob(unittest.TestCase):
         blob.update()
         npt.assert_array_almost_equal(blob.data(), - blob.diff())
 
+    def testBlobSwap(self):
+        blob_a = base.Blob((4,3))
+        blob_b = base.Blob((4,3))
+        blob_a.data().flat = 1.
+        blob_b.data().flat = 2.
+        blob_a.swap_data(blob_b)
+        npt.assert_array_almost_equal(blob_a.data(), 2.)
+        npt.assert_array_almost_equal(blob_b.data(), 1.)
+
     def testUseBlob(self):
         """testUseBlob checks if simple blob usages work."""
         blob_a = base.Blob((4,3))

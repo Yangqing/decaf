@@ -119,16 +119,16 @@ class Blob(object):
         """Initializes the data if necessary. The filler will be always
         called even if no reallocation of data takes place.
         """
-        if self.has_data() and self._data.shape == shape and \
-           self._data.dtype == dtype:
-            self._data[:] = 0
-        else:
-            self._data = np.zeros(shape, dtype)
+        if not(self.has_data() and self._data.shape == shape and \
+           self._data.dtype == dtype):
+            self._data = np.empty(shape, dtype)
         if self._filler is not None:
             self._filler.fill(self._data)
+        else:
+            self._data[:] = 0
         return self.data()
 
-    def init_diff(self):
+    def init_diff(self, setzero=False):
         """Initialize the diff in the same format as data.
         
         Returns diff for easy access.
@@ -137,10 +137,19 @@ class Blob(object):
             raise ValueError('The data should be initialized first!')
         if self.has_diff() and self._diff.shape == self._data.shape and \
            self._diff.dtype == self._data.dtype:
-            self._diff[:] = 0
+            if setzero:
+                self._diff[:] = 0
         else:
             self._diff = np.zeros(self._data.shape, self._data.dtype)
         return self.diff()
+
+    def swap_data(self, other_blob):
+        """swaps the data between two blobs."""
+        if not(self.has_data() and other_blob.has_data() and
+               self._data.dtype == other_blob._data.dtype and
+               self._data.shape == other_blob._data.shape):
+            raise DecafError('Attempting to swap incompatible blobs.')
+        self._data, other_blob._data = other_blob._data, self._data
     
     def __getstate__(self):
         """When pickling, we will not store the diff field."""
