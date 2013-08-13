@@ -11,7 +11,8 @@ class TestIm2col(unittest.TestCase):
     def testIm2col(self):
         np.random.seed(1701)
         output_blob = base.Blob()
-        shapes = [(1,5,5,1), (1,5,5,3), (1,4,3,1), (1,4,3,3)]
+        shapes = [(1,5,5,1), (1,5,5,3), (1,4,3,1), (1,4,3,3),
+                  (3,5,5,1), (3,5,5,3), (3,4,3,1), (3,4,3,3)]
         params = [(2,1), (2,2), (3,1), (3,2)] 
         for psize, stride in params:
             for shape in shapes:

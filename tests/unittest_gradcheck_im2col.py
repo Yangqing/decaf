@@ -5,11 +5,11 @@ import numpy as np
 import unittest
 
 
-class TestPaddingGrad(unittest.TestCase):
+class TestIm2colGrad(unittest.TestCase):
     def setUp(self):
         pass
 
-    def testPaddingGrad(self):
+    def testIm2colGrad(self):
         np.random.seed(1701)
         output_blob = base.Blob()
         checker = gradcheck.GradChecker(1e-4)

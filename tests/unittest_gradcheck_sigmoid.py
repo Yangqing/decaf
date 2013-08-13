@@ -5,11 +5,11 @@ import numpy as np
 import unittest
 
 
-class TestReLUGrad(unittest.TestCase):
+class TestSigmoidGrad(unittest.TestCase):
     def setUp(self):
         pass
 
-    def testReLUGrad(self):
+    def testSigmoidGrad(self):
         np.random.seed(1701)
         shapes = [(4,3), (1,10), (2,5,5,1), (2,5,5,3)]
         output_blob = base.Blob()
