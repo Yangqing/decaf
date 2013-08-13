@@ -32,7 +32,7 @@ def main():
                         provides=['image-all', 'label-all'])
     # add minibatch layer for stochastic optimization
     minibatch_layer = core_layers.BasicMinibatchLayer(
-        name='batch', minibatch=4096)
+        name='batch', minibatch=MINIBATCH)
     decaf_net.add_layer(minibatch_layer,
                         needs=['image-all', 'label-all'],
                         provides=['image', 'label'])
