@@ -13,64 +13,32 @@ try:
 except Exception as error:
     raise error
 
-
-def float_double_strategy(float_func, double_func):
-    """Create a function that wraps two functions, one float and one double,
-    and decides upon runtime which function to call based on the dtype of the
-    first argument.
-    """
-    def _strategy(*args, **kwargs):
-        """The actual strategy."""
-        if args[0].dtype == np.float32:
-            return float_func(*args, **kwargs)
-        elif args[0].dtype == np.float64:
-            return double_func(*args, **kwargs)
-        else:
-            raise TypeError('Unsupported type: ' + str(args[0].dtype))
-    return _strategy
-
-
 ################################################################################
-# im2col and col2im operation
+# im2col operation
 ################################################################################
-_DLL.im2col_sc_float.restype = \
-_DLL.im2col_mc_float.restype = \
-_DLL.im2col_sc_double.restype = \
-_DLL.im2col_mc_double.restype = \
-_DLL.col2im_sc_float.restype = \
-_DLL.col2im_mc_float.restype = \
-_DLL.col2im_sc_double.restype = \
-_DLL.col2im_mc_double.restype = None
+_DLL.im2col_forward.restype = _DLL.im2col_backward.restype = None
 
-_DLL.im2col_sc_float.argtypes = \
-_DLL.im2col_mc_float.argtypes = \
-_DLL.col2im_sc_float.argtypes = \
-_DLL.col2im_mc_float.argtypes = \
-    [np.ctypeslib.ndpointer(dtype=np.float32, flags='C'),
-     ct.c_int, ct.c_int, ct.c_int, ct.c_int, ct.c_int,
-     np.ctypeslib.ndpointer(dtype=np.float32, flags='C')]
+def im2col_forward(im, col, psize, stride):
+    height, width, channels = im.shape
+    _DLL.im2col_forward(ct.c_int(im.itemsize),
+                im.ctypes.data_as(ct.c_void_p),
+                col.ctypes.data_as(ct.c_void_p),
+                ct.c_int(height),
+                ct.c_int(width),
+                ct.c_int(channels),
+                ct.c_int(psize),
+                ct.c_int(stride))
 
-_DLL.im2col_sc_double.argtypes = \
-_DLL.im2col_mc_double.argtypes = \
-_DLL.col2im_sc_double.argtypes = \
-_DLL.col2im_mc_double.argtypes = \
-    [np.ctypeslib.ndpointer(dtype=np.float64, flags='C'),
-     ct.c_int, ct.c_int, ct.c_int, ct.c_int, ct.c_int,
-     np.ctypeslib.ndpointer(dtype=np.float64, flags='C')]
-
-im2col_sc = float_double_strategy(_DLL.im2col_sc_float,
-                                  _DLL.im2col_sc_double)
-col2im_sc = float_double_strategy(_DLL.col2im_sc_float,
-                                  _DLL.col2im_sc_double)
-im2col_mc = float_double_strategy(_DLL.im2col_mc_float,
-                                  _DLL.im2col_mc_double)
-col2im_mc = float_double_strategy(_DLL.col2im_mc_float,
-                                  _DLL.col2im_mc_double)
-# For convenience, if no mc or sc is specified, we default to mc.
-im2col = im2col_mc
-col2im = col2im_mc
-
-
+def im2col_backward(im, col, psize, stride):
+    height, width, channels = im.shape
+    _DLL.im2col_backward(ct.c_int(im.itemsize),
+                im.ctypes.data_as(ct.c_void_p),
+                col.ctypes.data_as(ct.c_void_p),
+                ct.c_int(height),
+                ct.c_int(width),
+                ct.c_int(channels),
+                ct.c_int(psize),
+                ct.c_int(stride))
 
 ################################################################################
 # pooling operation

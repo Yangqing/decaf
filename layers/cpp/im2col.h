@@ -3,69 +3,23 @@
 
 extern "C" {
 
-void im2col_mc_float(const float* data_im,
+void im2col_forward(const int len,
+        const void* data_im,
+        void* data_col,
         const int height,
         const int width,
         const int nchannels,
         const int psize,
-        const int stride,
-        float* data_col);
+        const int stride);
 
-void im2col_mc_double(const double* data_im,
+void im2col_backward(const int len,
+        void* data_im,
+        const void* data_col,
         const int height,
         const int width,
         const int nchannels,
         const int psize,
-        const int stride,
-        double* data_col);
-
-void col2im_mc_float(float* data_im,
-        const int height,
-        const int width,
-        const int nchannels,
-        const int psize,
-        const int stride,
-        const float* data_col);
-
-void col2im_mc_double(double* data_im,
-        const int height,
-        const int width,
-        const int nchannels,
-        const int psize,
-        const int stride,
-        const double* data_col);
-
-void im2col_sc_float(const float* data_im,
-        const int height,
-        const int width,
-        const int nchannels,
-        const int psize,
-        const int stride,
-        float* data_col);
-
-void im2col_sc_double(const double* data_im,
-        const int height,
-        const int width,
-        const int nchannels,
-        const int psize,
-        const int stride,
-        double* data_col);
-
-void col2im_sc_float(float* data_im,
-        const int height,
-        const int width,
-        const int nchannels,
-        const int psize,
-        const int stride,
-        const float* data_col);
-
-void col2im_sc_double(double* data_im,
-        const int height,
-        const int width,
-        const int nchannels,
-        const int psize,
-        const int stride,
-        const double* data_col);
+        const int stride);
 
 } // extern "C"
 

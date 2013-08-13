@@ -1,23 +1,21 @@
 // author: Yangqing Jia (jiayq@eecs.berkeley.edu)
 // Copyright 2012
 
-#include <cstring>
 #include <cmath>
+#include <cstdlib>
+#include <cstring>
 
 #include "im2col.h"
 
-// Note: in testing the code we found that OMP is slower fore relatively small
-// images (which is often the case), so we disabled OMP.
-
 template <typename Dtype>
-inline void im2col_mc(const Dtype* data_im,
+inline void _im2col_forward(const Dtype* data_im,
+        Dtype* data_col,
         const int height,
         const int width,
         const int nchannels,
         const int psize,
-        const int stride,
-        Dtype* data_col) {
-    // The naive im2col_mc implementation
+        const int stride) {
+    // The naive im2col_forward_mc implementation
     int step_im = width * nchannels;
     int step_col = psize * nchannels;
     int height_col = (height - psize) / stride + 1;
@@ -38,17 +36,17 @@ inline void im2col_mc(const Dtype* data_im,
             }
         }
     }
-} // im2col_mc
+} // im2col_forward
 
 
 template <typename Dtype>
-inline void col2im_mc(Dtype* data_im,
+inline void _im2col_backward(Dtype* data_im,
+        const Dtype* data_col,
         const int height,
         const int width,
         const int nchannels,
         const int psize,
-        const int stride,
-        const Dtype* data_col) {
+        const int stride) {
     memset(data_im, 0, sizeof(Dtype) * height * width * nchannels);
     int step_im = width * nchannels;
     int step_col = psize * nchannels;
@@ -70,49 +68,53 @@ inline void col2im_mc(Dtype* data_im,
             }
         }
     }
-} // im2col_mc
+} // im2col_backward
 
 
 extern "C" {
 
-void im2col_mc_float(const float* data_im,
+void im2col_forward(const int len,
+        const void* data_im,
+        void* data_col,
         const int height,
         const int width,
         const int nchannels,
         const int psize,
-        const int stride,
-        float* data_col) {
-    im2col_mc<float>(data_im, height, width, nchannels, psize, stride, data_col);
+        const int stride) {
+    switch(len) {
+    case sizeof(float):
+        _im2col_forward<float>((const float*)data_im, (float*)data_col,
+                height, width, nchannels, psize, stride);
+        break;
+    case sizeof(double):
+        _im2col_forward<double>((const double*)data_im, (double*)data_col,
+                height, width, nchannels, psize, stride);
+        break;
+    default:
+        exit(EXIT_FAILURE);
+    }
 }
 
-void im2col_mc_double(const double* data_im,
+void im2col_backward(const int len,
+        void* data_im,
+        const void* data_col,
         const int height,
         const int width,
         const int nchannels,
         const int psize,
-        const int stride,
-        double* data_col) {
-    im2col_mc<double>(data_im, height, width, nchannels, psize, stride, data_col);
-}
-
-void col2im_mc_float(float* data_im,
-        const int height,
-        const int width,
-        const int nchannels,
-        const int psize,
-        const int stride,
-        const float* data_col) {
-    col2im_mc<float>(data_im, height, width, nchannels, psize, stride, data_col);
-}
-
-void col2im_mc_double(double* data_im,
-        const int height,
-        const int width,
-        const int nchannels,
-        const int psize,
-        const int stride,
-        const double* data_col) {
-    col2im_mc<double>(data_im, height, width, nchannels, psize, stride, data_col);
+        const int stride) {
+    switch(len) {
+    case sizeof(float):
+        _im2col_backward<float>((float*)data_im, (const float*)data_col,
+                height, width, nchannels, psize, stride);
+        break;
+    case sizeof(double):
+        _im2col_backward<double>((double*)data_im, (const double*)data_col,
+                height, width, nchannels, psize, stride);
+        break;
+    default:
+        exit(EXIT_FAILURE);
+    }
 }
 
 } // extern "C"
