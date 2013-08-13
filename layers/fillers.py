@@ -73,3 +73,49 @@ class DropoutFiller(base.Filler):
         """The fill function."""
         ratio = self.spec['ratio']
         mat[:] = np.random.random_sample(mat.shape) < ratio
+
+
+# pylint: disable=R0903
+class XavierFiller(base.Filler):
+    """A filler based on the paper [Bengio and Glorot 2010]: Understanding
+    the difficulty of training deep feedforward neuralnetworks, but does not
+    use the fan_out value.
+
+    It fills the incoming matrix by randomly sampling uniform data from
+    [-scale, scale] where scale = sqrt(3 / fan_in) where fan_in is the number
+    of input nodes respectively. The code finds out fan_in as
+        mat.size / mat.shape[-1]
+    and you should make sure the matrix is at least 2-dimensional.
+    """
+    def fill(self, mat):
+        """The fill function."""
+        scale = np.sqrt(3. / float(mat.size / mat.shape[-1]))
+        mat[:] = np.random.random_sample(mat.shape)
+        mat *= scale * 2.
+        mat -= scale
+
+
+# pylint: disable=R0903
+class XavierGaussianFiller(base.Filler):
+    """A filler that is similar to XavierFiller, but uses a Gaussian
+    distribution that has the same standard deviation as the XavierFiller
+    has for the uniform distribution.
+    """
+    def fill(self, mat):
+        """The fill function."""
+        std = np.sqrt(1. / float(mat.size / mat.shape[-1]))
+        mat[:] = np.random.standard_normal(mat.shape)
+        mat *= std
+
+
+# pylint: disable=R0903
+class InverseStdFiller(base.Filler):
+    """A filler that initializes the weights using standard deviation 
+        1 / fan_in 
+    where fan_in is computed as mat.size / mat.shape[-1].
+    """
+    def fill(self, mat):
+        """The fill function."""
+        std = 1. / float(mat.size / mat.shape[-1])
+        mat[:] = np.random.standard_normal(mat.shape)
+        mat *= std
