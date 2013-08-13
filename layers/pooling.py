@@ -40,12 +40,10 @@ class PoolingLayer(base.Layer):
         if self._mode == 'max':
             for i in range(num):
                 wrapper.maxpooling_forward(bottom_data[i], top_data[i],
-                                           height, width, nchannels,
                                            self._psize, self._stride)
         elif self._mode == 'ave':
             for i in range(num):
                 wrapper.avepooling_forward(bottom_data[i], top_data[i],
-                                           height, width, nchannels,
                                            self._psize, self._stride)
         else:
             raise ValueError('Unknown mode: %s.' % self._mode)
@@ -63,13 +61,12 @@ class PoolingLayer(base.Layer):
                     top_data = top[0].data()
                     wrapper.maxpooling_backward(
                             bottom_data[i], top_data[i], bottom_diff[i],
-                            top_diff[i], height, width, nchannels,
-                            self._psize, self._stride)
+                            top_diff[i], self._psize, self._stride)
             elif self._mode == 'ave':
                 for i in range(num):
                     wrapper.avepooling_backward(
-                            bottom_diff[i], top_diff[i], height, width,
-                            nchannels, self._psize, self._stride)
+                            bottom_diff[i], top_diff[i], self._psize,
+                            self._stride)
             else:
                 raise ValueError('Unknown mode: %s.' % self._mode)
         return 0.

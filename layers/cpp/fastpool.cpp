@@ -1,6 +1,7 @@
-#include <cstring>
-#include <cmath>
 #include <algorithm>
+#include <cmath>
+#include <cstdlib>
+#include <cstring>
 
 #include "fastpool.h"
 
@@ -8,7 +9,7 @@ using std::max;
 using std::min;
 
 template <typename Dtype>
-inline void maxpooling_forward(
+inline void _maxpooling_forward(
         const Dtype* image, Dtype* pooled, const int height, const int width,
         const int nchannels, const int psize, const int stride) {
     int pooled_height = (height - psize) / stride + 1;
@@ -41,7 +42,7 @@ inline void maxpooling_forward(
 
 
 template <typename Dtype>
-inline void maxpooling_backward(
+inline void _maxpooling_backward(
         const Dtype* image, const Dtype* pooled, Dtype* image_grad,
         const Dtype* pooled_grad, const int height, const int width,
         const int nchannels, const int psize, const int stride) {
@@ -80,7 +81,7 @@ inline void maxpooling_backward(
 
 
 template <typename Dtype>
-inline void avepooling_forward(
+inline void _avepooling_forward(
         const Dtype* image, Dtype* pooled, const int height, const int width,
         const int nchannels, const int psize, const int stride) {
     int pooled_height = (height - psize) / stride + 1;
@@ -116,7 +117,7 @@ inline void avepooling_forward(
 }
 
 template <typename Dtype>
-inline void avepooling_backward(
+inline void _avepooling_backward(
         Dtype* image_grad, const Dtype* pooled_grad, const int height, 
         const int width, const int nchannels, const int psize,
         const int stride) {
@@ -157,64 +158,78 @@ inline void avepooling_backward(
 
 extern "C" {
 
-void maxpooling_forward_float(
-        const float* image, float* pooled, const int height, const int width,
+void maxpooling_forward(const int len,
+        const void* image, void* pooled, const int height, const int width,
         const int nchannels, const int psize, const int stride) {
-    maxpooling_forward<float>(image, pooled, height, width, nchannels, psize,
-            stride);
+    switch(len) {
+    case sizeof(float):
+        _maxpooling_forward<float>((const float*)image, (float*)pooled, height,
+                width, nchannels, psize, stride);
+        break;
+    case sizeof(double):
+        _maxpooling_forward<double>((const double*)image, (double*)pooled, height,
+                width, nchannels, psize, stride);
+        break;
+    default:
+        exit(EXIT_FAILURE);
+    } // switch(len)
 }
 
-void maxpooling_backward_float(
-        const float* image, const float* pooled, float* image_grad,
-        const float* pooled_grad, const int height, const int width,
+void maxpooling_backward(const int len,
+        const void* image, const void* pooled, void* image_grad,
+        const void* pooled_grad, const int height, const int width,
         const int nchannels, const int psize, const int stride) {
-    maxpooling_backward<float>(image, pooled, image_grad, pooled_grad,
-            height, width, nchannels, psize, stride);
+    switch(len) {
+    case sizeof(float):
+        _maxpooling_backward<float>((const float*)image, (const float*)pooled,
+                (float*)image_grad, (const float*)pooled_grad, height,
+                width, nchannels, psize, stride);
+        break;
+    case sizeof(double):
+        _maxpooling_backward<double>((const double*)image, (const double*)pooled,
+                (double*)image_grad, (const double*)pooled_grad, height,
+                width, nchannels, psize, stride);
+        break;
+    default:
+        exit(EXIT_FAILURE);
+    } // switch(len)
 }
 
-void avepooling_forward_float(
-        const float* image, float* pooled, const int height, const int width,
-        const int nchannels, const int psize, const int stride) {
-    avepooling_forward<float>(image, pooled, height, width, nchannels, psize,
-            stride);
+void avepooling_forward(const int len,
+        const void* image, void* pooled, const int height, const int width,
+        const int nchannels, const int psize, const int stride){
+    switch(len) {
+    case sizeof(float):
+        _avepooling_forward<float>((const float*)image, (float*)pooled, height,
+                width, nchannels, psize, stride);
+        break;
+    case sizeof(double):
+        _avepooling_forward<double>((const double*)image, (double*)pooled, height,
+                width, nchannels, psize, stride);
+        break;
+    default:
+        exit(EXIT_FAILURE);
+    } // switch(len)
 }
 
-void avepooling_backward_float(
-        float* image_grad, const float* pooled_grad, const int height, 
+void avepooling_backward(const int len,
+        void* image_grad, const void* pooled_grad, const int height, 
         const int width, const int nchannels, const int psize,
         const int stride) {
-    avepooling_backward<float>(image_grad, pooled_grad, height,width,
-            nchannels, psize, stride);
-}
-
-void maxpooling_forward_double(
-        const double* image, double* pooled, const int height, const int width,
-        const int nchannels, const int psize, const int stride) {
-    maxpooling_forward<double>(image, pooled, height, width, nchannels, psize,
-            stride);
-}
-
-void maxpooling_backward_double(
-        const double* image, const double* pooled, double* image_grad,
-        const double* pooled_grad, const int height, const int width,
-        const int nchannels, const int psize, const int stride) {
-    maxpooling_backward<double>(image, pooled, image_grad, pooled_grad,
-            height, width, nchannels, psize, stride);
-}
-
-void avepooling_forward_double(
-        const double* image, double* pooled, const int height, const int width,
-        const int nchannels, const int psize, const int stride) {
-    avepooling_forward<double>(image, pooled, height, width, nchannels, psize,
-            stride);
-}
-
-void avepooling_backward_double(
-        double* image_grad, const double* pooled_grad, const int height, 
-        const int width, const int nchannels, const int psize,
-        const int stride) {
-    avepooling_backward<double>(image_grad, pooled_grad, height,width,
-            nchannels, psize, stride);
+    switch(len) {
+    case sizeof(float):
+        _avepooling_backward<float>(
+                (float*)image_grad, (const float*)pooled_grad, height,
+                width, nchannels, psize, stride);
+        break;
+    case sizeof(double):
+        _avepooling_backward<double>(
+                (double*)image_grad, (const double*)pooled_grad, height,
+                width, nchannels, psize, stride);
+        break;
+    default:
+        exit(EXIT_FAILURE);
+    } // switch(len)
 }
 
 } // extern "C"

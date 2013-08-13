@@ -6,39 +6,21 @@
 
 extern "C" {
 
-void maxpooling_forward_float(
-        const float* image, float* pooled, const int height, const int width,
+void maxpooling_forward(const int len,
+        const void* image, void* pooled, const int height, const int width,
         const int nchannels, const int psize, const int stride);
 
-void maxpooling_backward_float(
-        const float* image, const float* pooled, float* image_grad,
-        const float* pooled_grad, const int height, const int width,
+void maxpooling_backward(const int len,
+        const void* image, const void* pooled, void* image_grad,
+        const void* pooled_grad, const int height, const int width,
         const int nchannels, const int psize, const int stride);
 
-void avepooling_forward_float(
-        const float* image, float* pooled, const int height, const int width,
+void avepooling_forward(const int len,
+        const void* image, void* pooled, const int height, const int width,
         const int nchannels, const int psize, const int stride);
 
-void avepooling_backward_float(
-        float* image_grad, const float* pooled_grad, const int height, 
-        const int width, const int nchannels, const int psize,
-        const int stride);
-
-void maxpooling_forward_double(
-        const double* image, double* pooled, const int height, const int width,
-        const int nchannels, const int psize, const int stride);
-
-void maxpooling_backward_double(
-        const double* image, const double* pooled, double* image_grad,
-        const double* pooled_grad, const int height, const int width,
-        const int nchannels, const int psize, const int stride);
-
-void avepooling_forward_double(
-        const double* image, double* pooled, const int height, const int width,
-        const int nchannels, const int psize, const int stride);
-
-void avepooling_backward_double(
-        double* image_grad, const double* pooled_grad, const int height, 
+void avepooling_backward(const int len,
+        void* image_grad, const void* pooled_grad, const int height, 
         const int width, const int nchannels, const int psize,
         const int stride);
 

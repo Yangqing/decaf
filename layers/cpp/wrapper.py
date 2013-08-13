@@ -75,50 +75,59 @@ col2im = col2im_mc
 ################################################################################
 # pooling operation
 ################################################################################
-_DLL.maxpooling_forward_float.restype = \
-_DLL.maxpooling_backward_float.restype = \
-_DLL.avepooling_forward_float.restype = \
-_DLL.avepooling_backward_float.restype = \
-_DLL.maxpooling_forward_double.restype = \
-_DLL.maxpooling_backward_double.restype = \
-_DLL.avepooling_forward_double.restype = \
-_DLL.avepooling_backward_double.restype = None
+_DLL.maxpooling_forward.restype = \
+_DLL.maxpooling_backward.restype = \
+_DLL.avepooling_forward.restype = \
+_DLL.avepooling_backward.restype = None
 
-_DLL.maxpooling_forward_float.argtypes = \
-_DLL.avepooling_forward_float.argtypes = \
-_DLL.avepooling_backward_float.argtypes = \
-    [np.ctypeslib.ndpointer(dtype=np.float32, flags='C'),
-     np.ctypeslib.ndpointer(dtype=np.float32, flags='C'),
-     ct.c_int, ct.c_int, ct.c_int, ct.c_int, ct.c_int]
+def maxpooling_forward(image, pooled, psize, stride):
+    height, width, channels = image.shape
+    _DLL.maxpooling_forward(ct.c_int(image.itemsize),
+                            image.ctypes.data_as(ct.c_void_p),
+                            pooled.ctypes.data_as(ct.c_void_p),
+                            ct.c_int(height),
+                            ct.c_int(width),
+                            ct.c_int(channels),
+                            ct.c_int(psize),
+                            ct.c_int(stride))
 
-_DLL.maxpooling_forward_double.argtypes = \
-_DLL.avepooling_forward_double.argtypes = \
-_DLL.avepooling_backward_double.argtypes = \
-    [np.ctypeslib.ndpointer(dtype=np.float64, flags='C'),
-     np.ctypeslib.ndpointer(dtype=np.float64, flags='C'),
-     ct.c_int, ct.c_int, ct.c_int, ct.c_int, ct.c_int]
+def avepooling_forward(image, pooled, psize, stride):
+    height, width, channels = image.shape
+    _DLL.avepooling_forward(ct.c_int(image.itemsize),
+                            image.ctypes.data_as(ct.c_void_p),
+                            pooled.ctypes.data_as(ct.c_void_p),
+                            ct.c_int(height),
+                            ct.c_int(width),
+                            ct.c_int(channels),
+                            ct.c_int(psize),
+                            ct.c_int(stride))
 
-_DLL.maxpooling_backward_float.argtypes = \
-    [np.ctypeslib.ndpointer(dtype=np.float32, flags='C'),
-     np.ctypeslib.ndpointer(dtype=np.float32, flags='C'),
-     np.ctypeslib.ndpointer(dtype=np.float32, flags='C'),
-     np.ctypeslib.ndpointer(dtype=np.float32, flags='C'),
-     ct.c_int, ct.c_int, ct.c_int, ct.c_int, ct.c_int]
-_DLL.maxpooling_backward_double.argtypes = \
-    [np.ctypeslib.ndpointer(dtype=np.float64, flags='C'),
-     np.ctypeslib.ndpointer(dtype=np.float64, flags='C'),
-     np.ctypeslib.ndpointer(dtype=np.float64, flags='C'),
-     np.ctypeslib.ndpointer(dtype=np.float64, flags='C'),
-     ct.c_int, ct.c_int, ct.c_int, ct.c_int, ct.c_int]
+def maxpooling_backward(image, pooled, image_diff, pooled_diff, psize,
+                        stride):
+    height, width, channels = image.shape
+    _DLL.maxpooling_backward(ct.c_int(image.itemsize),
+                             image.ctypes.data_as(ct.c_void_p),
+                             pooled.ctypes.data_as(ct.c_void_p),
+                             image_diff.ctypes.data_as(ct.c_void_p),
+                             pooled_diff.ctypes.data_as(ct.c_void_p),
+                             ct.c_int(height),
+                             ct.c_int(width),
+                             ct.c_int(channels),
+                             ct.c_int(psize),
+                             ct.c_int(stride))
 
-maxpooling_forward = float_double_strategy(_DLL.maxpooling_forward_float,
-                                           _DLL.maxpooling_forward_double)
-maxpooling_backward = float_double_strategy(_DLL.maxpooling_backward_float,
-                                            _DLL.maxpooling_backward_double)
-avepooling_forward = float_double_strategy(_DLL.avepooling_forward_float,
-                                           _DLL.avepooling_forward_double)
-avepooling_backward = float_double_strategy(_DLL.avepooling_backward_float,
-                                            _DLL.avepooling_backward_double)
+def avepooling_backward(image_diff, pooled_diff, psize, stride):
+    height, width, channels = image_diff.shape
+    _DLL.avepooling_backward(ct.c_int(image_diff.itemsize),
+                             image_diff.ctypes.data_as(ct.c_void_p),
+                             pooled_diff.ctypes.data_as(ct.c_void_p),
+                             ct.c_int(height),
+                             ct.c_int(width),
+                             ct.c_int(channels),
+                             ct.c_int(psize),
+                             ct.c_int(stride))
+
+
 
 ################################################################################
 # local contrast normalization operation
