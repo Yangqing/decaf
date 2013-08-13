@@ -139,9 +139,9 @@ class ConvolutionLayer(base.Layer):
 
     def __getstate__(self):
         """When pickling, we will remove the intermediate data."""
-        self._single_data = [base.Blob()]
-        self._padded = [base.Blob()]
-        self._col = [base.Blob()]
+        self._single_data = base.Blob()
+        self._padded = base.Blob()
+        self._col = base.Blob()
         return self.__dict__
 
     def update(self):

@@ -23,6 +23,8 @@ def draw_net(decaf_net, format='png'):
     for name, blob in decaf_net.blobs.iteritems():
         if blob.has_data():
             shapestr = 'x'.join(str(v) for v in blob.data().shape[1:])
+            if blob.data().ndim == 1:
+                shapestr = 'scalar'
             dtypestr = str(blob.data().dtype)
         else:
             shapestr = 'unknown shape'

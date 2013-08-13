@@ -43,6 +43,8 @@ class MNISTDataLayer(ndarraydata.NdarrayDataLayer):
             self._label = self._read_byte_data(
                     os.path.join(rootfolder,'t10k-labels-idx1-ubyte'),
                     8, [MNISTDataLayer.NUM_TEST]).astype(np.int)
+        # In the end, we will make the data 4-dimensional (num * 28 * 28 * 1)
+        self._data.resize(self._data.shape + (1,))
 
     def _read_byte_data(self, filename, skipbytes, shape):
         fid = open(filename, 'rb')

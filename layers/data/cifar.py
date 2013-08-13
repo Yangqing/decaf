@@ -61,7 +61,7 @@ class CIFARDataLayer(ndarraydata.NdarrayDataLayer):
                            CIFARDataLayer.__image_size))
         images = mat.swapaxes(1, 2).reshape(
             (mat.shape[0],) + CIFARDataLayer.__image_dim)
-        return images.astype(dtype)
+        return np.ascontiguousarray(images.astype(dtype))
     
     def load_cifar100(self, rootfolder, is_training, dtype):
         """loads the cifar-100 dataset

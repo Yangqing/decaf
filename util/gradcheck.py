@@ -5,7 +5,7 @@ import numpy as np
 from scipy import optimize
 
 
-def _blobs_to_vec(blobs):
+def blobs_to_vec(blobs):
     """Collect the network parameters into a long vector.
 
     This method is not memory efficient - do NOT use in codes that require
@@ -15,13 +15,13 @@ def _blobs_to_vec(blobs):
         return np.array(())
     return np.hstack([blob.data().flatten() for blob in blobs])
 
-def _blobs_diff_to_vec(blobs):
-    """Similar to _blobs_to_vec, but copying diff."""
+def blobs_diff_to_vec(blobs):
+    """Similar to blobs_to_vec, but copying diff."""
     if len(blobs) == 0:
         return np.array(())
     return np.hstack([blob.diff().flatten() for blob in blobs])
 
-def _vec_to_blobs(vec, blobs):
+def vec_to_blobs(vec, blobs):
     """Distribute the values in the vec to the blobs.
     """
     current = 0
@@ -30,7 +30,7 @@ def _vec_to_blobs(vec, blobs):
         blob.data().flat = vec[current:current+size]
         current += size
 
-def _vec_to_blobs_diff(vec, blobs):
+def vec_to_blobs_diff(vec, blobs):
     """Distribute the values in the vec to the blobs' diff part.
     """
     current = 0
@@ -69,15 +69,15 @@ class GradChecker(object):
     @staticmethod
     def _func_net(x_init, decaf_net):
         """function wrapper for a net."""
-        _vec_to_blobs(x_init, decaf_net.params())
+        vec_to_blobs(x_init, decaf_net.params())
         return decaf_net.forward_backward()
 
     @staticmethod
     def _grad_net(x_init, decaf_net):
         """gradient wrapper for a net."""
-        _vec_to_blobs(x_init, decaf_net.params())
+        vec_to_blobs(x_init, decaf_net.params())
         decaf_net.forward_backward()
-        return _blobs_diff_to_vec(decaf_net.params())
+        return blobs_diff_to_vec(decaf_net.params())
 
     @staticmethod
     def _func(x_init, layer, input_blobs, output_blobs, check_data, idx,
@@ -87,12 +87,12 @@ class GradChecker(object):
         output values.
         """
         if check_data:
-            _vec_to_blobs(x_init, checked_blobs)
+            vec_to_blobs(x_init, checked_blobs)
         else:
-            _vec_to_blobs(x_init, layer.param())
+            vec_to_blobs(x_init, layer.param())
         layer.forward(input_blobs, output_blobs)
         if len(output_blobs) > 0:
-            output = _blobs_to_vec(output_blobs)
+            output = blobs_to_vec(output_blobs)
         else:
             # a dummy output
             output = np.array([0])
@@ -110,28 +110,28 @@ class GradChecker(object):
               checked_blobs):
         """The coarse gradient."""
         if check_data:
-            _vec_to_blobs(x_init, checked_blobs)
+            vec_to_blobs(x_init, checked_blobs)
         else:
-            _vec_to_blobs(x_init, layer.param())
+            vec_to_blobs(x_init, layer.param())
         layer.forward(input_blobs, output_blobs)
         # initialize the diff
         for blob in output_blobs:
             blob.init_diff()
         if len(output_blobs) > 0:
-            output = _blobs_to_vec(output_blobs)
+            output = blobs_to_vec(output_blobs)
             if idx < 0:
                 output *= 2.
             else:
                 output[:] = 0
                 output[idx] = 1.
-            _vec_to_blobs_diff(output, output_blobs)
+            vec_to_blobs_diff(output, output_blobs)
         # Now, get the diff
         if check_data:
             layer.backward(input_blobs, output_blobs, True)
-            return _blobs_diff_to_vec(checked_blobs)
+            return blobs_diff_to_vec(checked_blobs)
         else:
             layer.backward(input_blobs, output_blobs, False)
-            return _blobs_diff_to_vec(layer.param())
+            return blobs_diff_to_vec(layer.param())
 
     def check_network(self, decaf_net):
         """Checks a whole decaf network. Your network should not contain any
@@ -140,7 +140,7 @@ class GradChecker(object):
         """
         # Run a round to initialize the params.
         decaf_net.forward_backward()
-        param_backup = _blobs_to_vec(decaf_net.params())
+        param_backup = blobs_to_vec(decaf_net.params())
         x_init = param_backup.copy()
         # pylint: disable=E1101
         err = optimize.check_grad(GradChecker._func_net, GradChecker._grad_net,
@@ -159,12 +159,12 @@ class GradChecker(object):
         else:
             checked_blobs = [input_blobs[i] for i in check_indices]
         layer.forward(input_blobs, output_blobs)
-        input_backup = _blobs_to_vec(checked_blobs)
-        param_backup = _blobs_to_vec(layer.param())
-        num_output = _blobs_to_vec(output_blobs).size
+        input_backup = blobs_to_vec(checked_blobs)
+        param_backup = blobs_to_vec(layer.param())
+        num_output = blobs_to_vec(output_blobs).size
         max_err = 0
         # first, check grad w.r.t. param
-        x_init = _blobs_to_vec(layer.param())
+        x_init = blobs_to_vec(layer.param())
         if len(x_init) > 0:
             for i in range(-1, num_output):
                 # pylint: disable=E1101
@@ -175,9 +175,9 @@ class GradChecker(object):
                 if err > self._threshold:
                     return (False, i, err, 'param')
             # restore param
-            _vec_to_blobs(param_backup, layer.param())
+            vec_to_blobs(param_backup, layer.param())
         # second, check grad w.r.t. input
-        x_init = _blobs_to_vec(checked_blobs)
+        x_init = blobs_to_vec(checked_blobs)
         if len(x_init) > 0:
             for i in range(-1, num_output):
                 # pylint: disable=E1101
@@ -188,5 +188,5 @@ class GradChecker(object):
                 if err > self._threshold:
                     return (False, i, err, 'input')
             # restore input
-            _vec_to_blobs(input_backup, checked_blobs)
+            vec_to_blobs(input_backup, checked_blobs)
         return (True, max_err)

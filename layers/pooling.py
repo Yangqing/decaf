@@ -14,7 +14,7 @@ class PoolingLayer(base.Layer):
             psize: the pooling size. Pooling regions will be square shaped.
             stride: the pooling stride. If not given, it will be the same as
                 the psize.
-            mode: 'max' or 'full'.
+            mode: 'max' or 'ave'.
         """
         base.Layer.__init__(self, **kwargs)
         self._psize = self.spec['psize']

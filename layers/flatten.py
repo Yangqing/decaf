@@ -16,12 +16,12 @@ class FlattenLayer(base.Layer):
 
     def backward(self, bottom, top, propagate_down):
         """Computes the backward pass."""
-        if not propagate_down:
-            return 0.
-        for blob_b, blob_t in zip(bottom, top):
-            shape = blob_t.diff().shape
-            newshape = (shape[0], np.prod(shape[1:]))
-            blob_b.mirror_diff(blob_t, shape=newshape)
+        if propagate_down:
+            for blob_b, blob_t in zip(bottom, top):
+                shape = blob_t.diff().shape
+                newshape = (shape[0], np.prod(shape[1:]))
+                blob_b.mirror_diff(blob_t, shape=newshape)
+        return 0.
 
     def update(self):
         """FlattenLayer has nothing to update."""
