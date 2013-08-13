@@ -369,7 +369,7 @@ class Net(object):
         self._params = None
         self._finished = False
 
-    def save(self, filename, protocol=0, store_full=False):
+    def save(self, filename, store_full=False):
         """Saving the necessary 
         
         When pickling, we will simply store the network structure, but not
@@ -391,7 +391,7 @@ class Net(object):
                 output[1][name] = (layer, self.needs[name], self.provides[name])
         # finally, pickle the content.
         file = gzip.open(filename, 'wb')
-        pickle.dump(output, file, protocol=protocol)
+        pickle.dump(output, file, protocol=pickle.HIGHEST_PROTOCOL)
 
     @staticmethod
     def load(filename):
