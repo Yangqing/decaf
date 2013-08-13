@@ -26,25 +26,22 @@ class Im2colLayer(base.Layer):
         if self._stride < 1:
             raise ValueError('Stride should be larger than 0.')
 
-    def _analyze_shape(self, features):
-        num, height, width = features.shape[:3]
-        channels = 1
-        if features.ndim == 4:
-            channels = features.shape[3]
-        newshape = (num,
-                    (height - self._psize) / self._stride + 1,
-                    (width - self._psize) / self._stride + 1,
-                    channels * self._psize * self._psize)
-        return num, height, width, channels, newshape
+    def _get_new_shape(self, features):
+        if features.ndim != 4:
+            raise ValueError('Input features should be 4-dimensional.')
+        num, height, width, channels = features.shape
+        return (num,
+                (height - self._psize) / self._stride + 1,
+                (width - self._psize) / self._stride + 1,
+                channels * self._psize * self._psize)
 
     def forward(self, bottom, top):
         """Computes the forward pass."""
         # Get features and output
         features = bottom[0].data()
-        num, height, width, channels, newshape = self._analyze_shape(features)
-        output = top[0].init_data(newshape,
+        output = top[0].init_data(self._get_new_shape(features),
                                   features.dtype)
-        for i in range(num):
+        for i in range(features.shape[0]):
             wrapper.im2col_forward(features[i], output[i], self._psize, self._stride)
 
     def backward(self, bottom, top, propagate_down):
@@ -53,9 +50,8 @@ class Im2colLayer(base.Layer):
             return 0.
         top_diff = top[0].diff()
         features = bottom[0].data()
-        num, height, width, channels, newshape = self._analyze_shape(features)
         bottom_diff = bottom[0].init_diff()
-        for i in range(num):
+        for i in range(features.shape[0]):
             wrapper.im2col_backward(bottom_diff[i], top_diff[i],
                                     self._psize, self._stride)
         return 0.
