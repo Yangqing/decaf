@@ -2,6 +2,7 @@ from decaf import base
 import logging
 import numpy as np
 import numpy.testing as npt
+import tempfile
 import unittest
 
 
@@ -64,7 +65,7 @@ class TestNet(unittest.TestCase):
         self.assertTrue(any(isinstance(layer, base.SplitLayer)
                              for layer in decaf_net.layers.values()))
         from decaf.util import visualize
-        visualize.draw_net_to_file(decaf_net, 'test.png')
+        visualize.draw_net_to_file(decaf_net, tempfile.mktemp('.png'))
 
 if __name__ == '__main__':
     logging.getLogger().setLevel(logging.INFO)
