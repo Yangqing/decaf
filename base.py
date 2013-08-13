@@ -63,6 +63,11 @@ class Blob(object):
         if shape is not None:
             self.init_data(shape, dtype)
 
+    @staticmethod
+    def blob_like(source_blob):
+        return Blob(source_blob._data.shape, source_blob._data.dtype,
+                    source_blob._filler)
+
     def clear(self):
         """Clears a blob data."""
         self._data = None
