@@ -24,6 +24,9 @@ class ConvolutionLayer(base.Layer):
                 should be a decaf.base.Regularizer instance. Default None. 
             filler: a filler to initialize the weights. Should be a
                 decaf.base.Filler instance. Default None.
+            large_mem: if set True, the layer will consume a lot of memory by
+                storing all the intermediate im2col results, but will increase
+                the backward operation time. Default False.
         
         When computing convolutions, we will always start from the top left
         corner, and any rows/columns on the right and bottom sides that do not
@@ -36,6 +39,7 @@ class ConvolutionLayer(base.Layer):
         self._ksize = self.spec['ksize']
         self._stride = self.spec['stride']
         self._mode = self.spec['mode']
+        self._large_mem = self.spec.get('large_mem', False)
         self._reg = self.spec.get('reg', None)
         self._filler = self.spec.get('filler', None)
         if self._ksize <= 1:
@@ -83,8 +87,13 @@ class ConvolutionLayer(base.Layer):
             padded_data[:, self._pad_size:-self._pad_size,
                         self._pad_size:-self._pad_size] = bottom_data
         # initialize self._col
+        if self._large_mem:
+            col_data_num = bottom_data.shape[0]
+        else:
+            col_data_num = 1
         col_data = self._col.init_data(
-            (1, (padded_data.shape[1] - self._ksize) / self._stride + 1,
+            (col_data_num,
+             (padded_data.shape[1] - self._ksize) / self._stride + 1,
              (padded_data.shape[2] - self._ksize) / self._stride + 1,
              padded_data.shape[3] * self._ksize * self._ksize),
             padded_data.dtype, setdata=False)
@@ -93,12 +102,17 @@ class ConvolutionLayer(base.Layer):
             (bottom_data.shape[0], col_data.shape[1], col_data.shape[2],
              self._num_kernels), dtype=bottom_data.dtype, setdata=False)
         # process data individually
-        for i in range(bottom_data.shape[0]):
-            # call im2col individually
-            wrapper.im2col_forward(padded_data[i:i+1], col_data,
+        if self._large_mem:
+            wrapper.im2col_forward(padded_data, col_data,
                                    self._ksize, self._stride)
-            blasdot.dot_lastdim(col_data, self._kernels.data(),
-                                out=top_data[i])
+            blasdot.dot_lastdim(col_data, self._kernels.data(), out=top_data)
+        else:
+            for i in range(bottom_data.shape[0]):
+                # call im2col individually
+                wrapper.im2col_forward(padded_data[i:i+1], col_data,
+                                       self._ksize, self._stride)
+                blasdot.dot_lastdim(col_data, self._kernels.data(),
+                                    out=top_data[i])
         return
 
     def backward(self, bottom, top, propagate_down):
@@ -110,7 +124,6 @@ class ConvolutionLayer(base.Layer):
         if bottom_data.ndim != 4:
             raise ValueError('Bottom data should be a 4-dim tensor.')
         kernel_diff = self._kernels.init_diff()
-        kernel_diff_buffer = np.zeros_like(kernel_diff)
         if propagate_down:
             bottom_diff = bottom[0].init_diff(setzero=False)
             col_diff = self._col.init_diff()
@@ -118,20 +131,31 @@ class ConvolutionLayer(base.Layer):
                 padded_diff = self._padded.mirror_diff(bottom_diff)
             else:
                 padded_diff = self._padded.init_diff(setzero=False)
-        for i in range(bottom_data.shape[0]):
-            # although it is a backward layer, we still need to compute
-            # the intermediate results using forward calls.
-            wrapper.im2col_forward(padded_data[i:i+1], col_data,
-                                   self._ksize, self._stride)
-            blasdot.dot_firstdims(col_data, top_diff[i],
-                                 out=kernel_diff_buffer)
-            kernel_diff += kernel_diff_buffer
+        if self._large_mem:
+            # we have the col_data all pre-stored, making things more efficient.
+            blasdot.dot_firstdims(col_data, top_diff, out=kernel_diff)
             if propagate_down:
-                blasdot.dot_lastdim(top_diff[i], self._kernels.data().T,
+                blasdot.dot_lastdim(top_diff, self._kernels.data().T,
                                     out=col_diff)
-                # im2col backward
-                wrapper.im2col_backward(padded_diff[i:i+1], col_diff,
-                                        self._ksize, self._stride)
+                wrapper.im2col_backward(padded_diff, col_diff,
+                                    self._ksize, self._stride)
+        else:
+            kernel_diff_buffer = np.zeros_like(kernel_diff)
+            for i in range(bottom_data.shape[0]):
+                # although it is a backward layer, we still need to compute
+                # the intermediate results using forward calls.
+                wrapper.im2col_forward(padded_data[i:i+1], col_data,
+                                       self._ksize, self._stride)
+                blasdot.dot_firstdims(col_data, top_diff[i],
+                                     out=kernel_diff_buffer)
+                kernel_diff += kernel_diff_buffer
+                if propagate_down:
+                    blasdot.dot_lastdim(top_diff[i], self._kernels.data().T,
+                                        out=col_diff)
+                    # im2col backward
+                    wrapper.im2col_backward(padded_diff[i:i+1], col_diff,
+                                            self._ksize, self._stride)
+        # finally, copy results to the bottom diff.
         if propagate_down:
             if self._mode != 'valid':
                 bottom_diff[:] = padded_diff[:,
