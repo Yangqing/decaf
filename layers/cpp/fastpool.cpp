@@ -69,9 +69,7 @@ inline void _maxpooling_backward(
                     const Dtype* p_pooled_grad = pooled_grad + 
                         (ph * pooled_width + pw) * nchannels;
                     for (int c = 0; c < nchannels; ++c) {
-                        if (p_image[c] + EQUAL_THRESHOLD > p_pooled[c]) {
-                            p_image_grad[c] += p_pooled_grad[c];
-                        }
+                        p_image_grad[c] += p_pooled_grad[c] * (p_image[c] >= p_pooled[c]);
                     }
                 }
             }
