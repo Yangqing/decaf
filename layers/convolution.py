@@ -1,7 +1,7 @@
 """Implements the convolution layer."""
 
 from decaf import base
-from decaf.layers import im2col, padding 
+from decaf.layers.cpp import wrapper
 from decaf.util import blasdot
 import numpy as np
 
@@ -43,8 +43,7 @@ class ConvolutionLayer(base.Layer):
         if self._mode == 'same' and self._ksize % 2 == 0:
             raise ValueError('The "same" mode should have an odd kernel size.')
         # since the im2col operation often creates large intermediate matrices,
-        # we will have intermediate blobs to store them.
-        self._single_data = base.Blob()
+        # we will process them in batches.
         self._padded = base.Blob()
         self._col = base.Blob()
         # set up the parameter
@@ -59,11 +58,6 @@ class ConvolutionLayer(base.Layer):
             self._pad_size = int(self._ksize / 2)
         else:
             raise ValueError('Unknown mode: %s' % self._mode)
-        # construct the layers
-        self._im2col_layer = im2col.Im2colLayer(
-            name=self.name + '_im2col',
-            psize=self._ksize,
-            stride=self._stride)
     
     def forward(self, bottom, top):
         """Runs the forward pass."""
@@ -76,36 +70,42 @@ class ConvolutionLayer(base.Layer):
                 (self._ksize * self._ksize * bottom_data.shape[-1],
                  self._num_kernels),
                 bottom_data.dtype)
+        # pad the data
+        if self._mode == 'valid':
+            padded_data = self._padded.mirror(bottom_data)
+        else:
+            padded_data = self._padded.init_data(
+                    (bottom_data.shape[0],
+                     bottom_data.shape[1] + self._pad_size * 2,
+                     bottom_data.shape[2] + self._pad_size * 2,
+                     bottom_data.shape[3]),
+                    bottom_data.dtype)
+            padded_data[:, self._pad_size:-self._pad_size,
+                        self._pad_size:-self._pad_size] = bottom_data
+        # initialize self._col
+        col_data = self._col.init_data(
+            ((padded_data.shape[1] - self._ksize) / self._stride + 1,
+             (padded_data.shape[2] - self._ksize) / self._stride + 1,
+             padded_data.shape[3] * self._ksize * self._ksize),
+            padded_data.dtype, setdata=False)
+        # initialize top data
+        top_data = top[0].init_data(
+            (bottom_data.shape[0], col_data.shape[0], col_data.shape[1],
+             self._num_kernels), dtype=bottom_data.dtype, setdata=False)
         # process data individually
         for i in range(bottom_data.shape[0]):
-            if self._mode == 'valid':
-                self._padded.mirror(bottom_data[i:i+1])
-            else:
-                self._padded.init_data(
-                    (1, bottom_data.shape[1] + self._pad_size * 2,
-                                        bottom_data.shape[2] + self._pad_size * 2,
-                                        bottom_data.shape[3]),
-                                       bottom_data.dtype)
-                self._padded.data()[0, self._pad_size:-self._pad_size, self._pad_size:-self._pad_size] = bottom_data[i]
-            # call im2col
-            self._im2col_layer.forward([self._padded], [self._col])
-            if i == 0:
-                # initialize the top_data
-                top_data = top[0].init_data(
-                    (bottom_data.shape[0],
-                     self._col.data().shape[1],
-                     self._col.data().shape[2],
-                     self._num_kernels),
-                    bottom_data.dtype,
-                    setdata=False)
-            # inner product
-            blasdot.dot_lastdim(self._col.data()[0], self._kernels.data(),
+            # call im2col individually
+            wrapper.im2col_forward(padded_data[i], col_data,
+                                   self._ksize, self._stride)
+            blasdot.dot_lastdim(col_data, self._kernels.data(),
                                 out=top_data[i])
         return
 
     def backward(self, bottom, top, propagate_down):
         """Runs the backward pass."""
         top_diff = top[0].diff()
+        padded_data = self._padded.data()
+        col_data = self._col.data()
         bottom_data = bottom[0].data()
         if bottom_data.ndim != 4:
             raise ValueError('Bottom data should be a 4-dim tensor.')
@@ -113,35 +113,30 @@ class ConvolutionLayer(base.Layer):
         kernel_diff_buffer = np.zeros_like(kernel_diff)
         if propagate_down:
             bottom_diff = bottom[0].init_diff(setzero=False)
+            col_diff = self._col.init_diff()
+            if self._mode == 'valid':
+                padded_diff = self._padded.mirror_diff(bottom_diff)
+            else:
+                padded_diff = self._padded.init_diff(setzero=False)
         for i in range(bottom_data.shape[0]):
             # although it is a backward layer, we still need to compute
             # the intermediate results using forward calls.
-            if self._mode == 'valid':
-                self._padded.mirror(bottom_data[i:i+1])
-            else:
-                self._padded.init_data(
-                    (1, bottom_data.shape[1] + self._pad_size * 2,
-                                        bottom_data.shape[2] + self._pad_size * 2,
-                                        bottom_data.shape[3]),
-                                       bottom_data.dtype)
-                self._padded.data()[0, self._pad_size:-self._pad_size, self._pad_size:-self._pad_size] = bottom_data[i]
-            self._im2col_layer.forward([self._padded], [self._col])
-            col_data = self._col.data()[0]
+            wrapper.im2col_forward(padded_data[i], col_data,
+                                   self._ksize, self._stride)
             blasdot.dot_firstdims(col_data, top_diff[i],
                                  out=kernel_diff_buffer)
             kernel_diff += kernel_diff_buffer
             if propagate_down:
-                col_diff = self._col.init_diff()[0]
                 blasdot.dot_lastdim(top_diff[i], self._kernels.data().T,
                                     out=col_diff)
                 # im2col backward
-                self._im2col_layer.backward([self._padded], [self._col], True)
-                if self._mode == 'valid':
-                    bottom_diff[i] = self._padded.diff()
-                else:
-                    bottom_diff[i] = self._padded.diff()[0,
-                                                         self._pad_size:-self._pad_size,
-                                                         self._pad_size:-self._pad_size]
+                wrapper.im2col_backward(padded_diff[i], col_diff,
+                                        self._ksize, self._stride)
+        if propagate_down:
+            if self._mode != 'valid':
+                bottom_diff[:] = padded_diff[:,
+                                             self._pad_size:-self._pad_size,
+                                             self._pad_size:-self._pad_size]
         # finally, add the regularization term
         if self._reg is not None:
             return self._reg.reg(self._kernels, bottom_data.shape[0])
@@ -150,7 +145,6 @@ class ConvolutionLayer(base.Layer):
 
     def __getstate__(self):
         """When pickling, we will remove the intermediate data."""
-        self._single_data = base.Blob()
         self._padded = base.Blob()
         self._col = base.Blob()
         return self.__dict__
