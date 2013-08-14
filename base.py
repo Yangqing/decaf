@@ -82,6 +82,7 @@ class Blob(object):
             self._data = input_array.view()
         if shape is not None:
             self._data.shape = shape
+        return self.data()
    
     def mirror_diff(self, input_array, shape=None):
         """Create the diff as a view of the input array's diff. This is useful
@@ -93,6 +94,7 @@ class Blob(object):
             self._diff = input_array.view()
         if shape is not None:
             self._diff.shape = shape
+        return self.diff()
 
     def has_data(self):
         """Checks if the blob has data."""
