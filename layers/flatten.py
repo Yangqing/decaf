@@ -20,7 +20,7 @@ class FlattenLayer(base.Layer):
             for blob_b, blob_t in zip(bottom, top):
                 shape = blob_t.diff().shape
                 newshape = (shape[0], np.prod(shape[1:]))
-                blob_b.mirror_diff(blob_t, shape=newshape)
+                blob_b.mirror_diff(blob_t, shape=blob_b.data().shape)
         return 0.
 
     def update(self):
