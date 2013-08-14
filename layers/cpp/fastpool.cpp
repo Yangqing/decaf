@@ -157,16 +157,29 @@ inline void _avepooling_backward(
 extern "C" {
 
 void maxpooling_forward(const int len,
-        const void* image, void* pooled, const int height, const int width,
+        const void* image, void* pooled, const int num,
+        const int height, const int width,
         const int nchannels, const int psize, const int stride) {
+    int pooled_height = (height - psize) / stride + 1;
+    int pooled_width = (width - psize) / stride + 1;
+    int image_step = height * width * nchannels;
+    int pooled_step = pooled_height * pooled_width * nchannels;
     switch(len) {
     case sizeof(float):
-        _maxpooling_forward<float>((const float*)image, (float*)pooled, height,
-                width, nchannels, psize, stride);
+        for (int i = 0; i < num; ++i) {
+            _maxpooling_forward<float>(
+                ((const float*)image) + image_step * i, 
+                ((float*)pooled) + pooled_step * i,
+                height, width, nchannels, psize, stride);
+        }
         break;
     case sizeof(double):
-        _maxpooling_forward<double>((const double*)image, (double*)pooled, height,
-                width, nchannels, psize, stride);
+        for (int i = 0; i < num; ++i) {
+            _maxpooling_forward<double>(
+                ((const double*)image) + image_step * i, 
+                ((double*)pooled) + pooled_step * i,
+                height, width, nchannels, psize, stride);
+        }
         break;
     default:
         exit(EXIT_FAILURE);
@@ -175,18 +188,33 @@ void maxpooling_forward(const int len,
 
 void maxpooling_backward(const int len,
         const void* image, const void* pooled, void* image_grad,
-        const void* pooled_grad, const int height, const int width,
+        const void* pooled_grad, const int num,
+        const int height, const int width,
         const int nchannels, const int psize, const int stride) {
+    int pooled_height = (height - psize) / stride + 1;
+    int pooled_width = (width - psize) / stride + 1;
+    int image_step = height * width * nchannels;
+    int pooled_step = pooled_height * pooled_width * nchannels;
     switch(len) {
     case sizeof(float):
-        _maxpooling_backward<float>((const float*)image, (const float*)pooled,
-                (float*)image_grad, (const float*)pooled_grad, height,
-                width, nchannels, psize, stride);
+        for (int i = 0; i < num; ++i) {
+            _maxpooling_backward<float>(
+                ((const float*)image) + image_step * i,
+                ((const float*)pooled) + pooled_step * i,
+                ((float*)image_grad) + image_step * i,
+                ((const float*)pooled_grad) + pooled_step * i,
+                height, width, nchannels, psize, stride);
+        }
         break;
     case sizeof(double):
-        _maxpooling_backward<double>((const double*)image, (const double*)pooled,
-                (double*)image_grad, (const double*)pooled_grad, height,
-                width, nchannels, psize, stride);
+        for (int i = 0; i < num; ++i) {
+            _maxpooling_backward<double>(
+                ((const double*)image) + image_step * i,
+                ((const double*)pooled) + pooled_step * i,
+                ((double*)image_grad) + image_step * i,
+                ((const double*)pooled_grad) + pooled_step * i,
+                height, width, nchannels, psize, stride);
+        }
         break;
     default:
         exit(EXIT_FAILURE);
@@ -194,16 +222,29 @@ void maxpooling_backward(const int len,
 }
 
 void avepooling_forward(const int len,
-        const void* image, void* pooled, const int height, const int width,
+        const void* image, void* pooled, const int num,
+        const int height, const int width,
         const int nchannels, const int psize, const int stride){
+    int pooled_height = (height - psize) / stride + 1;
+    int pooled_width = (width - psize) / stride + 1;
+    int image_step = height * width * nchannels;
+    int pooled_step = pooled_height * pooled_width * nchannels;
     switch(len) {
     case sizeof(float):
-        _avepooling_forward<float>((const float*)image, (float*)pooled, height,
-                width, nchannels, psize, stride);
+        for (int i = 0; i < num; ++i) {
+            _avepooling_forward<float>(
+                ((const float*)image) + image_step * i, 
+                ((float*)pooled) + pooled_step * i,
+                height, width, nchannels, psize, stride);
+        }
         break;
     case sizeof(double):
-        _avepooling_forward<double>((const double*)image, (double*)pooled, height,
-                width, nchannels, psize, stride);
+        for (int i = 0; i < num; ++i) {
+            _avepooling_forward<double>(
+                ((const double*)image) + image_step * i, 
+                ((double*)pooled) + pooled_step * i,
+                height, width, nchannels, psize, stride);
+        }
         break;
     default:
         exit(EXIT_FAILURE);
@@ -211,19 +252,29 @@ void avepooling_forward(const int len,
 }
 
 void avepooling_backward(const int len,
-        void* image_grad, const void* pooled_grad, const int height, 
-        const int width, const int nchannels, const int psize,
-        const int stride) {
+        void* image_grad, const void* pooled_grad, const int num, 
+        const int height, const int width, const int nchannels,
+        const int psize, const int stride) {
+    int pooled_height = (height - psize) / stride + 1;
+    int pooled_width = (width - psize) / stride + 1;
+    int image_step = height * width * nchannels;
+    int pooled_step = pooled_height * pooled_width * nchannels;
     switch(len) {
     case sizeof(float):
-        _avepooling_backward<float>(
-                (float*)image_grad, (const float*)pooled_grad, height,
-                width, nchannels, psize, stride);
+        for (int i = 0; i < num; ++i) {
+            _avepooling_backward<float>(
+                ((float*)image_grad) + image_step * i, 
+                ((const float*)pooled_grad) + pooled_step * i,
+                height, width, nchannels, psize, stride);
+        }
         break;
     case sizeof(double):
-        _avepooling_backward<double>(
-                (double*)image_grad, (const double*)pooled_grad, height,
-                width, nchannels, psize, stride);
+        for (int i = 0; i < num; ++i) {
+            _avepooling_backward<double>(
+                ((double*)image_grad) + image_step * i, 
+                ((const double*)pooled_grad) + pooled_step * i,
+                height, width, nchannels, psize, stride);
+        }
         break;
     default:
         exit(EXIT_FAILURE);
