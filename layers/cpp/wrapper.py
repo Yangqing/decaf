@@ -19,10 +19,11 @@ except Exception as error:
 _DLL.im2col_forward.restype = _DLL.im2col_backward.restype = None
 
 def im2col_forward(im, col, psize, stride):
-    height, width, channels = im.shape
+    num, height, width, channels = im.shape
     _DLL.im2col_forward(ct.c_int(im.itemsize),
                 im.ctypes.data_as(ct.c_void_p),
                 col.ctypes.data_as(ct.c_void_p),
+                ct.c_int(num),
                 ct.c_int(height),
                 ct.c_int(width),
                 ct.c_int(channels),
@@ -30,10 +31,11 @@ def im2col_forward(im, col, psize, stride):
                 ct.c_int(stride))
 
 def im2col_backward(im, col, psize, stride):
-    height, width, channels = im.shape
+    num, height, width, channels = im.shape
     _DLL.im2col_backward(ct.c_int(im.itemsize),
                 im.ctypes.data_as(ct.c_void_p),
                 col.ctypes.data_as(ct.c_void_p),
+                ct.c_int(num),
                 ct.c_int(height),
                 ct.c_int(width),
                 ct.c_int(channels),

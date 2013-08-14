@@ -68,7 +68,7 @@ class DeconvolutionLayer(base.Layer):
                  self._ksize * self._ksize * self._num_channels),
                 bottom_data.dtype)
         # initialize the buffers.
-        self._col.init_data((bottom_data.shape[1], bottom_data.shape[2],
+        self._col.init_data((1, bottom_data.shape[1], bottom_data.shape[2],
                              self._kernels.data().shape[1]),
                             dtype = bottom_data.dtype)
         pad_height = self._ksize + (bottom_data.shape[1] - 1) \
@@ -77,7 +77,7 @@ class DeconvolutionLayer(base.Layer):
                 * self._stride
         if self._mode != 'valid':
             padded_data = self._padded.init_data(
-                (pad_height, pad_width, self._num_channels),
+                (1, pad_height, pad_width, self._num_channels),
                 dtype = bottom_data.dtype)
         top_data = top[0].init_data(
             (bottom_data.shape[0], pad_height - self._border * 2,
@@ -86,16 +86,16 @@ class DeconvolutionLayer(base.Layer):
         # process data individually
         for i in range(bottom_data.shape[0]):
             # first, compute the convolution as a gemm operation
-            blasdot.dot_lastdim(bottom_data[i], self._kernels.data(),
+            blasdot.dot_lastdim(bottom_data[i:i+1], self._kernels.data(),
                                 out=self._col.data())
             if self._mode != 'valid':
             # do col2im
                 wrapper.im2col_backward(padded_data, self._col.data(),
                                self._ksize, self._stride)
-                top_data[i] = padded_data[self._border:-self._border,
+                top_data[i] = padded_data[0, self._border:-self._border,
                                           self._border:-self._border]
             else:
-                wrapper.im2col_backward(top_data[i], self._col.data(),
+                wrapper.im2col_backward(top_data[i:i+1], self._col.data(),
                                         self._ksize, self._stride)
         return
 
@@ -113,10 +113,10 @@ class DeconvolutionLayer(base.Layer):
         for i in range(bottom_data.shape[0]):
             if self._mode != 'valid':
                 # do padding
-                pad_diff[self._border:-self._border,
+                pad_diff[0, self._border:-self._border,
                          self._border:-self._border] = top_diff[i]
             else:
-                pad_diff = top_diff[i].view()
+                pad_diff = top_diff[i:i+1].view()
             # run im2col
             wrapper.im2col_forward(pad_diff, col_diff, self._ksize,
                                    self._stride)
@@ -135,8 +135,8 @@ class DeconvolutionLayer(base.Layer):
 
     def __getstate__(self):
         """When pickling, we will remove the intermediate data."""
-        self._padded = [base.Blob()]
-        self._col = [base.Blob()]
+        self._padded = base.Blob()
+        self._col = base.Blob()
         return self.__dict__
 
     def update(self):

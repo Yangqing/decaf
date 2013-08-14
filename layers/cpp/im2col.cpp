@@ -76,19 +76,32 @@ extern "C" {
 void im2col_forward(const int len,
         const void* data_im,
         void* data_col,
+        const int num,
         const int height,
         const int width,
         const int nchannels,
         const int psize,
         const int stride) {
+    const int height_col = (height - psize) / stride + 1;
+    const int width_col = (width - psize) / stride + 1;
+    const int image_step = height * width * nchannels;
+    const int col_step = height_col * width_col * psize * psize * nchannels;
     switch(len) {
     case sizeof(float):
-        _im2col_forward<float>((const float*)data_im, (float*)data_col,
-                height, width, nchannels, psize, stride);
+        for (int i = 0; i < num; ++i) {
+            _im2col_forward<float>(
+                    ((const float*)data_im) + image_step * i,
+                    ((float*)data_col) + col_step * i,
+                    height, width, nchannels, psize, stride);
+        }
         break;
     case sizeof(double):
-        _im2col_forward<double>((const double*)data_im, (double*)data_col,
-                height, width, nchannels, psize, stride);
+        for (int i = 0; i < num; ++i) {
+            _im2col_forward<double>(
+                    ((const double*)data_im) + image_step * i,
+                    ((double*)data_col) + col_step * i,
+                    height, width, nchannels, psize, stride);
+        }
         break;
     default:
         exit(EXIT_FAILURE);
@@ -98,19 +111,32 @@ void im2col_forward(const int len,
 void im2col_backward(const int len,
         void* data_im,
         const void* data_col,
+        const int num,
         const int height,
         const int width,
         const int nchannels,
         const int psize,
         const int stride) {
+    const int height_col = (height - psize) / stride + 1;
+    const int width_col = (width - psize) / stride + 1;
+    const int image_step = height * width * nchannels;
+    const int col_step = height_col * width_col * psize * psize * nchannels;
     switch(len) {
     case sizeof(float):
-        _im2col_backward<float>((float*)data_im, (const float*)data_col,
-                height, width, nchannels, psize, stride);
+        for (int i = 0; i < num; ++i) {
+            _im2col_backward<float>(
+                    ((float*)data_im) + image_step * i,
+                    ((const float*)data_col) + col_step * i,
+                    height, width, nchannels, psize, stride);
+        }
         break;
     case sizeof(double):
-        _im2col_backward<double>((double*)data_im, (const double*)data_col,
-                height, width, nchannels, psize, stride);
+        for (int i = 0; i < num; ++i) {
+            _im2col_backward<double>(
+                    ((double*)data_im) + image_step * i,
+                    ((const double*)data_col) + col_step * i,
+                    height, width, nchannels, psize, stride);
+        }
         break;
     default:
         exit(EXIT_FAILURE);

@@ -84,18 +84,18 @@ class ConvolutionLayer(base.Layer):
                         self._pad_size:-self._pad_size] = bottom_data
         # initialize self._col
         col_data = self._col.init_data(
-            ((padded_data.shape[1] - self._ksize) / self._stride + 1,
+            (1, (padded_data.shape[1] - self._ksize) / self._stride + 1,
              (padded_data.shape[2] - self._ksize) / self._stride + 1,
              padded_data.shape[3] * self._ksize * self._ksize),
             padded_data.dtype, setdata=False)
         # initialize top data
         top_data = top[0].init_data(
-            (bottom_data.shape[0], col_data.shape[0], col_data.shape[1],
+            (bottom_data.shape[0], col_data.shape[1], col_data.shape[2],
              self._num_kernels), dtype=bottom_data.dtype, setdata=False)
         # process data individually
         for i in range(bottom_data.shape[0]):
             # call im2col individually
-            wrapper.im2col_forward(padded_data[i], col_data,
+            wrapper.im2col_forward(padded_data[i:i+1], col_data,
                                    self._ksize, self._stride)
             blasdot.dot_lastdim(col_data, self._kernels.data(),
                                 out=top_data[i])
@@ -121,7 +121,7 @@ class ConvolutionLayer(base.Layer):
         for i in range(bottom_data.shape[0]):
             # although it is a backward layer, we still need to compute
             # the intermediate results using forward calls.
-            wrapper.im2col_forward(padded_data[i], col_data,
+            wrapper.im2col_forward(padded_data[i:i+1], col_data,
                                    self._ksize, self._stride)
             blasdot.dot_firstdims(col_data, top_diff[i],
                                  out=kernel_diff_buffer)
@@ -130,7 +130,7 @@ class ConvolutionLayer(base.Layer):
                 blasdot.dot_lastdim(top_diff[i], self._kernels.data().T,
                                     out=col_diff)
                 # im2col backward
-                wrapper.im2col_backward(padded_diff[i], col_diff,
+                wrapper.im2col_backward(padded_diff[i:i+1], col_diff,
                                         self._ksize, self._stride)
         if propagate_down:
             if self._mode != 'valid':

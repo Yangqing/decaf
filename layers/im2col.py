@@ -41,8 +41,7 @@ class Im2colLayer(base.Layer):
         features = bottom[0].data()
         output = top[0].init_data(self._get_new_shape(features),
                                   features.dtype, setdata=False)
-        for i in range(features.shape[0]):
-            wrapper.im2col_forward(features[i], output[i], self._psize, self._stride)
+        wrapper.im2col_forward(features, output, self._psize, self._stride)
 
     def backward(self, bottom, top, propagate_down):
         """Computes the backward pass."""
@@ -51,9 +50,8 @@ class Im2colLayer(base.Layer):
         top_diff = top[0].diff()
         features = bottom[0].data()
         bottom_diff = bottom[0].init_diff(setzero=False)
-        for i in range(features.shape[0]):
-            wrapper.im2col_backward(bottom_diff[i], top_diff[i],
-                                    self._psize, self._stride)
+        wrapper.im2col_backward(bottom_diff, top_diff, self._psize,
+                                self._stride)
         return 0.
 
     def update(self):
