@@ -7,20 +7,24 @@
 extern "C" {
 
 void maxpooling_forward(const int len,
-        const void* image, void* pooled, const int height, const int width,
+        const void* image, void* pooled, const int num, 
+        const int height, const int width,
         const int nchannels, const int psize, const int stride);
 
 void maxpooling_backward(const int len,
         const void* image, const void* pooled, void* image_grad,
-        const void* pooled_grad, const int height, const int width,
+        const void* pooled_grad, const int num,
+        const int height, const int width,
         const int nchannels, const int psize, const int stride);
 
 void avepooling_forward(const int len,
-        const void* image, void* pooled, const int height, const int width,
+        const void* image, void* pooled, const int num,
+        const int height, const int width,
         const int nchannels, const int psize, const int stride);
 
 void avepooling_backward(const int len,
-        void* image_grad, const void* pooled_grad, const int height, 
+        void* image_grad, const void* pooled_grad, 
+        const int num, const int height, 
         const int width, const int nchannels, const int psize,
         const int stride);
 

@@ -49,10 +49,11 @@ _DLL.avepooling_forward.restype = \
 _DLL.avepooling_backward.restype = None
 
 def maxpooling_forward(image, pooled, psize, stride):
-    height, width, channels = image.shape
+    num, height, width, channels = image.shape
     _DLL.maxpooling_forward(ct.c_int(image.itemsize),
                             image.ctypes.data_as(ct.c_void_p),
                             pooled.ctypes.data_as(ct.c_void_p),
+                            ct.c_int(num),
                             ct.c_int(height),
                             ct.c_int(width),
                             ct.c_int(channels),
@@ -60,10 +61,11 @@ def maxpooling_forward(image, pooled, psize, stride):
                             ct.c_int(stride))
 
 def avepooling_forward(image, pooled, psize, stride):
-    height, width, channels = image.shape
+    num, height, width, channels = image.shape
     _DLL.avepooling_forward(ct.c_int(image.itemsize),
                             image.ctypes.data_as(ct.c_void_p),
                             pooled.ctypes.data_as(ct.c_void_p),
+                            ct.c_int(num),
                             ct.c_int(height),
                             ct.c_int(width),
                             ct.c_int(channels),
@@ -72,12 +74,13 @@ def avepooling_forward(image, pooled, psize, stride):
 
 def maxpooling_backward(image, pooled, image_diff, pooled_diff, psize,
                         stride):
-    height, width, channels = image.shape
+    num, height, width, channels = image.shape
     _DLL.maxpooling_backward(ct.c_int(image.itemsize),
                              image.ctypes.data_as(ct.c_void_p),
                              pooled.ctypes.data_as(ct.c_void_p),
                              image_diff.ctypes.data_as(ct.c_void_p),
                              pooled_diff.ctypes.data_as(ct.c_void_p),
+                             ct.c_int(num),
                              ct.c_int(height),
                              ct.c_int(width),
                              ct.c_int(channels),
@@ -85,10 +88,11 @@ def maxpooling_backward(image, pooled, image_diff, pooled_diff, psize,
                              ct.c_int(stride))
 
 def avepooling_backward(image_diff, pooled_diff, psize, stride):
-    height, width, channels = image_diff.shape
+    num, height, width, channels = image_diff.shape
     _DLL.avepooling_backward(ct.c_int(image_diff.itemsize),
                              image_diff.ctypes.data_as(ct.c_void_p),
                              pooled_diff.ctypes.data_as(ct.c_void_p),
+                             ct.c_int(num),
                              ct.c_int(height),
                              ct.c_int(width),
                              ct.c_int(channels),

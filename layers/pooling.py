@@ -38,13 +38,11 @@ class PoolingLayer(base.Layer):
             (num, pooled_height, pooled_width, nchannels),
             dtype=bottom_data.dtype)
         if self._mode == 'max':
-            for i in range(num):
-                wrapper.maxpooling_forward(bottom_data[i], top_data[i],
-                                           self._psize, self._stride)
+            wrapper.maxpooling_forward(bottom_data, top_data,
+                                       self._psize, self._stride)
         elif self._mode == 'ave':
-            for i in range(num):
-                wrapper.avepooling_forward(bottom_data[i], top_data[i],
-                                           self._psize, self._stride)
+            wrapper.avepooling_forward(bottom_data, top_data,
+                                       self._psize, self._stride)
         else:
             raise ValueError('Unknown mode: %s.' % self._mode)
         return
@@ -52,21 +50,18 @@ class PoolingLayer(base.Layer):
     def backward(self, bottom, top, propagate_down):
         """Runs the backward pass."""
         if propagate_down:
+            bottom_data = bottom[0].data()
+            top_data = top[0].data()
             bottom_diff = bottom[0].init_diff()
             top_diff = top[0].diff()
-            num, height, width, nchannels = bottom_diff.shape
             if self._mode == 'max':
-                for i in range(num):
-                    bottom_data = bottom[0].data()
-                    top_data = top[0].data()
-                    wrapper.maxpooling_backward(
-                            bottom_data[i], top_data[i], bottom_diff[i],
-                            top_diff[i], self._psize, self._stride)
+                wrapper.maxpooling_backward(
+                        bottom_data, top_data, bottom_diff,
+                        top_diff, self._psize, self._stride)
             elif self._mode == 'ave':
-                for i in range(num):
-                    wrapper.avepooling_backward(
-                            bottom_diff[i], top_diff[i], self._psize,
-                            self._stride)
+                wrapper.avepooling_backward(
+                        bottom_diff, top_diff, self._psize,
+                        self._stride)
             else:
                 raise ValueError('Unknown mode: %s.' % self._mode)
         return 0.
