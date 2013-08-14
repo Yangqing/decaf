@@ -52,16 +52,14 @@ class ConvolutionLayer(base.Layer):
         self._param = [self._kernels]
         # Constructs the sub layers that actually carry out the convolution.
         if self._mode == 'valid':
-            pad = 0
+            self._pad_size = 0
         elif self._mode == 'full':
-            pad = self._ksize - 1
+            self._pad_size = self._ksize - 1
         elif self._mode == 'same':
-            pad = int(self._ksize / 2)
+            self._pad_size = int(self._ksize / 2)
         else:
             raise ValueError('Unknown mode: %s' % self._mode)
         # construct the layers
-        self._pad_layer = padding.PaddingLayer(
-            name=self.name + '_pad', pad = pad)
         self._im2col_layer = im2col.Im2colLayer(
             name=self.name + '_im2col',
             psize=self._ksize,
@@ -69,7 +67,6 @@ class ConvolutionLayer(base.Layer):
     
     def forward(self, bottom, top):
         """Runs the forward pass."""
-        single_data = self._single_data
         bottom_data = bottom[0].data()
         if bottom_data.ndim != 4:
             raise ValueError('Bottom data should be a 4-dim tensor.')
@@ -81,10 +78,15 @@ class ConvolutionLayer(base.Layer):
                 bottom_data.dtype)
         # process data individually
         for i in range(bottom_data.shape[0]):
-            # mirror input
-            single_data.mirror(bottom_data[i:i+1])
-            # pad
-            self._pad_layer.forward([self._single_data], [self._padded])
+            if self._mode == 'valid':
+                self._padded.mirror(bottom_data[i:i+1])
+            else:
+                self._padded.init_data(
+                    (1, bottom_data.shape[1] + self._pad_size * 2,
+                                        bottom_data.shape[2] + self._pad_size * 2,
+                                        bottom_data.shape[3]),
+                                       bottom_data.dtype)
+                self._padded.data()[0, self._pad_size:-self._pad_size, self._pad_size:-self._pad_size] = bottom_data[i]
             # call im2col
             self._im2col_layer.forward([self._padded], [self._col])
             if i == 0:
@@ -103,7 +105,6 @@ class ConvolutionLayer(base.Layer):
 
     def backward(self, bottom, top, propagate_down):
         """Runs the backward pass."""
-        single_data = self._single_data
         top_diff = top[0].diff()
         bottom_data = bottom[0].data()
         if bottom_data.ndim != 4:
@@ -111,12 +112,19 @@ class ConvolutionLayer(base.Layer):
         kernel_diff = self._kernels.init_diff()
         kernel_diff_buffer = np.zeros_like(kernel_diff)
         if propagate_down:
-            bottom_diff = bottom[0].init_diff()
+            bottom_diff = bottom[0].init_diff(setzero=False)
         for i in range(bottom_data.shape[0]):
             # although it is a backward layer, we still need to compute
             # the intermediate results using forward calls.
-            single_data.mirror(bottom_data[i:i+1])
-            self._pad_layer.forward([self._single_data], [self._padded])
+            if self._mode == 'valid':
+                self._padded.mirror(bottom_data[i:i+1])
+            else:
+                self._padded.init_data(
+                    (1, bottom_data.shape[1] + self._pad_size * 2,
+                                        bottom_data.shape[2] + self._pad_size * 2,
+                                        bottom_data.shape[3]),
+                                       bottom_data.dtype)
+                self._padded.data()[0, self._pad_size:-self._pad_size, self._pad_size:-self._pad_size] = bottom_data[i]
             self._im2col_layer.forward([self._padded], [self._col])
             col_data = self._col.data()[0]
             blasdot.dot_firstdims(col_data, top_diff[i],
@@ -128,10 +136,12 @@ class ConvolutionLayer(base.Layer):
                                     out=col_diff)
                 # im2col backward
                 self._im2col_layer.backward([self._padded], [self._col], True)
-                # pad backward
-                self._pad_layer.backward([self._single_data], [self._padded], True)
-                # write gradient back
-                bottom_diff[i] = self._single_data.diff()
+                if self._mode == 'valid':
+                    bottom_diff[i] = self._padded.diff()
+                else:
+                    bottom_diff[i] = self._padded.diff()[0,
+                                                         self._pad_size:-self._pad_size,
+                                                         self._pad_size:-self._pad_size]
         # finally, add the regularization term
         if self._reg is not None:
             return self._reg.reg(self._kernels, bottom_data.shape[0])

@@ -33,7 +33,7 @@ class PaddingLayer(base.Layer):
                     features.shape[2] + pad * 2,
                     features.shape[3])
         output = top[0].init_data(newshape,
-                                  features.dtype)
+                                  features.dtype, setdata=False)
         output[:] = self._value
         output[:, pad:-pad, pad:-pad] = features
 
@@ -46,7 +46,7 @@ class PaddingLayer(base.Layer):
         else:
             pad = self._pad
             top_diff = top[0].diff()
-            bottom_diff = bottom[0].init_diff()
+            bottom_diff = bottom[0].init_diff(setzero=False)
             bottom_diff[:] = top_diff[:, pad:-pad, pad:-pad]
         return 0.
 
