@@ -3,6 +3,7 @@
 
 import numpy as np
 from scipy import optimize
+import unittest
 
 
 def blobs_to_vec(blobs):
@@ -40,7 +41,7 @@ def vec_to_blobs_diff(vec, blobs):
         current += size
 
 
-class GradChecker(object):
+class GradChecker(unittest.TestCase):
     """A gradient checker that utilizes scipy.optimize.check_grad to perform
     the gradient check.
 
@@ -145,6 +146,7 @@ class GradChecker(object):
         # pylint: disable=E1101
         err = optimize.check_grad(GradChecker._func_net, GradChecker._grad_net,
                                   x_init, decaf_net)
+        self.assertLessEqual(err, self._threshold)
         if err > self._threshold:
             return (False, err)
         else:
@@ -172,6 +174,7 @@ class GradChecker(object):
                     GradChecker._func, GradChecker._grad, x_init,
                     layer, input_blobs, output_blobs, False, i, checked_blobs)
                 max_err = max(err, max_err)
+                self.assertLessEqual(err, self._threshold)
                 if err > self._threshold:
                     return (False, i, err, 'param')
             # restore param
@@ -185,6 +188,7 @@ class GradChecker(object):
                     GradChecker._func, GradChecker._grad, x_init,
                     layer, input_blobs, output_blobs, True, i, checked_blobs)
                 max_err = max(err, max_err)
+                self.assertLessEqual(err, self._threshold)
                 if err > self._threshold:
                     return (False, i, err, 'input')
             # restore input
