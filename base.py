@@ -121,7 +121,7 @@ class Blob(object):
         """
         self._data -= self._diff
 
-    def init_data(self, shape, dtype=np.float64, setdata=True):
+    def init_data(self, shape, dtype, setdata=True):
         """Initializes the data if necessary. The filler will be always
         called even if no reallocation of data takes place.
         """
