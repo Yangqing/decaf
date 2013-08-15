@@ -12,6 +12,14 @@ try:
             os.path.join(os.path.dirname(__file__)))
 except Exception as error:
     raise error
+try:
+    _OMP_NUM_THREADS=int(os.environ['OMP_NUM_THREADS'])
+except KeyError:
+    try:
+        import multiprocessing
+        _OMP_NUM_THREADS=multiprocessing.cpu_count()
+    except ImportError:
+        _OMP_NUM_THREADS=1
 
 ################################################################################
 # im2col operation
@@ -118,7 +126,8 @@ def lrn_forward(bottom, top, scale, size, alpha, beta):
                      ct.c_int(bottom.shape[-1]),
                      ct.c_int(size),
                      ct.c_double(alpha),
-                     ct.c_double(beta))
+                     ct.c_double(beta),
+                     ct.c_int(_OMP_NUM_THREADS))
 
 
 def lrn_backward(bottom, top, bottom_diff, top_diff, scale, size, alpha, beta):
@@ -132,4 +141,5 @@ def lrn_backward(bottom, top, bottom_diff, top_diff, scale, size, alpha, beta):
                      ct.c_int(bottom.shape[-1]),
                      ct.c_int(size),
                      ct.c_double(alpha),
-                     ct.c_double(beta))
+                     ct.c_double(beta),
+                     ct.c_int(_OMP_NUM_THREADS))
