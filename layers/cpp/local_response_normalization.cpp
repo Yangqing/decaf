@@ -1,7 +1,7 @@
 #include <cmath>
 #include <cstdlib>
 #include <cstring>
-
+#include <omp.h>
 #include "local_response_normalization.h"
 
 // Takes a bottom input of size (num_data * channels), computes the local
@@ -14,8 +14,11 @@ inline void _lrn_forward(const Dtype* bottom, Dtype* top, Dtype* scale,
     // Iterates over the data.
     int padded_channels = channels + size - 1;
     int pre_pad = (size - 1) / 2;
+#pragma omp parallel
+    {
     Dtype * padded_square = new Dtype[padded_channels];
     memset(padded_square, 0, sizeof(Dtype) * padded_channels);
+#pragma omp for
     for (int data_id = 0; data_id < num_data; ++data_id) {
         const Dtype* bottom_datum = bottom + data_id * channels;
         Dtype* top_datum = top + data_id * channels;
@@ -38,6 +41,7 @@ inline void _lrn_forward(const Dtype* bottom, Dtype* top, Dtype* scale,
         }
     }
     delete[] padded_square;
+    } // pragma omp parallel
 }
 
 
@@ -48,10 +52,13 @@ inline void _lrn_backward(const Dtype* bottom, const Dtype* top, Dtype* bottom_d
         const Dtype beta) {
     int padded_channels = channels + size - 1;
     int pre_pad = size - (size + 1) / 2;
+#pragma omp parallel
+    {
     Dtype * padded_ratio = new Dtype[padded_channels];
     memset(padded_ratio, 0, sizeof(Dtype) * padded_channels);
     // the ratio 2*alpha*beta/size
     Dtype cache_ratio = 2. * alpha * beta / size;
+#pragma omp for
     for (int data_id = 0; data_id < num_data; ++data_id) {
         const Dtype* bottom_datum = bottom + data_id * channels;
         const Dtype* top_datum = top + data_id * channels;
@@ -76,6 +83,7 @@ inline void _lrn_backward(const Dtype* bottom, const Dtype* top, Dtype* bottom_d
         }
     }
     delete[] padded_ratio;
+    } // pragma omp parallel
 }
 
 extern "C" {
