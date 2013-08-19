@@ -14,6 +14,9 @@ class StochasticSolver(base.Solver):
         
         kwargs:
             base_lr: the base learning rate.
+            disp: if 0, no information is displayed. If a positive number, the
+                optimization status will be printed out every few iterations,
+                with the interval given by disp.
             max_iter: the maximum number of iterations. Default 1000.
             snapshot_interval: the snapshot interval. Default 0.
             folder: the snapshot folder. Should be provided
@@ -98,8 +101,10 @@ class StochasticSolver(base.Solver):
                 self._iter_idx % self._snapshot_interval == 0):
                 # perform snapshot.
                 self.snapshot()
-            logging.info('Iter %d, loss %f, elapsed %s', self._iter_idx, loss,
-                         timer.lap())
+            if (self.spec.get('disp', 0) and 
+                self._iter_idx % self.spec['disp']):
+                logging.info('Iter %d, loss %f, elapsed %s', self._iter_idx,
+                             loss, timer.lap())
             self.iter_callback(loss)
             self._iter_idx += 1
         # perform last snapshot.
