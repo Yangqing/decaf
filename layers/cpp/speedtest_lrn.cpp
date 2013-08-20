@@ -3,7 +3,7 @@
 #include <cstring>
 #include "local_response_normalization.h"
 
-#define N 1000
+#define N 10000
 #define D 256
 #define SIZE 5
 #define ALPHA 1.0
@@ -26,7 +26,7 @@ int main(int argc, char** argv) {
 
     clock_t start = clock();
     for (int i = 0; i < ITER; ++i) {
-        lrn_forward(sizeof(float), bottom_data, top_data, scale, N, D, SIZE, ALPHA, BETA);
+        lrn_forward(sizeof(float), bottom_data, top_data, scale, N, D, SIZE, ALPHA, BETA, 1);
     }
     clock_t duration = clock() - start;
 
@@ -36,7 +36,7 @@ int main(int argc, char** argv) {
     start = clock();
     for (int i = 0; i < ITER; ++i) {
         lrn_backward(sizeof(float), bottom_data, top_data, bottom_diff, top_diff,
-                scale, N, D, SIZE, ALPHA, BETA);
+                scale, N, D, SIZE, ALPHA, BETA, 1);
     }
     duration = clock() - start;
 
