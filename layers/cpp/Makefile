@@ -1,6 +1,6 @@
 CC = g++
 CCFLAGS = -fPIC -O3 -Wall -ffast-math -pedantic -msse -msse2 -fopenmp
-LINKFLAGS = -shared -s -Wl -lgomp
+LINKFLAGS = -shared -Wl -fopenmp -lgomp
 INPUT = im2col.cpp fastpool.cpp local_response_normalization.cpp
 TARGET = libcpputil.so
 
