@@ -1,3 +1,4 @@
+import cPickle as pickle
 from decaf import base
 import logging
 import numpy as np
@@ -27,6 +28,13 @@ class TestBlob(unittest.TestCase):
         diff[:] = 1.
         blob.update()
         npt.assert_array_almost_equal(blob.data(), - blob.diff())
+
+    def testBlobPickle(self):
+        blob = base.Blob((4,3))
+        blob.data()[:] = np.random.random_sample(blob.data().shape)
+        s = pickle.dumps(blob)
+        blob_recover = pickle.loads(s)
+        npt.assert_array_almost_equal(blob.data(), blob_recover.data())
 
     def testBlobSwap(self):
         blob_a = base.Blob((4,3))

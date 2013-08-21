@@ -5,6 +5,7 @@ of matrix in addition to its gradients.
 import cPickle as pickle
 import numpy as np
 
+
 # pylint: disable=R0903
 class Blob(object):
     """Blob is the data structure that holds a piece of numpy array as well as
@@ -19,7 +20,7 @@ class Blob(object):
     The diff matrix will not be created unless you explicitly run init_diff,
     as many Blobs do not need the gradients to be computed.
     """
-    def __init__(self, shape=None, dtype=np.float64, filler=None):
+    def __init__(self, shape=None, dtype=None, filler=None):
         self._data = None
         self._diff = None
         self._filler = filler
@@ -123,9 +124,12 @@ class Blob(object):
         self._data, other_blob._data = other_blob._data, self._data
     
     def __getstate__(self):
-        """When pickling, we will not store the diff field."""
-        dictionary = dict(self.__dict__)
-        dictionary['_diff'] = None
-        return dictionary
-
+        """When pickling, we will simply store the data field and the
+        filler of this blob."""
+        return self.data(), self._filler
+    
+    def __setstate__(self, state):
+        """Recovers the state."""
+        Blob.__init__(self, state[0].shape, state[0].dtype, state[1])
+        self._data[:] = state[0]
 
