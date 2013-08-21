@@ -10,7 +10,7 @@
 template <typename Dtype>
 inline void _lrn_forward(const Dtype* bottom, Dtype* top, Dtype* scale,
         const int num_data, const int channels, const int size,
-        const Dtype alpha, const Dtype beta) {
+        const Dtype k, const Dtype alpha, const Dtype beta) {
     // Iterates over the data.
     int padded_channels = channels + size - 1;
     int pre_pad = (size - 1) / 2;
@@ -35,7 +35,7 @@ inline void _lrn_forward(const Dtype* bottom, Dtype* top, Dtype* scale,
         }
         for (int i = 0; i < channels; ++i) {
             accum_scale += padded_square[i + size - 1];
-            scale_datum[i] = 1. + accum_scale;
+            scale_datum[i] = k + accum_scale;
             accum_scale -= padded_square[i];
             top_datum[i] = bottom_datum[i] * pow(scale_datum[i], -beta);
         }
@@ -48,8 +48,8 @@ inline void _lrn_forward(const Dtype* bottom, Dtype* top, Dtype* scale,
 template <typename Dtype>
 inline void _lrn_backward(const Dtype* bottom, const Dtype* top, Dtype* bottom_diff,
         const Dtype* top_diff, const Dtype* scale, const int num_data,
-        const int channels, const int size, const Dtype alpha,
-        const Dtype beta) {
+        const int channels, const int size, const Dtype k,
+        const Dtype alpha, const Dtype beta) {
     int padded_channels = channels + size - 1;
     int pre_pad = size - (size + 1) / 2;
 #pragma omp parallel
@@ -90,16 +90,17 @@ extern "C" {
 
 void lrn_forward(const int len, const void* bottom, void* top, void* scale,
         const int num_data, const int channels, const int size,
-        const double alpha, const double beta, const int threads) {
+        const double k, const double alpha, const double beta,
+        const int threads) {
     omp_set_num_threads(threads);
     switch(len) {
     case sizeof(float):
         _lrn_forward<float>((const float*)bottom, (float*)top, (float*)scale,
-                num_data, channels, size, (float)alpha, (float)beta);
+                num_data, channels, size, (float)k, (float)alpha, (float)beta);
         break;
     case sizeof(double):
         _lrn_forward<double>((const double*)bottom, (double*)top, (double*)scale,
-                num_data, channels, size, alpha, beta);
+                num_data, channels, size, k, alpha, beta);
         break;
     default:
         exit(EXIT_FAILURE);
@@ -109,19 +110,21 @@ void lrn_forward(const int len, const void* bottom, void* top, void* scale,
 void lrn_backward(const int len, const void* bottom, const void* top,
         void* bottom_diff, const void* top_diff, const void* scale,
         const int num_data, const int channels, const int size,
-        const double alpha, const double beta, const int threads) {
+        const double k, const double alpha, const double beta,
+        const int threads) {
     omp_set_num_threads(threads);
     switch(len) {
     case sizeof(float):
         _lrn_backward<float>((const float*)bottom, (const float*)top,
                 (float*)bottom_diff, (const float*)top_diff, 
-                (const float*)scale, num_data, channels, size, (float)alpha,
-                (float)beta);
+                (const float*)scale, num_data, channels, size,
+                (float)k, (float)alpha, (float)beta);
         break;
     case sizeof(double):
         _lrn_backward<double>((const double*)bottom, (const double*)top,
                 (double*)bottom_diff, (const double*)top_diff, 
-                (const double*)scale, num_data, channels, size, alpha, beta);
+                (const double*)scale, num_data, channels, size, k, alpha,
+                beta);
         break;
     default:
         exit(EXIT_FAILURE);

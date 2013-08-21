@@ -117,7 +117,7 @@ def avepooling_backward(image_diff, pooled_diff, psize, stride):
 _DLL.lrn_forward.restype = \
 _DLL.lrn_backward.restype = None
 
-def lrn_forward(bottom, top, scale, size, alpha, beta):
+def lrn_forward(bottom, top, scale, size, k, alpha, beta):
     _DLL.lrn_forward(ct.c_int(bottom.itemsize),
                      bottom.ctypes.data_as(ct.c_void_p),
                      top.ctypes.data_as(ct.c_void_p),
@@ -125,12 +125,14 @@ def lrn_forward(bottom, top, scale, size, alpha, beta):
                      ct.c_int(bottom.size / bottom.shape[-1]),
                      ct.c_int(bottom.shape[-1]),
                      ct.c_int(size),
+                     ct.c_double(k),
                      ct.c_double(alpha),
                      ct.c_double(beta),
                      ct.c_int(_OMP_NUM_THREADS))
 
 
-def lrn_backward(bottom, top, bottom_diff, top_diff, scale, size, alpha, beta):
+def lrn_backward(bottom, top, bottom_diff, top_diff, scale, size, k, alpha,
+                 beta):
     _DLL.lrn_backward(ct.c_int(bottom.itemsize),
                      bottom.ctypes.data_as(ct.c_void_p),
                      top.ctypes.data_as(ct.c_void_p),
@@ -140,6 +142,7 @@ def lrn_backward(bottom, top, bottom_diff, top_diff, scale, size, alpha, beta):
                      ct.c_int(bottom.size / bottom.shape[-1]),
                      ct.c_int(bottom.shape[-1]),
                      ct.c_int(size),
+                     ct.c_double(k),
                      ct.c_double(alpha),
                      ct.c_double(beta),
                      ct.c_int(_OMP_NUM_THREADS))

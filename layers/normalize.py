@@ -101,7 +101,7 @@ class ResponseNormalizeLayer(base.Layer):
 class LocalResponseNormalizeLayer(base.Layer):
     """A layer that locally normalizes the last dimension. For a vector x, it is 
     normalized as
-        y_i = x_i / (1 + alpha/size \sum_j x_j^2)^beta,
+        y_i = x_i / (k + alpha/size \sum_j x_j^2)^beta,
     where the range of j is
         [max(0, i - floor((size-1)/2)), min(dim, i - floor((size-1)/2) + size)].
     """
@@ -109,10 +109,12 @@ class LocalResponseNormalizeLayer(base.Layer):
         """Initalizes the layer. 
         
         kwargs:
-            alpha, beta: as defined in the equation.
+
+            k, alpha, beta: as defined in the equation.
             size: the local range.
         """
         base.Layer.__init__(self, **kwargs)
+        self._k = self.spec['k']
         self._alpha = self.spec['alpha']
         self._beta = self.spec['beta']
         self._size = self.spec['size']
@@ -127,7 +129,7 @@ class LocalResponseNormalizeLayer(base.Layer):
             raise base.DecafError('Incorrect size: should be smaller than '
                                   'the number of input channels.')
         wrapper.lrn_forward(features, output, scale,
-                            self._size, self._alpha, self._beta)
+                            self._size, self._k, self._alpha, self._beta)
     
     def backward(self, bottom, top, propagate_down):
         """Computes the backward pass."""
@@ -139,7 +141,7 @@ class LocalResponseNormalizeLayer(base.Layer):
             scale = self._scale.data()
             wrapper.lrn_backward(
                 features, output, bottom_diff, top_diff, scale,
-                self._size, self._alpha, self._beta)
+                self._size, self._k, self._alpha, self._beta)
         return 0.
 
     def __getstate__(self):
