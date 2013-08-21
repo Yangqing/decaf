@@ -1,6 +1,8 @@
 #include <cublas.h>
 #include "util.cuh"
 
+extern "C" {
+
 int init_cuda() {
     cudaError err;
     cublasStatus cublas_err;
@@ -10,3 +12,5 @@ int init_cuda() {
     CUBLAS_RETURN_ON_FAILURE(cublas_err);
     return cudaSuccess;
 }
+
+} // extern "C"

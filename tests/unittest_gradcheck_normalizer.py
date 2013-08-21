@@ -48,13 +48,18 @@ class TestNormalizer(unittest.TestCase):
                     input_blob = base.Blob(shape, filler=fillers.RandFiller())
                     # odd size
                     layer = core_layers.LocalResponseNormalizeLayer(
-                        name='normalize', alpha=alpha, beta=beta, size=5)
+                        name='normalize', k = 1., alpha=alpha, beta=beta, size=5)
+                    result = checker.check(layer, [input_blob], [output_blob])
+                    print(result)
+                    self.assertTrue(result[0])
+                    layer = core_layers.LocalResponseNormalizeLayer(
+                        name='normalize', k = 2., alpha=alpha, beta=beta, size=5)
                     result = checker.check(layer, [input_blob], [output_blob])
                     print(result)
                     self.assertTrue(result[0])
                     # even size
                     layer = core_layers.LocalResponseNormalizeLayer(
-                        name='normalize', alpha=alpha, beta=beta, size=6)
+                        name='normalize', k = 1., alpha=alpha, beta=beta, size=6)
                     result = checker.check(layer, [input_blob], [output_blob])
                     print(result)
                     self.assertTrue(result[0])

@@ -3,6 +3,7 @@
 faster or handles some numpy tricky issues.
 """
 import ctypes as ct
+from decaf import base
 import numpy as np
 import os
 
@@ -13,13 +14,18 @@ try:
 except Exception as error:
     raise error
 
+class DecafCudaError(base.DecafError):
+    """An error that will be raised if anything at cuda is wrong."""
+    pass
+
 ################################################################################
 # init_cuda
 ################################################################################
 _DLL.init_cuda.restype = ct.c_int
 
 def init_cuda():
-    return _DLL.init_cuda()
+    if _DLL.init_cuda():
+        raise DecafCudaError('Initialization Failed.')
 
 ################################################################################
 # The following code is for testing: if init_cuda fails, we will set a flag
