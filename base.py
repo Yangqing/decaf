@@ -202,9 +202,14 @@ class Solver(object):
     def __init__(self, **kwargs):
         self.spec = kwargs
 
-    def solve(self, net):
+    def solve(self, net, previous_net=None):
         """The solve function takes a net as an input, and optimizes its
         parameters.
+        
+        Input:
+            net: the decaf network to run optimization on.
+            previous_net: the previous network that produces input to the net.
+                This net should be pre-trained.
         """
         raise NotImplementedError
 
