@@ -380,6 +380,9 @@ class Net(object):
         (except the first layer, whose input is given by needs), and only one
         blob as its output (except the last layer, likewise).
         """
+        if isinstance(layers, Layer):
+            # We are just given one simple layer
+            self.add_layer(layers, needs, provides)
         if len(layers) == 1:
             self.add_layer(layers[0], needs, provides)
         else:
@@ -538,13 +541,16 @@ class Net(object):
             logging.warning('Have multiple unused blobs in the net. Do you'
                             ' actually mean running a forward backward pass?')
         loss = 0.
+        # If there is a previous_net, we will run that first
+        if previous_net:
+            previous_blobs = previous_net.predict()
+            for blobname, blob in previous_blobs.iteritems():
+                self.blobs[blobname].mirror(previous_blob)
         for _, layer, bottom, top in self._forward_order:
             layer.forward(bottom, top)
         # the backward pass
         for name, layer, bottom, top, propagate_down in self._backward_order:
             layer_loss = layer.backward(bottom, top, propagate_down)
-            # if layer_loss > 0:
-            #     logging.debug('layer %s produces loss %f.', name, layer_loss)
             loss += layer_loss
         return loss
 
