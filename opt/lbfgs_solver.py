@@ -58,16 +58,16 @@ class LBFGSSolver(base.Solver):
         """The objective function that wraps around the net."""
         self._param.data()[:] = variable
         self._distribute_params()
-        loss = self._net.forward_backward()
+        loss = self._net.forward_backward(self._previous_net)
         self._collect_params()
         return loss, self._param.diff()
 
-
-    def solve(self, decaf_net):
+    def solve(self, decaf_net, previous_net=None):
         """Solves the net."""
         # first, run an execute pass to initialize all the parameters.
         self._net = decaf_net
-        initial_loss = self._net.forward_backward()
+        self._previous_net = previous_net
+        initial_loss = self._net.forward_backward(self._previous_net)
         logging.info('Initial loss: %f.', initial_loss)
         self._collect_params(True)
         # now, run LBFGS
