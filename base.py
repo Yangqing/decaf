@@ -374,7 +374,7 @@ class Net(object):
     def _make_output_name(layer):
         return '%s_%s_out' % (DECAF_PREFIX, layer.name)
 
-    def add_layers(self, layers, needs, provides):
+    def add_layers(self, layers, needs=None, provides=None):
         """A wrapper that adds multiple layers as a chain to the graph. Each
         layer in the layers list should have only one blob as its input
         (except the first layer, whose input is given by needs), and only one
