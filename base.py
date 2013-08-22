@@ -327,7 +327,6 @@ class Net(object):
         # issues.
         self.finish()
 
-
     def add_layer(self, layer, needs=None, provides=None):
         """Add a layer to the current network.
 
@@ -337,6 +336,7 @@ class Net(object):
                 needs as its input.
             provides: similar to needs, but the layer's output instead.
         """
+        self._finished = False
         # validate input
         if needs is None:
             needs = []
@@ -380,10 +380,11 @@ class Net(object):
         (except the first layer, whose input is given by needs), and only one
         blob as its output (except the last layer, likewise).
         """
+        self._finished = False
         if isinstance(layers, Layer):
             # We are just given one simple layer
             self.add_layer(layers, needs, provides)
-        if len(layers) == 1:
+        elif len(layers) == 1:
             self.add_layer(layers[0], needs, provides)
         else:
             # add the first layer
@@ -528,11 +529,7 @@ class Net(object):
         """
         # the forward pass. We will also accumulate the loss function.
         if not self._finished:
-            # Trying to modify an already finished network.
             raise DecafError('Call finish() before you use the network.')
-        if len(self._input_blobs):
-            raise DecafError('Cannot run forward_backward on a network with'
-                             ' input blobs. Did you mean predict()?')
         if len(self._output_blobs):
             # If the network has output blobs, it usually shouldn't be used
             # to run forward-backward: such blobs won't be used and cause waste
@@ -544,8 +541,12 @@ class Net(object):
         # If there is a previous_net, we will run that first
         if previous_net:
             previous_blobs = previous_net.predict()
-            for blobname, blob in previous_blobs.iteritems():
-                self.blobs[blobname].mirror(previous_blob)
+            try:
+                for name in self._input_blobs:
+                    self.blobs[name].mirror(previous_blobs[name])
+            except KeyError as err:
+                raise DecafError('Cannot run forward_backward on a network'
+                                 ' with unspecified input blobs.', err)
         for _, layer, bottom, top in self._forward_order:
             layer.forward(bottom, top)
         # the backward pass
@@ -559,6 +560,8 @@ class Net(object):
         should have at least one output blob. All input blobs need to be
         provided using the kwargs.
         """
+        if not self._finished:
+            raise DecafError('Call finish() before you use the network.')
         for name, arr in kwargs.iteritems():
             self.blobs[name].mirror(arr)
         for _, layer, bottom, top in self._forward_order:
