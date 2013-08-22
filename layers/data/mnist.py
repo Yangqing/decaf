@@ -50,11 +50,6 @@ class MNISTDataLayer(ndarraydata.NdarrayDataLayer):
         fid = open(filename, 'rb')
         fid.seek(skipbytes)
         nbytes = np.prod(shape)
-        rawdata = fid.read(nbytes)
-        fid.close()
-        #convert rawdata to data
-        data = np.zeros(nbytes)
-        for i in range(nbytes):
-            data[i] = ord(rawdata[i])
+        data = np.fromfile(fid, dtype=np.uint8, count=nbytes)
         data.resize(shape)
         return data
