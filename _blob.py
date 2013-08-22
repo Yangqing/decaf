@@ -42,9 +42,15 @@ class Blob(object):
         save space and avoid duplication for data layers.
         """
         if isinstance(input_array, Blob):
-            self._data = input_array.data()
+            income_data = input_array.data()
         else:
-            self._data = input_array.view()
+            income_data = input_array.view()
+        # check if the shape or dtype changed, in which case we need to
+        # reset the diff
+        if (self.has_data() and (self._data.shape != income_data.shape
+                                 or self._data.dtype != income_data.dtype)):
+            self._diff = None
+        self._data = income_data
         if shape is not None:
             self._data.shape = shape
         return self.data()
@@ -113,7 +119,7 @@ class Blob(object):
             if setzero:
                 self._diff[:] = 0
         else:
-            self._diff = np.empty_like(self._data)
+            self._diff = np.zeros_like(self._data)
         return self.diff()
 
     def swap_data(self, other_blob):
