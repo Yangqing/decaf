@@ -93,6 +93,8 @@ class Blob(object):
         if not(self.has_data() and self._data.shape == shape and \
            self._data.dtype == dtype):
             self._data = np.empty(shape, dtype)
+            # Since we changed the data, the old diff has to be discarded.
+            self._diff = None
         if setdata:
             if self._filler is not None:
                 self._filler.fill(self._data)
@@ -107,12 +109,11 @@ class Blob(object):
         """
         if not self.has_data():
             raise ValueError('The data should be initialized first!')
-        if self.has_diff() and self._diff.shape == self._data.shape and \
-           self._diff.dtype == self._data.dtype:
+        if self.has_diff():
             if setzero:
                 self._diff[:] = 0
         else:
-            self._diff = np.zeros(self._data.shape, self._data.dtype)
+            self._diff = np.empty_like(self._data)
         return self.diff()
 
     def swap_data(self, other_blob):
