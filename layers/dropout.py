@@ -3,6 +3,7 @@
 from decaf import base
 from decaf.layers import fillers
 import numpy as np
+import numexpr
 
 class DropoutLayer(base.Layer):
     """A layer that implements the dropout."""
@@ -18,8 +19,7 @@ class DropoutLayer(base.Layer):
                 than purposes like gradient check.
         """
         base.Layer.__init__(self, **kwargs)
-        self._ratio = self.spec['ratio']
-        filler = fillers.DropoutFiller(ratio=self._ratio)
+        filler = fillers.DropoutFiller(ratio=self.spec['ratio'])
         self._mask = base.Blob(filler=filler)
 
     def forward(self, bottom, top):
@@ -28,9 +28,19 @@ class DropoutLayer(base.Layer):
         features = bottom[0].data()
         output = top[0].init_data(features.shape, features.dtype, setdata=False)
         if not (self.spec.get('debug_freeze', False) and self._mask.has_data()):
-            self._mask.init_data(features.shape, np.bool)
-        output[:] = features
-        output *= self._mask.data()
+            mask = self._mask.init_data(features.shape, np.bool)
+        else:
+            mask = self._mask.data()
+        numexpr.evaluate('features * mask', out=output)
+
+    def predict(self, bottom, top):
+        """The dropout predict pass. It will not randomly shut off features,
+        but will instead scale data according to the ratio.
+        """
+        features = bottom[0].data()
+        output = top[0].init_data(features.shape, features.dtype, setdata=False)
+        ratio = self.spec['ratio']
+        numexpr.evaluate('features * ratio', out=output)
 
     def backward(self, bottom, top, propagate_down):
         """Computes the backward pass."""
@@ -38,8 +48,8 @@ class DropoutLayer(base.Layer):
             return 0.
         top_diff = top[0].diff()
         bottom_diff = bottom[0].init_diff(setzero=False)
-        bottom_diff[:] = top_diff
-        bottom_diff *= self._mask.data()
+        mask = self._mask.data()
+        numexpr.evaluate('top_diff * mask', out=bottom_diff) 
         return 0.
 
     def update(self):

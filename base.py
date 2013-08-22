@@ -71,6 +71,16 @@ class Layer(object):
         """
         raise NotImplementedError
 
+    def predict(self, bottom, top):
+        """A wrapper function to do prediction. If a layer has different
+        behaviors during training and testing, one can write a predict()
+        function which is called during testing time.
+        
+        In default, the predict() function will simply call forward.
+        """
+        return self.forward(bottom, top)
+
+
     def backward(self, bottom, top, propagate_down):
         """Computes the backward pass.
         Input:
@@ -546,7 +556,7 @@ class Net(object):
         for name, arr in kwargs.iteritems():
             self.blobs[name].mirror(arr)
         for _, layer, bottom, top in self._forward_order:
-            layer.forward(bottom, top)
+            layer.predict(bottom, top)
         return dict([(name, self.blobs[name].data())
                      for name in self._output_blobs])
 
