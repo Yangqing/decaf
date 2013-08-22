@@ -81,20 +81,21 @@ class StochasticSolver(base.Solver):
         """
         pass
 
-    def solve(self, decaf_net):
+    def solve(self, decaf_net, previous_net=None):
         """Solves the net."""
         # first, run a pass to initialize all the parameters.
         logging.info('StochasticSolver: precomputing.')
         self._iter_idx = 0
         self._decaf_net = decaf_net
-        initial_loss = decaf_net.forward_backward()
+        self._previous_net = previous_net
+        initial_loss = decaf_net.forward_backward(self._previous_net)
         logging.info('StochasticSolver: initial loss: %f.', initial_loss)
         self.initialize_status()
         # the main iteration
         timer = Timer()
         logging.info('StochasticSolver: started.')
         for _ in range(self._max_iter):
-            loss = decaf_net.forward_backward()
+            loss = decaf_net.forward_backward(self._previous_net)
             self.compute_update_value()
             decaf_net.update()
             if (self._snapshot_interval > 0 and self._iter_idx > 0 and
@@ -276,5 +277,4 @@ class AdagradSolver(StochasticSolver):
         with open(os.path.join(subfolder, 'adagrad_accum'), 'wb') as fid:
             pickle.dump(self._accum, fid, protocol=pickle.HIGHEST_PROTOCOL)
         return subfolder
-
 
