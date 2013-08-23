@@ -7,8 +7,8 @@ import logging
 import networkx as nx
 import numpy as np
 
-from decaf._blob import *
-
+from decaf._blob import Blob
+from decaf.puff import Puff
 
 class DecafError(Exception):
     """NOOOOOOO! I need caffeine!
