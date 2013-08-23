@@ -24,6 +24,7 @@ its subfolders, which contain JPEG images.
 """
 
 from decaf import puff
+from decaf.util import Timer
 import gflags
 import glob
 import logging
@@ -67,7 +68,7 @@ def process_image(filename):
 def main(argv):
     logging.getLogger().setLevel(logging.INFO)
     FLAGS(argv)
-    logging.info('Searching for Image Categories...')
+    logging.info('Listing images...')
     images = glob.glob(os.path.join(FLAGS.root, '*', '*.' + FLAGS.extension))
     random.shuffle(images)
     logging.info('A total of %d images', len(images))
@@ -78,10 +79,16 @@ def main(argv):
     # Now, process individual images, and write them to the puff files.
     image_writer = puff.PuffStreamedWriter(FLAGS.output)
     labels = []
+    current = 0
+    my_timer = Timer()
     for filename in images:
         image_cropped = process_image(filename)
         labels.append(label2id[os.path.dirname(filename)])
         image_writer.write_single(image_cropped)
+        current += 1
+        if current % 1000 == 0:
+            logging.info('Processed %d images, elapsed %s',
+                         current, my_timer.lap())
     image_writer.finish()
     # Write the label
     puff.write_puff(np.array(labels, dtype=np.int), FLAGS.output_label)

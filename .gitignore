@@ -17,6 +17,9 @@ no_git_*
 # Python compiled
 *.py[cod]
 
+# slurm
+slurm-*.out
+
 # C extensions
 a.out
 *.o
