@@ -1,6 +1,7 @@
 """Implements the stochastic solvers."""
 import cPickle as pickle
 from decaf import base
+from decaf.util import mpi
 from decaf.util.timer import Timer
 import logging
 import numpy as np
@@ -28,21 +29,29 @@ class StochasticSolver(base.Solver):
         if self._snapshot_interval > 0 and 'folder' not in self.spec:
             raise ValueError('You should provide a folder to write result to.')
         self._decaf_net = None
+        self._previous_net = None
         self._iter_idx = None
 
     def initialize_status(self):
         """A function that specific stochastic solvers can override
         to perform necessary initialization, after the net is run for the
         first time to allocate all the intermediate variables and gives an
-        initial loss.
+        initial loss. The default initialization will make all the parameters
+        the same by broadcasting the parameters from root.
         """
-        pass
+        if mpi.SIZE > 1:
+            params = self._decaf_net.params()
+            for param in params:
+                mpi.COMM.Bcast(param.data())
+        return
 
     def compute_update_value(self):
         """An abstract function that specific stochastic solvers have to
         implement to determine the update value. The gradients can be obtained
         as [param.diff() for param in decaf_net.params()], and the algorithm
-        should write the update values into the param.diff() fields.
+        should write the update values into the param.diff() fields. Note that
+        the diff values are already the averaged version over the mpi nodes
+        by the solver, so you don't need to rebroadcast them again.
 
         Input:
             decaf_net: the network.
@@ -90,15 +99,28 @@ class StochasticSolver(base.Solver):
         self._previous_net = previous_net
         initial_loss = decaf_net.forward_backward(self._previous_net)
         logging.info('StochasticSolver: initial loss: %f.', initial_loss)
+        logging.info('(Under mpirun, the given loss will just be an estimate'
+                     ' on the root node.)')
         self.initialize_status()
         # the main iteration
         timer = Timer()
         logging.info('StochasticSolver: started.')
         for _ in range(self._max_iter):
-            loss = decaf_net.forward_backward(self._previous_net)
+            if mpi.SIZE > 1:
+                loss = mpi.COMM.allreduce(
+                    decaf_net.forward_backward(self._previous_net)) / mpi.SIZE
+                # we need to broadcast and average the parameters
+                params = decaf_net.params()
+                for param in params:
+                    diff = param.diff()
+                    mpi.COMM.Allreduce(diff)
+                    diff /= mpi.SIZE
+            else:
+                loss = decaf_net.forward_backward(self._previous_net)
             self.compute_update_value()
             decaf_net.update()
-            if (self._snapshot_interval > 0 and self._iter_idx > 0 and
+            if (mpi.is_root() and 
+                self._snapshot_interval > 0 and self._iter_idx > 0 and
                 self._iter_idx % self._snapshot_interval == 0):
                 # perform snapshot.
                 self.snapshot()
@@ -109,8 +131,9 @@ class StochasticSolver(base.Solver):
             self.iter_callback(loss)
             self._iter_idx += 1
         # perform last snapshot.
-        if 'folder' in self.spec:
+        if mpi.is_root() and 'folder' in self.spec:
             self.snapshot(True)
+        mpi.barrier()
         logging.info('StochasticSolver: finished. Total time %s.',
                      timer.total())
 
@@ -168,6 +191,7 @@ class SGDSolver(StochasticSolver):
     
     def initialize_status(self):
         """Initializes the status."""
+        StochasticSolver.initialize_status(self)
         if self.spec['momentum']:
             # we need to maintain the momentum history
             params = self._decaf_net.params()
