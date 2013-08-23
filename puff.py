@@ -26,14 +26,14 @@ class Puff(object):
         self.open(name)
 
     def open(self, name):
-        """Opens a puff data: it is composed of two files, name and name.meta.
+        """Opens a puff data: it is composed of two files, name.puff and name.icing.
         """
-        meta = pickle.load(open(name + '.meta'))
-        self._shape = meta['shape']
-        self._dtype = meta['dtype']
-        self._num_data = meta['num']
+        icing = pickle.load(open(name + '.icing'))
+        self._shape = icing['shape']
+        self._dtype = icing['dtype']
+        self._num_data = icing['num']
         self._step = reduce(mul, self._shape, 1)
-        self._fid = open(name, 'rb')
+        self._fid = open(name + '.puff', 'rb')
         self._curr = 0
 
     def seek(self, offset):
@@ -69,7 +69,7 @@ class PuffStreamedWriter(object):
         self._shape = None
         self._num_data = 0
         self._dtype = None
-        self._fid = open(name, 'wb')
+        self._fid = open(name + '.puff', 'wb')
         self._name = name
     
     def check_validity(self, arr):
@@ -98,7 +98,7 @@ class PuffStreamedWriter(object):
         if self._num_data == 0:
             raise ValueError('Nothing is written!')
         self._fid.close()
-        with open(self._name + '.meta', 'w') as fid:
+        with open(self._name + '.icing', 'w') as fid:
             pickle.dump({'shape': self._shape,
                          'dtype': self._dtype,
                          'num': self._num_data}, fid)

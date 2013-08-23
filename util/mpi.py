@@ -12,6 +12,7 @@ import time
 try:
     from mpi4py import MPI
     COMM = MPI.COMM_WORLD
+    _IS_DUMMY = False
 except ImportError as error:
     logging.warning(
         "Warning: I cannot import mpi4py. Using a dummpy single noded "
@@ -22,6 +23,7 @@ except ImportError as error:
         "mpi4py.\n")
     logging.warning("mpi4py exception message is: %s", error)
     from decaf.util._mpi_dummy import COMM
+    _IS_DUMMY = True
 
 RANK = COMM.Get_rank()
 SIZE = COMM.Get_size()
@@ -34,6 +36,9 @@ _MPI_BUFFER_LIMIT = 2 ** 30
 logging.info('blop.util.mpi: seting different random seeds for each node.')
 random.seed(time.time() * RANK)
 
+def is_dummy():
+    '''Returns True if this is a dummy version of MPI.'''
+    return _IS_DUMMY
 
 def mkdir(dirname):
     '''make a directory safely.
