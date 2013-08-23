@@ -1,6 +1,7 @@
 #!/bin/bash
 
 uname -a
+mkdir -p /tscratch/tmp/jiayq/
 
 python convert_imagenet_to_puff.py \
     --root=/u/vis/x1/common/ILSVRC-2010/train \

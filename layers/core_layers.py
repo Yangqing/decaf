@@ -13,6 +13,7 @@ from decaf.layers.sampler import (BasicMinibatchLayer,
 
 # Computation Layers
 from decaf.layers.convolution import ConvolutionLayer
+from decaf.layers.group_convolution import GroupConvolutionLayer
 from decaf.layers.deconvolution import DeconvolutionLayer
 from decaf.layers.dropout import DropoutLayer
 from decaf.layers.flatten import FlattenLayer
