@@ -11,6 +11,18 @@ class TestPuff(unittest.TestCase):
     def setUp(self):
         pass
 
+    def testPuffVectorForm(self):
+        fname = tempfile.mktemp()
+        data = np.random.rand(4)
+        puff.write_puff(data, fname)
+        # Now, let's read it
+        puff_recovered = puff.Puff(fname)
+        npt.assert_array_almost_equal(puff_recovered.read_all(), data)
+        self.assertTrue(puff_recovered.read_all().shape, (4,))
+        puff_recovered.seek(0)
+        npt.assert_array_almost_equal(puff_recovered.read(2), data[:2])
+        self.assertTrue(puff_recovered.read(2).shape, (2,))
+
     def testPuffSingleWrite(self):
         fname = tempfile.mktemp()
         data = np.random.rand(4,3)
