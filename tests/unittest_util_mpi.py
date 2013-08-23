@@ -1,4 +1,6 @@
+from decaf import base
 from decaf.util import mpi
+import numpy as np
 import os
 import unittest
 
@@ -54,6 +56,13 @@ class TestMPI(unittest.TestCase):
         time.sleep(mpi.RANK)
         mpi.barrier()
         self.assertTrue(True)
+
+    def testBroadcastBlob(self):
+        blob = base.Blob((3,4))
+        blob.data()[:] = mpi.RANK
+        np.testing.assert_array_almost_equal(blob.data(), mpi.RANK)
+        mpi.COMM.Bcast(blob.data())
+        np.testing.assert_array_almost_equal(blob.data(), 0)
     
 if __name__ == '__main__':
     unittest.main()
