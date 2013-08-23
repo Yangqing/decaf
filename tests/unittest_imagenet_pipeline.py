@@ -20,8 +20,8 @@ def imagenet_layers():
             name='lrn-55-96', k=2., alpha=0.0001, beta=0.75, size=5),
         core_layers.PoolingLayer(
             name='pool-55-to-27', psize=3, stride=2, mode='max'),
-        core_layers.ConvolutionLayer(
-            name='conv-27-256', num_kernels=256, ksize=5,
+        core_layers.GroupConvolutionLayer(
+            name='conv-27-256', num_kernels=128, group=2, ksize=5,
             stride=1, mode='same', filler=fillers.XavierFiller()),
         core_layers.ReLULayer(name='relu-27-256'),
         core_layers.LocalResponseNormalizeLayer(
@@ -32,12 +32,12 @@ def imagenet_layers():
             name='conv-13-384', num_kernels=384, ksize=3,
             stride=1, mode='same', filler=fillers.XavierFiller()),
         core_layers.ReLULayer(name='relu-13-384'),
-        core_layers.ConvolutionLayer(
-            name='conv-13-384-second', num_kernels=384, ksize=3,
+        core_layers.GroupConvolutionLayer(
+            name='conv-13-384-second', num_kernels=192, group=2, ksize=3,
             stride=1, mode='same', filler=fillers.XavierFiller()),
         core_layers.ReLULayer(name='relu-13-384-second'),
-        core_layers.ConvolutionLayer(
-            name='conv-13-256', num_kernels=256, ksize=3,
+        core_layers.GroupConvolutionLayer(
+            name='conv-13-256', num_kernels=128, group=2, ksize=3,
             stride=1, mode='same', filler=fillers.XavierFiller()),
         core_layers.ReLULayer(name='relu-13-256'),
         core_layers.PoolingLayer(
@@ -78,7 +78,6 @@ class TestImagenet(unittest.TestCase):
                              provides='prediction')
         decaf_net.finish()
         result = decaf_net.predict()
-        print result
         self.assertTrue('label' in result)
         self.assertTrue('prediction' in result)
         self.assertEqual(result['prediction'].shape[-1], 1000)
