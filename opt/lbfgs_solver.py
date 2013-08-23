@@ -13,7 +13,8 @@ class LBFGSSolver(base.Solver):
     fmin_l_bfgs_b) so we write it differently from the other solvers. When
     faced with very large-scale problems, the additional memory overhead of
     LBFGS may make the method inapplicable, in which you may want to use the
-    stochastic solvers.
+    stochastic solvers. Due to this reason, LBFGS solver does NOT support mpi
+    based optimizations - you may be better off using stochastic solvers.
     """
     
     def __init__(self, **kwargs):
@@ -24,12 +25,13 @@ class LBFGSSolver(base.Solver):
         base.Solver.__init__(self, **kwargs)
         self._lbfgs_args = self.spec.get('lbfgs_args', {})
         self._param = None
-        self._net = None
+        self._decaf_net = None
+        self._previous_net = None
 
     def _collect_params(self, realloc=False):
         """Collect the network parameters into a long vector.
         """
-        params_list = self._net.params()
+        params_list = self._decaf_net.params()
         if self._param is None or realloc:
             total_size = sum(p.data().size for p in params_list)
             dtype = max(p.data().dtype for p in params_list)
@@ -47,7 +49,7 @@ class LBFGSSolver(base.Solver):
     def _distribute_params(self):
         """Distribute the parameter to the net.
         """
-        params_list = self._net.params()
+        params_list = self._decaf_net.params()
         current = 0
         for param in params_list:
             size = param.data().size
@@ -58,16 +60,16 @@ class LBFGSSolver(base.Solver):
         """The objective function that wraps around the net."""
         self._param.data()[:] = variable
         self._distribute_params()
-        loss = self._net.forward_backward(self._previous_net)
+        loss = self._decaf_net.forward_backward(self._previous_net)
         self._collect_params()
         return loss, self._param.diff()
 
     def solve(self, decaf_net, previous_net=None):
         """Solves the net."""
         # first, run an execute pass to initialize all the parameters.
-        self._net = decaf_net
+        self._decaf_net = decaf_net
         self._previous_net = previous_net
-        initial_loss = self._net.forward_backward(self._previous_net)
+        initial_loss = self._decaf_net.forward_backward(self._previous_net)
         logging.info('Initial loss: %f.', initial_loss)
         self._collect_params(True)
         # now, run LBFGS

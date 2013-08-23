@@ -1,4 +1,4 @@
-a.out
+# decaf stuff
 no_git_*
 *.dat
 *.decafnet
@@ -7,12 +7,48 @@ no_git_*
 *.mat
 *.npy
 *.npy
-*.o
 *.pdf
 *.pickle
 *.png
 *.pstats
-*.pyc
-*.so
 *.swp
 *.txt
+
+# Python compiled
+*.py[cod]
+
+# C extensions
+a.out
+*.o
+*.so
+
+# Packages
+*.egg
+*.egg-info
+dist
+build
+eggs
+parts
+bin
+var
+sdist
+develop-eggs
+.installed.cfg
+lib
+lib64
+
+# Installer logs
+pip-log.txt
+
+# Unit test / coverage reports
+.coverage
+.tox
+nosetests.xml
+
+# Translations
+*.mo
+
+# Mr Developer
+.mr.developer.cfg
+.project
+.pydevproject
