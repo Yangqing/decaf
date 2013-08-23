@@ -46,6 +46,16 @@ class TestPuff(unittest.TestCase):
         npt.assert_array_almost_equal(data_recovered[4:8], data)
         npt.assert_array_almost_equal(data_recovered[8], data[0])
 
+    def testPuffMultipleWriteException(self):
+        fname = tempfile.mktemp()
+        data = np.random.rand(4,3)
+        writer = puff.PuffStreamedWriter(fname)
+        writer.write_batch(data)
+        self.assertRaises(
+            TypeError, writer.write_batch, data.astype(np.float32))
+        self.assertRaises(
+            TypeError, writer.write_batch, np.random.rand(4,2))
+
     def testPuffReadBoundary(self):
         fname = tempfile.mktemp()
         data = np.random.rand(4,3)
