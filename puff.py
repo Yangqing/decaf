@@ -9,7 +9,7 @@ class Puff(object):
     """The puff class. It defines a simple interface that stores numpy arrays in
     its raw form.
     """
-    def __init__(self, name):
+    def __init__(self, name, start = 0, end = 0):
         # shape is the shape of a single data point.
         self._shape = None
         # step is an internal variable that indicates how many bytes we need
@@ -17,15 +17,19 @@ class Puff(object):
         self._step = None
         # num_data is the total number of data in the file
         self._num_data = None
+        # the following variables are used to slice a puff
+        self._num_local_data = None
+        self._start = None
+        self._end = None
         # dtype is the data type of the data
         self._dtype = None
         # the fid for the opened file
         self._fid = None
         # the current index of the data.
         self._curr = None
-        self.open(name)
+        self.open(name, start, end)
 
-    def open(self, name):
+    def open(self, name, start, end):
         """Opens a puff data: it is composed of two files, name.puff and name.icing.
         """
         icing = pickle.load(open(name + '.icing'))
@@ -34,33 +38,47 @@ class Puff(object):
         self._num_data = icing['num']
         self._step = reduce(mul, self._shape, 1)
         self._fid = open(name + '.puff', 'rb')
-        self._curr = 0
+        # determine the local start and end range
+        self._start = start
+        if end > start and end <= self._num_data:
+            self._end = end
+        elif end == 0:
+            self._end = self._num_data
+        else:
+            raise ValueError('Invalid end index.')
+        if self._start:
+            self.seek(self._start)
+        self._num_local_data = self._end - self._start
+        self._curr = self._start
 
     def seek(self, offset):
         """Seek to the beginning of the offset-th data point."""
+        if offset < self._start or offset >= self._end:
+            raise ValueError('Offset should lie in the data range.')
         self._fid.seek(offset * self._step * self._dtype.itemsize)
         self._curr = offset
 
     def read(self, count):
         """Read the specified number of data and return as a numpy array."""
-        if count > self._num_data:
-            raise ValueError('Not enough data points to read.')
-        if self._curr + count <= self._num_data:
+        if count > self._num_local_data:
+            raise ValueError('Not enough data points to read: count %d, limit'
+                             ' %d.' % (count, self._num_local_data))
+        if self._curr + count <= self._end:
             data = np.fromfile(self._fid, self._dtype, count * self._step)
             self._curr += count
-            if self._curr == self._num_data:
+            if self._curr == self._end:
                 # When everything is read, we restart from the head.
-                self.seek(0)
+                self.seek(self._start)
         else:
-            part = self._num_data - self._curr
+            part = self._end - self._curr
             data = np.vstack((self.read(part),
                               self.read(count - part)))
         return data.reshape((count,) + self._shape)
 
     def read_all(self):
         """Reads all the data from the file."""
-        self.seek(0)
-        return self.read(self._num_data)
+        self.seek(self._start)
+        return self.read(self._num_local_data)
 
 
 class PuffStreamedWriter(object):

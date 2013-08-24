@@ -69,6 +69,20 @@ class TestPuff(unittest.TestCase):
         puff_recovered.seek(1)
         npt.assert_array_almost_equal(puff_recovered.read(2), data[1:3])
 
+    def testPuffReadSlice(self):
+        fname = tempfile.mktemp()
+        data = np.random.rand(10,3)
+        puff.write_puff(data, fname)
+        # Now, let's read it as a slice
+        data = data[5:9]
+        puff_recovered = puff.Puff(fname, start=5, end=9)
+        npt.assert_array_almost_equal(puff_recovered.read(3), data[:3])
+        npt.assert_array_almost_equal(puff_recovered.read(3),
+                                      data[np.array([3,0,1], dtype=int)])
+        # test incorrect seeking
+        self.assertRaises(
+            ValueError, puff_recovered.seek, 0)
+
 
 if __name__ == '__main__':
     logging.getLogger().setLevel(logging.INFO)
