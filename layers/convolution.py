@@ -24,10 +24,14 @@ class ConvolutionLayer(base.Layer):
                 should be a decaf.base.Regularizer instance. Default None. 
             filler: a filler to initialize the weights. Should be a
                 decaf.base.Filler instance. Default None.
+            has_bias: specifying if the convolutional network should have a
+                bias term. Note that the same bias is going to be applied
+                regardless of the location. Default True.
+            bias_filler: a filler to unitialize the bias. Should be a
+                decaf.base.Filler instance. Default None.
             large_mem: if set True, the layer will consume a lot of memory by
                 storing all the intermediate im2col results, but will increase
                 the backward operation time. Default False.
-        
         When computing convolutions, we will always start from the top left
         corner, and any rows/columns on the right and bottom sides that do not
         fit the stride will be discarded. To enforce the 'same' mode to return
@@ -41,7 +45,7 @@ class ConvolutionLayer(base.Layer):
         self._mode = self.spec['mode']
         self._large_mem = self.spec.get('large_mem', False)
         self._reg = self.spec.get('reg', None)
-        self._filler = self.spec.get('filler', None)
+        self._has_bias = self.spec.get('has_bias', True)
         if self._ksize <= 1:
             raise ValueError('Invalid kernel size. Kernel size should > 1.')
         if self._mode == 'same' and self._ksize % 2 == 0:
@@ -51,8 +55,12 @@ class ConvolutionLayer(base.Layer):
         self._padded = base.Blob()
         self._col = base.Blob()
         # set up the parameter
-        self._kernels = base.Blob(filler=self._filler)
-        self._param = [self._kernels]
+        self._kernels = base.Blob(filler=self.spec.get('filler', None))
+        if self._has_bias:
+            self._bias = base.Blob(filler=self.spec.get('bias_filler', None))
+            self._param = [self._kernels, self._bias]
+        else:
+            self._param = [self._kernels]
         # Constructs the sub layers that actually carry out the convolution.
         if self._mode == 'valid':
             self._pad_size = 0
@@ -74,6 +82,8 @@ class ConvolutionLayer(base.Layer):
                 (self._ksize * self._ksize * bottom_data.shape[-1],
                  self._num_kernels),
                 bottom_data.dtype)
+            if self._has_bias:
+                self._bias.init_data((self._num_kernels,), bottom_data.dtype)
         # pad the data
         if self._mode == 'valid':
             padded_data = self._padded.mirror(bottom_data)
@@ -113,6 +123,8 @@ class ConvolutionLayer(base.Layer):
                                        self._ksize, self._stride)
                 blasdot.dot_lastdim(col_data, self._kernels.data(),
                                     out=top_data[i])
+        if self._has_bias:
+            top_data += self._bias.data()
         return
 
     def backward(self, bottom, top, propagate_down):
@@ -124,6 +136,13 @@ class ConvolutionLayer(base.Layer):
         if bottom_data.ndim != 4:
             raise ValueError('Bottom data should be a 4-dim tensor.')
         kernel_diff = self._kernels.init_diff()
+        if self._has_bias:
+            bias_diff = self._bias.init_diff()
+            # bias diff is fairly easy to compute: just sum over all other
+            # dimensions
+            np.sum(top_diff.reshape(top_diff.size / top_diff.shape[-1],
+                                    top_diff.shape[-1]),
+                   axis=0, out=bias_diff)
         if propagate_down:
             bottom_diff = bottom[0].init_diff(setzero=False)
             col_diff = self._col.init_diff()
@@ -177,4 +196,6 @@ class ConvolutionLayer(base.Layer):
         """updates the parameters."""
         # Only the inner product layer needs to be updated.
         self._kernels.update()
+        if self._has_bias:
+            self._bias.update()
 

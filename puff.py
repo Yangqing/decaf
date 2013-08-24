@@ -79,7 +79,10 @@ class PuffStreamedWriter(object):
             self._dtype = arr.dtype
         else:
             if self._shape != arr.shape or self._dtype != arr.dtype:
-                raise TypeError('Array invalid with previous inputs!')
+                raise TypeError('Array invalid with previous inputs! '
+                                'Previous: %s, %s, current: %s %s' %
+                                (str(self._shape), str(self._dtype),
+                                 str(arr.shape), str(arr.dtype)))
 
     def write_single(self, arr):
         """Write a single data point."""
