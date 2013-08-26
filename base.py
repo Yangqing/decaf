@@ -544,7 +544,7 @@ class Net(object):
                             ' actually mean running a forward backward pass?')
         loss = 0.
         # If there is a previous_net, we will run that first
-        if previous_net:
+        if isinstance(previous_net, Net):
             previous_blobs = previous_net.predict()
             try:
                 for name in self._input_blobs:
@@ -552,6 +552,10 @@ class Net(object):
             except KeyError as err:
                 raise DecafError('Cannot run forward_backward on a network'
                                  ' with unspecified input blobs.', err)
+        elif isinstance(previous_net, dict):
+            # If previous net is a dict, simply mirror all the data.
+            for key, arr in previous_net.iteritems():
+                self.blobs[key].mirror(arr)
         for _, layer, bottom, top in self._forward_order:
             layer.forward(bottom, top)
         # the backward pass

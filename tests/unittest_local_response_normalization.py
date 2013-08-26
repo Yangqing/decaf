@@ -28,7 +28,6 @@ class TestLRN(unittest.TestCase):
         return output, scale
 
     def testLocalResponseNormalizationForward(self):
-        """testBlobInit checks if blobs can be successfully initialized."""
         np.random.seed(1701)
         dtypes = [np.float32, np.float64]
         for dtype in dtypes:

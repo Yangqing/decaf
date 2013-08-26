@@ -2,6 +2,7 @@
 
 from decaf import base
 from decaf.layers.cpp import wrapper
+import math
 
 class PoolingLayer(base.Layer):
     """A layer that implements the pooling function."""
@@ -32,8 +33,8 @@ class PoolingLayer(base.Layer):
         """Runs the forward pass."""
         bottom_data = bottom[0].data()
         num, height, width, nchannels = bottom_data.shape
-        pooled_height = (height - self._psize) / self._stride + 1
-        pooled_width = (width - self._psize) / self._stride + 1
+        pooled_height = math.ceil(float(height - self._psize) / self._stride) + 1
+        pooled_width = math.ceil(float(width - self._psize) / self._stride) + 1
         top_data = top[0].init_data(
             (num, pooled_height, pooled_width, nchannels),
             dtype=bottom_data.dtype)

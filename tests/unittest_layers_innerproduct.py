@@ -3,7 +3,7 @@ from decaf.layers import innerproduct
 import numpy as np
 import unittest
 
-class TestBlasdot(unittest.TestCase):
+class TestInnerProduct(unittest.TestCase):
     """Test the blasdot module
     """
     def setUp(self):

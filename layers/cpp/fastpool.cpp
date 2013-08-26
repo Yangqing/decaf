@@ -12,15 +12,13 @@ template <typename Dtype>
 inline void _maxpooling_forward(
         const Dtype* image, Dtype* pooled, const int height, const int width,
         const int nchannels, const int psize, const int stride) {
-    int pooled_height = (height - psize) / stride + 1;
-    int pooled_width = (width - psize) / stride + 1;
-    int last_height = stride * (pooled_height - 1) + psize;
-    int last_width = stride * (pooled_width - 1) + psize;
+    int pooled_height = int(ceil(float(height - psize) / stride)) + 1;
+    int pooled_width = int(ceil(float(width - psize) / stride)) + 1;
     memset(pooled, 0, sizeof(Dtype) * pooled_height * pooled_width * nchannels);
     // This code is written in a forward mode: we go through the pixels once,
     // and write to all the pooled regions that it maps to.
-    for (int i = 0; i < last_height; ++i) {
-        for (int j = 0; j < last_width; ++j) {
+    for (int i = 0; i < height; ++i) {
+        for (int j = 0; j < width; ++j) {
             // Processing pixel at [i,j].
             // First, compute the pooling region
             int h_start = (i < psize) ? 0 : (i - psize) / stride + 1;
@@ -46,15 +44,13 @@ inline void _maxpooling_backward(
         const Dtype* image, const Dtype* pooled, Dtype* image_grad,
         const Dtype* pooled_grad, const int height, const int width,
         const int nchannels, const int psize, const int stride) {
-    int pooled_height = (height - psize) / stride + 1;
-    int pooled_width = (width - psize) / stride + 1;
-    int last_height = stride * (pooled_height - 1) + psize;
-    int last_width = stride * (pooled_width - 1) + psize;
+    int pooled_height = int(ceil(float(height - psize) / stride)) + 1;
+    int pooled_width = int(ceil(float(width - psize) / stride)) + 1;
     memset(image_grad, 0, sizeof(Dtype) * height * width * nchannels);
     // This code is written in a forward mode: we go through the pixels once,
     // and write to all the pooled regions that it maps to.
-    for (int i = 0; i < last_height; ++i) {
-        for (int j = 0; j < last_width; ++j) {
+    for (int i = 0; i < height; ++i) {
+        for (int j = 0; j < width; ++j) {
             // Processing pixel at [i,j].
             // First, compute the pooling region
             int h_start = (i < psize) ? 0 : (i - psize) / stride + 1;
@@ -82,13 +78,11 @@ template <typename Dtype>
 inline void _avepooling_forward(
         const Dtype* image, Dtype* pooled, const int height, const int width,
         const int nchannels, const int psize, const int stride) {
-    int pooled_height = (height - psize) / stride + 1;
-    int pooled_width = (width - psize) / stride + 1;
-    int last_height = stride * (pooled_height - 1) + psize;
-    int last_width = stride * (pooled_width - 1) + psize;
+    int pooled_height = int(ceil(float(height - psize) / stride)) + 1;
+    int pooled_width = int(ceil(float(width - psize) / stride)) + 1;
     memset(pooled, 0, sizeof(Dtype) * pooled_height * pooled_width * nchannels);
-    for (int i = 0; i < last_height; ++i) {
-        for (int j = 0; j < last_width; ++j) {
+    for (int i = 0; i < height; ++i) {
+        for (int j = 0; j < width; ++j) {
             // Processing pixel at [i,j].
             // First, compute the pooling region
             int h_start = (i < psize) ? 0 : (i - psize) / stride + 1;
@@ -119,15 +113,13 @@ inline void _avepooling_backward(
         Dtype* image_grad, const Dtype* pooled_grad, const int height, 
         const int width, const int nchannels, const int psize,
         const int stride) {
-    int pooled_height = (height - psize) / stride + 1;
-    int pooled_width = (width - psize) / stride + 1;
-    int last_height = stride * (pooled_height - 1) + psize;
-    int last_width = stride * (pooled_width - 1) + psize;
+    int pooled_height = int(ceil(float(height - psize) / stride)) + 1;
+    int pooled_width = int(ceil(float(width - psize) / stride)) + 1;
     memset(image_grad, 0, sizeof(Dtype) * height * width * nchannels);
     // This code is written in a forward mode: we go through the pixels once,
     // and write to all the pooled regions that it maps to.
-    for (int i = 0; i < last_height; ++i) {
-        for (int j = 0; j < last_width; ++j) {
+    for (int i = 0; i < height; ++i) {
+        for (int j = 0; j < width; ++j) {
             // Processing pixel at [i,j].
             // First, compute the pooling region
             int h_start = (i < psize) ? 0 : (i - psize) / stride + 1;
@@ -160,8 +152,8 @@ void maxpooling_forward(const int len,
         const void* image, void* pooled, const int num,
         const int height, const int width,
         const int nchannels, const int psize, const int stride) {
-    int pooled_height = (height - psize) / stride + 1;
-    int pooled_width = (width - psize) / stride + 1;
+    int pooled_height = int(ceil(float(height - psize) / stride)) + 1;
+    int pooled_width = int(ceil(float(width - psize) / stride)) + 1;
     int image_step = height * width * nchannels;
     int pooled_step = pooled_height * pooled_width * nchannels;
     switch(len) {
@@ -191,8 +183,8 @@ void maxpooling_backward(const int len,
         const void* pooled_grad, const int num,
         const int height, const int width,
         const int nchannels, const int psize, const int stride) {
-    int pooled_height = (height - psize) / stride + 1;
-    int pooled_width = (width - psize) / stride + 1;
+    int pooled_height = int(ceil(float(height - psize) / stride)) + 1;
+    int pooled_width = int(ceil(float(width - psize) / stride)) + 1;
     int image_step = height * width * nchannels;
     int pooled_step = pooled_height * pooled_width * nchannels;
     switch(len) {
@@ -225,8 +217,8 @@ void avepooling_forward(const int len,
         const void* image, void* pooled, const int num,
         const int height, const int width,
         const int nchannels, const int psize, const int stride){
-    int pooled_height = (height - psize) / stride + 1;
-    int pooled_width = (width - psize) / stride + 1;
+    int pooled_height = int(ceil(float(height - psize) / stride)) + 1;
+    int pooled_width = int(ceil(float(width - psize) / stride)) + 1;
     int image_step = height * width * nchannels;
     int pooled_step = pooled_height * pooled_width * nchannels;
     switch(len) {
@@ -255,8 +247,8 @@ void avepooling_backward(const int len,
         void* image_grad, const void* pooled_grad, const int num, 
         const int height, const int width, const int nchannels,
         const int psize, const int stride) {
-    int pooled_height = (height - psize) / stride + 1;
-    int pooled_width = (width - psize) / stride + 1;
+    int pooled_height = int(ceil(float(height - psize) / stride)) + 1;
+    int pooled_width = int(ceil(float(width - psize) / stride)) + 1;
     int image_step = height * width * nchannels;
     int pooled_step = pooled_height * pooled_width * nchannels;
     switch(len) {
