@@ -113,7 +113,8 @@ class StochasticSolver(base.Solver):
                 params = decaf_net.params()
                 for param in params:
                     diff = param.diff()
-                    mpi.COMM.Allreduce(diff)
+                    diff_cache = diff.copy()
+                    mpi.COMM.Allreduce(diff_cache, diff)
                     diff /= mpi.SIZE
             else:
                 loss = decaf_net.forward_backward(self._previous_net)

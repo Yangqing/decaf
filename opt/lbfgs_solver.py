@@ -1,6 +1,7 @@
 """Implements the LBFGS solver."""
 
 from decaf import base
+from decaf.util import mpi
 import logging
 from scipy import optimize
 
@@ -13,8 +14,9 @@ class LBFGSSolver(base.Solver):
     fmin_l_bfgs_b) so we write it differently from the other solvers. When
     faced with very large-scale problems, the additional memory overhead of
     LBFGS may make the method inapplicable, in which you may want to use the
-    stochastic solvers. Due to this reason, LBFGS solver does NOT support mpi
-    based optimizations - you may be better off using stochastic solvers.
+    stochastic solvers. Also, although LBFGS solver supports mpi based
+    optimizations, due to the network communication overhead you may still be
+    better off using stochastic solvers with large-scale problems..
     """
     
     def __init__(self, **kwargs):
@@ -43,7 +45,14 @@ class LBFGSSolver(base.Solver):
         for param in params_list:
             size = param.data().size
             collected_param[current:current+size] = param.data().flat
-            collected_diff[current:current+size] = param.diff().flat
+            # If we are computing mpi, we will need to reduce the diff.
+            diff = param.diff()
+            if mpi.SIZE > 1:
+                part = collected_diff[current:current+size]
+                part.shape = diff.shape
+                mpi.COMM.Allreduce(diff, part)
+            else:
+                collected_diff[current:current+size] = diff.flat
             current += size
 
     def _distribute_params(self):
@@ -61,6 +70,8 @@ class LBFGSSolver(base.Solver):
         self._param.data()[:] = variable
         self._distribute_params()
         loss = self._decaf_net.forward_backward(self._previous_net)
+        if mpi.SIZE > 1:
+            loss = mpi.COMM.allreduce(loss)
         self._collect_params()
         return loss, self._param.diff()
 
@@ -71,6 +82,12 @@ class LBFGSSolver(base.Solver):
         self._previous_net = previous_net
         initial_loss = self._decaf_net.forward_backward(self._previous_net)
         logging.info('Initial loss: %f.', initial_loss)
+        logging.info('(Under mpirun, the given loss will just be an estimate'
+                     ' on the root node.)')
+        if mpi.SIZE > 1:
+            params = self._decaf_net.params()
+            for param in params:
+                mpi.COMM.Bcast(param.data())
         self._collect_params(True)
         # now, run LBFGS
         # pylint: disable=W0108
