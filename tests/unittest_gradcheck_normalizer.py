@@ -41,7 +41,9 @@ class TestNormalizer(unittest.TestCase):
     # threads are being used, so I will simply skip it.
     @unittest.skipIf(sys.platform.startswith('darwin') and 
                      ('OMP_NUM_THREADS' not in os.environ or
-                      os.environ['OMP_NUM_THREADS'] != '1'))
+                      os.environ['OMP_NUM_THREADS'] != '1'),
+                     "Known to not work on macs.")
+
     def testLocalResponseNormalizeLayer(self):
         np.random.seed(1701)
         output_blob = base.Blob()
