@@ -12,7 +12,7 @@ class TestGroupConvolutionGrad(unittest.TestCase):
     def testGroupConvolutionGrad(self):
         np.random.seed(1701)
         output_blob = base.Blob()
-        checker = gradcheck.GradChecker(1e-4)
+        checker = gradcheck.GradChecker(1e-3)
         shapes = [(1,5,5,4)]
         num_kernels = 1
         group = 2
@@ -30,6 +30,11 @@ class TestGroupConvolutionGrad(unittest.TestCase):
                 self.assertEqual(output_blob.data().shape[-1], num_kernels * group)
                 print(result)
                 self.assertTrue(result[0])
+        # check if we will be able to produce an exception
+        input_blob = base.Blob((1,5,5,3), filler=fillers.GaussianRandFiller())
+        self.assertRaises(RuntimeError, checker.check,
+                          layer, [input_blob], [output_blob])
+        
 
 if __name__ == '__main__':
     unittest.main()
