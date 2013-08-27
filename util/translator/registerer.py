@@ -25,16 +25,18 @@ def register_translator(name, translator):
     _translators[name] = translator
 
 
-def default_translator(cuda_layer):
+def default_translator(cuda_layer, output_shapes):
     """A default translator if nothing fits: it will print a warning and then
     return a dummy base.Layer that does nothing.
     """
     logging.error('Default translator called.'
                   ' Will return a dummy layer for %s.', cuda_layer['name'])
+    input_shape = output_shapes[cuda_layer['inputLayers'][0]['name']]
+    output_shapes[cuda_layer['name']] = input_shape
     return core_layers.IdentityLayer(name=cuda_layer['name'])
     
 
-def translate_layer(cuda_layer):
+def translate_layer(cuda_layer, output_shapes):
     """Translates a cuda layer to a decaf layer. The function will return
     False if the input layer is a data layer, in which no decaf layer needs to
     be inserted.
@@ -42,6 +44,8 @@ def translate_layer(cuda_layer):
     Input:
         cuda_layer: a cuda layer as a dictionary, produced by the cuda convnet
             code.
+        output_shapes: a dictionary keeping the output shapes of all the 
+            layers.
     Output:
         decaf_layer: the corresponding decaf layer, or False if the input is a
             data layer.
@@ -51,17 +55,26 @@ def translate_layer(cuda_layer):
         return False
     layertype = cuda_layer['type']
     if layertype in _translators:
-        return _translators[layertype](cuda_layer)
+        return _translators[layertype](cuda_layer, output_shapes)
     else:
-        return default_translator(cuda_layer)
+        return default_translator(cuda_layer, output_shapes)
 
 
-def translate_cuda_network(cuda_layers):
+def translate_cuda_network(cuda_layers, output_shapes):
     """Translates a list of cuda layers to a decaf net.
+
+    Input:
+        cuda_layers: a list of layers from the cuda convnet training.
+        output_shapes: a dictionary that contains the specification on the
+            input shapes. This dictionary will be modified in-place to add
+            the output shapes for the intermediate layers, but you need to
+            provide the shapes for all the data layers. For data that are
+            going to be scalar, use -1. The shapes should be following the
+            decaf convention, not the cuda convnet convention.
     """
     decaf_net = base.Net()
     for cuda_layer in cuda_layers:
-        decaf_layer = translate_layer(cuda_layer)
+        decaf_layer = translate_layer(cuda_layer, output_shapes)
         if not decaf_layer:
             # This is a data layer.
             logging.info('Considering %s as an input blob.', cuda_layer['name'])
