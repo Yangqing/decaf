@@ -46,7 +46,7 @@ RESULTS_SUBDIR=`ls -1 $RESULTS_DIR`
 RESULTS_FILE=`ls -1 $RESULTS_DIR/$RESULTS_SUBDIR`
 
 
-for LAYER in data conv1 pool1 conv2 pool2 conv3 pool3 fc64 fc10 probs
+for LAYER in data conv1 pool1 pool1_neuron conv2 conv2_neuron pool2 conv3 conv3_neuron pool3 fc64 fc64_neuron fc10 probs
 do
     echo "Outputting Layer $LAYER"
     python \
@@ -58,7 +58,7 @@ do
 	    --train-range=$TRAIN_RANGE
 done
 
-echo "Dumping layer to $RESULTS_DIR/$RESULTS_SUBDIR/$RESULTS_FILE"
+echo "Dumping layer from $RESULTS_DIR/$RESULTS_SUBDIR/$RESULTS_FILE"
 # Now, let's create a layer just
 echo "
 import cPickle as pickle
@@ -67,7 +67,7 @@ pickle.dump(temp['model_state']['layers'], open('$RESULTS_DIR/layers.pickle', 'w
 exit()
 " | python
 
-
 # Now copy the data
+echo "Copying Data"
 cp -r $RESULTS_DIR/* $TEST_FOLDER
-
+echo "Done."

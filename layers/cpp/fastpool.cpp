@@ -1,4 +1,5 @@
 #include <algorithm>
+#include <cfloat>
 #include <cmath>
 #include <cstdlib>
 #include <cstring>
@@ -14,7 +15,9 @@ inline void _maxpooling_forward(
         const int nchannels, const int psize, const int stride) {
     int pooled_height = int(ceil(float(height - psize) / stride)) + 1;
     int pooled_width = int(ceil(float(width - psize) / stride)) + 1;
-    memset(pooled, 0, sizeof(Dtype) * pooled_height * pooled_width * nchannels);
+    for (int i = 0; i < pooled_height * pooled_width * nchannels; ++i) {
+        pooled[i] = -FLT_MAX;
+    }
     // This code is written in a forward mode: we go through the pixels once,
     // and write to all the pooled regions that it maps to.
     for (int i = 0; i < height; ++i) {

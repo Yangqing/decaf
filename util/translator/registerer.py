@@ -9,6 +9,7 @@ place so your function actually gets registered.
 """
 
 from decaf import base
+from decaf.layers import core_layers
 import logging
 
 # OUTPUT_AFFIX is the affix we add to the layer name as the output blob name
@@ -30,7 +31,7 @@ def default_translator(cuda_layer):
     """
     logging.error('Default translator called.'
                   ' Will return a dummy layer for %s.', cuda_layer['name'])
-    return base.Layer(name=cuda_layer['name'])
+    return core_layers.IdentityLayer(name=cuda_layer['name'])
     
 
 def translate_layer(cuda_layer):
@@ -73,6 +74,7 @@ def translate_cuda_network(cuda_layers):
             else:
                 needs.append(cuda_layers[idx]['name'] + OUTPUT_AFFIX)
         provide = cuda_layer['name'] + OUTPUT_AFFIX
-        decaf_net.add_layer(decaf_layer, needs=needs, provides=provide)
+        decaf_net.add_layers(decaf_layer, needs=needs, provides=provide)
+    decaf_net.finish()
     return decaf_net
 
