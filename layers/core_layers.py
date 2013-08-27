@@ -17,6 +17,7 @@ from decaf.layers.group_convolution import GroupConvolutionLayer
 from decaf.layers.deconvolution import DeconvolutionLayer
 from decaf.layers.dropout import DropoutLayer
 from decaf.layers.flatten import FlattenLayer
+from decaf.layers.identity import IdentityLayer
 from decaf.layers.im2col import Im2colLayer
 from decaf.layers.innerproduct import InnerProductLayer
 from decaf.layers.loss import (SquaredLossLayer,
