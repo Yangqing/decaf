@@ -24,7 +24,6 @@ class TestLossGrad(unittest.TestCase):
         np.random.seed(1701)
         shapes = [(4,3), (1,10), (4,3,2)]
         layer = core_layers.SquaredLossLayer(name='squared')
-        half_layer = core_layers.SquaredLossLayer(name='squared', weight=0.5)
         checker = gradcheck.GradChecker(1e-6)
         for shape in shapes:
             input_blob = base.Blob(shape, filler=fillers.GaussianRandFiller())
@@ -36,12 +35,24 @@ class TestLossGrad(unittest.TestCase):
             # also, check if weight works.
             self._testWeight(layer, [input_blob, target_blob])
 
+    def testLogisticLossGrad(self):
+        np.random.seed(1701)
+        layer = core_layers.LogisticLossLayer(name='logistic')
+        checker = gradcheck.GradChecker(1e-6)
+        input_blob = base.Blob((10,1), filler=fillers.GaussianRandFiller())
+        target_blob = base.Blob((10,), dtype=np.int,
+                                filler=fillers.RandIntFiller(high=2))
+        result = checker.check(layer, [input_blob,target_blob], [],
+                               check_indices = [0])
+        print(result)
+        self.assertTrue(result[0])
+        # also, check if weight works.
+        self._testWeight(layer, [input_blob, target_blob])
     
     def testAutoencoderLossGrad(self):
         np.random.seed(1701)
         shapes = [(4,3), (1,10), (4,3,2)]
         layer = core_layers.AutoencoderLossLayer(name='loss', ratio=0.5)
-        half_layer = core_layers.SquaredLossLayer(name='squared', weight=0.5)
         checker = gradcheck.GradChecker(1e-5)
         for shape in shapes:
             input_blob = base.Blob(shape, filler=fillers.RandFiller(min=0.05, max=0.95))
@@ -54,7 +65,6 @@ class TestLossGrad(unittest.TestCase):
     def testMultinomialLogisticLossGrad(self):
         np.random.seed(1701)
         layer = core_layers.MultinomialLogisticLossLayer(name='loss')
-        half_layer = core_layers.SquaredLossLayer(name='squared', weight=0.5)
         checker = gradcheck.GradChecker(1e-6)
         shape = (10,5)
         # check index input

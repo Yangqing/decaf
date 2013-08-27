@@ -20,6 +20,7 @@ from decaf.layers.flatten import FlattenLayer
 from decaf.layers.im2col import Im2colLayer
 from decaf.layers.innerproduct import InnerProductLayer
 from decaf.layers.loss import (SquaredLossLayer,
+                               LogisticLossLayer,
                                MultinomialLogisticLossLayer,
                                AutoencoderLossLayer)
 from decaf.layers.normalize import (MeanNormalizeLayer,

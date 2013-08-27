@@ -4,6 +4,7 @@
 from decaf import base
 from decaf.util import logexp
 import numpy as np
+import numexpr
 
 class SquaredLossLayer(base.LossLayer):
     """The squared loss. Following conventions, we actually compute
@@ -17,6 +18,28 @@ class SquaredLossLayer(base.LossLayer):
         self._loss = np.dot(diff.flat, diff.flat) / 2. / diff.shape[0] \
                 * self.spec['weight']
         diff *= self.spec['weight'] / diff.shape[0]
+
+
+class LogisticLossLayer(base.LossLayer):
+    """The logistic loss layer. The input will be the scores BEFORE softmax
+    normalization.
+
+    The inpub should be two blobs: the first blob stores a N*1 dimensional
+    matrix where N is the number of data points. The second blob stores the
+    labels as a N-dimensional 0-1 vector.
+    """
+    def forward(self, bottom, top):
+        pred = bottom[0].data()
+        label = bottom[1].data()[:, np.newaxis]
+        prob = logexp.exp(pred)
+        numexpr.evaluate("prob / (1. + prob)", out=prob)
+        diff = bottom[0].init_diff(setzero=False)
+        numexpr.evaluate("label - prob", out=diff)
+        self._loss = np.dot(label.flat, logexp.log(prob).flat) + \
+                     np.dot((1. - label).flat, logexp.log(1. - prob).flat)
+        # finally, scale down by the number of data points
+        diff *= self.spec['weight'] / diff.shape[0]
+        self._loss *= self.spec['weight'] / diff.shape[0]
 
 
 class MultinomialLogisticLossLayer(base.LossLayer):
