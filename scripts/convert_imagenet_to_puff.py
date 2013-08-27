@@ -58,6 +58,8 @@ def process_image(filename):
     else:
         newshape = (int(img.shape[0] * float(FLAGS.size) / img.shape[1] + 0.5),
                     FLAGS.size)
+    if img.shape[2] == 4:
+        img = img[:,:,:3]
     img = transform.resize(img, newshape)
     # now, cut the margin
     if img.shape[0] > FLAGS.size:
