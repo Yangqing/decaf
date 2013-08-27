@@ -1,4 +1,4 @@
-"""Implements the inner product layer."""
+"""Implements the minibatch sampling layer."""
 
 from decaf import base
 import numpy as np

@@ -27,6 +27,7 @@ class Im2colLayer(base.Layer):
             raise ValueError('Stride should be larger than 0.')
 
     def _get_new_shape(self, features):
+        """Gets the new shape of the im2col operation."""
         if features.ndim != 4:
             raise ValueError('Input features should be 4-dimensional.')
         num, height, width, channels = features.shape
@@ -48,7 +49,6 @@ class Im2colLayer(base.Layer):
         if not propagate_down:
             return 0.
         top_diff = top[0].diff()
-        features = bottom[0].data()
         bottom_diff = bottom[0].init_diff(setzero=False)
         wrapper.im2col_backward(bottom_diff, top_diff, self._psize,
                                 self._stride)

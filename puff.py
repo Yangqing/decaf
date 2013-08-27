@@ -30,7 +30,8 @@ class Puff(object):
         self.open(name, start, end)
 
     def open(self, name, start, end):
-        """Opens a puff data: it is composed of two files, name.puff and name.icing.
+        """Opens a puff data: it is composed of two files, name.puff and
+        name.icing.
         """
         icing = pickle.load(open(name + '.icing'))
         self._shape = icing['shape']
