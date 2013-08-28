@@ -4,6 +4,7 @@
 from decaf import base
 from decaf.util import logexp
 import numpy as np
+import numexpr
 
 class SquaredLossLayer(base.LossLayer):
     """The squared loss. Following conventions, we actually compute
@@ -17,6 +18,30 @@ class SquaredLossLayer(base.LossLayer):
         self._loss = np.dot(diff.flat, diff.flat) / 2. / diff.shape[0] \
                 * self.spec['weight']
         diff *= self.spec['weight'] / diff.shape[0]
+
+
+class LogisticLossLayer(base.LossLayer):
+    """The logistic loss layer. The input will be the scores BEFORE softmax
+    normalization.
+
+    The inpub should be two blobs: the first blob stores a N*1 dimensional
+    matrix where N is the number of data points. The second blob stores the
+    labels as a N-dimensional 0-1 vector.
+    """
+    def forward(self, bottom, top):
+        pred = bottom[0].data()
+        label = bottom[1].data()[:, np.newaxis]
+        prob = logexp.exp(pred)
+        numexpr.evaluate("prob / (1. + prob)", out=prob)
+        diff = bottom[0].init_diff(setzero=False)
+        numexpr.evaluate("label - prob", out=diff)
+        self._loss = np.dot(label.flat, logexp.log(prob).flat) + \
+                     np.dot((1. - label).flat, logexp.log(1. - prob).flat)
+        # finally, scale down by the number of data points
+        # Also, since we we computing the Loss (minimizing), we change the
+        # sign of the loss value.
+        diff *= - self.spec['weight'] / diff.shape[0]
+        self._loss *= - self.spec['weight'] / diff.shape[0]
 
 
 class MultinomialLogisticLossLayer(base.LossLayer):
@@ -59,6 +84,31 @@ class MultinomialLogisticLossLayer(base.LossLayer):
         # finally, scale down by the number of data points
         diff *= self.spec['weight'] / diff.shape[0]
         self._loss *= self.spec['weight'] / diff.shape[0]
+
+
+class KLDivergenceLossLayer(base.LossLayer):
+    """This layer is similar to the MultinomialLogisticLossLayer, with the
+    difference that this layer's input is AFTER the softmax function. If you
+    would like to train a multinomial logistic regression, you should prefer
+    using the MultinomialLogisticLossLayer since the gradient computation
+    would be more efficient.
+    """
+    def forward(self, bottom, top):
+        prob = bottom[0].data()
+        label = bottom[1].data()
+        diff = bottom[0].init_diff()
+        if label.ndim == 1:
+            # The labels are given as a sparse vector.
+            indices = np.arange(diff.shape[0])
+            prob_sub = np.ascontiguousarray(prob[indices, label])
+            diff[indices, label] = 1. / prob_sub
+            self._loss = logexp.log(prob_sub).sum()
+        else:
+            numexpr.evaluate('label / prob', out=diff)
+            self._loss = np.dot(label.flat, logexp.log(prob).flat)
+        # finally, scale down by the number of data points
+        diff *= - self.spec['weight'] / diff.shape[0]
+        self._loss *= - self.spec['weight'] / diff.shape[0]
 
 
 class AutoencoderLossLayer(base.LossLayer):

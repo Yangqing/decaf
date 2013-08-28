@@ -1,4 +1,5 @@
 #include <algorithm>
+#include <cfloat>
 #include <cmath>
 #include <cstdlib>
 #include <cstring>
@@ -14,7 +15,9 @@ inline void _maxpooling_forward(
         const int nchannels, const int psize, const int stride) {
     int pooled_height = int(ceil(float(height - psize) / stride)) + 1;
     int pooled_width = int(ceil(float(width - psize) / stride)) + 1;
-    memset(pooled, 0, sizeof(Dtype) * pooled_height * pooled_width * nchannels);
+    for (int i = 0; i < pooled_height * pooled_width * nchannels; ++i) {
+        pooled[i] = -FLT_MAX;
+    }
     // This code is written in a forward mode: we go through the pixels once,
     // and write to all the pooled regions that it maps to.
     for (int i = 0; i < height; ++i) {
@@ -81,30 +84,27 @@ inline void _avepooling_forward(
     int pooled_height = int(ceil(float(height - psize) / stride)) + 1;
     int pooled_width = int(ceil(float(width - psize) / stride)) + 1;
     memset(pooled, 0, sizeof(Dtype) * pooled_height * pooled_width * nchannels);
-    for (int i = 0; i < height; ++i) {
-        for (int j = 0; j < width; ++j) {
-            // Processing pixel at [i,j].
-            // First, compute the pooling region
-            int h_start = (i < psize) ? 0 : (i - psize) / stride + 1;
-            int h_end = min(i / stride + 1, pooled_height);
-            int w_start = (j < psize) ? 0 : (j - psize) / stride + 1;
-            int w_end = min(j / stride + 1, pooled_width);
-            const Dtype* p_image = image + (i * width + j) * nchannels;
-            for (int ph = h_start; ph < h_end; ++ph) {
-                for (int pw = w_start; pw < w_end; ++pw) {
-                    Dtype* p_pooled = pooled + (ph * pooled_width + pw) * nchannels;
+    for (int ph = 0; ph < pooled_height; ++ph) {
+        for (int pw = 0; pw < pooled_width; ++pw) {
+            int h_start = ph * stride;
+            int h_end = min(height, h_start + psize);
+            int w_start = pw * stride;
+            int w_end = min(width, w_start + psize);
+            Dtype* p_pooled = pooled + (ph * pooled_width + pw) * nchannels;
+            for (int i = h_start; i < h_end; ++i) {
+                for (int j = w_start; j < w_end; ++j) {
+                    const Dtype* p_image = image + (i * width + j) * nchannels;
                     for (int c = 0; c < nchannels; ++c) {
                         p_pooled[c] += p_image[c];
                     }
                 }
             }
-        } // loop over width
-    } // loop over height
-    // do average
-    int total = pooled_height * pooled_width * nchannels;
-    Dtype scale = 1. / psize / psize;
-    for (int i = 0; i < total; ++i) {
-        pooled[i] *= scale;
+            // normalize
+            Dtype scale = 1. / Dtype((h_end - h_start) * (w_end - w_start));
+            for (int c = 0; c < nchannels; ++c) {
+                p_pooled[c] *= scale;
+            }
+        }
     }
 }
 
@@ -118,31 +118,24 @@ inline void _avepooling_backward(
     memset(image_grad, 0, sizeof(Dtype) * height * width * nchannels);
     // This code is written in a forward mode: we go through the pixels once,
     // and write to all the pooled regions that it maps to.
-    for (int i = 0; i < height; ++i) {
-        for (int j = 0; j < width; ++j) {
-            // Processing pixel at [i,j].
-            // First, compute the pooling region
-            int h_start = (i < psize) ? 0 : (i - psize) / stride + 1;
-            int h_end = min(i / stride + 1, pooled_height);
-            int w_start = (j < psize) ? 0 : (j - psize) / stride + 1;
-            int w_end = min(j / stride + 1, pooled_width);
-            Dtype* p_image_grad = image_grad + (i * width + j) * nchannels;
-            for (int ph = h_start; ph < h_end; ++ph) {
-                for (int pw = w_start; pw < w_end; ++pw) {
-                    const Dtype* p_pooled_grad = pooled_grad + 
-                        (ph * pooled_width + pw) * nchannels;
+    for (int ph = 0; ph < pooled_height; ++ph) {
+        for (int pw = 0; pw < pooled_width; ++pw) {
+            int h_start = ph * stride;
+            int h_end = min(height, h_start + psize);
+            int w_start = pw * stride;
+            int w_end = min(width, w_start + psize);
+            Dtype scale = 1. / Dtype((h_end - h_start) * (w_end - w_start));
+            const Dtype* p_pooled_grad = pooled_grad
+                    + (ph * pooled_width + pw) * nchannels;
+            for (int i = h_start; i < h_end; ++i) {
+                for (int j = w_start; j < w_end; ++j) {
+                    Dtype* p_image_grad = image_grad + (i * width + j) * nchannels;
                     for (int c = 0; c < nchannels; ++c) {
-                        p_image_grad[c] += p_pooled_grad[c];
+                        p_image_grad[c] += p_pooled_grad[c] * scale;
                     }
                 }
             }
-        } // loop over width
-    } // loop over height
-    // do average
-    int total = height * width * nchannels;
-    Dtype scale = 1. / psize / psize;
-    for (int i = 0; i < total; ++i) {
-        image_grad[i] *= scale;
+        }
     }
 }
 

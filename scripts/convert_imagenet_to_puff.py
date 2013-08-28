@@ -38,7 +38,8 @@ import sys
 gflags.DEFINE_string('root', '', 'The path to the imagenet data.')
 gflags.DEFINE_string('output', '', 'The output file name.')
 gflags.DEFINE_string('output_label', '', 'The output label file name.')
-gflags.DEFINE_integer('size', 256, 'The image size.')
+gflags.DEFINE_integer('size', 256, 'The image size. If size=0,'
+                      ' no resize is carried out.')
 gflags.DEFINE_string('extension', 'JPEG', 'The image extension.')
 gflags.MarkFlagAsRequired('root')
 gflags.MarkFlagAsRequired('output')
@@ -49,12 +50,16 @@ def process_image(filename):
     img = io.imread(filename)
     if img.ndim == 2:
         img = np.tile(img[:,:,np.newaxis], (1,1,3))
+    if FLAGS.size == 0:
+        return img
     if img.shape[0] < img.shape[1]:
         newshape = (FLAGS.size,
                     int(img.shape[1] * float(FLAGS.size) / img.shape[0] + 0.5))
     else:
         newshape = (int(img.shape[0] * float(FLAGS.size) / img.shape[1] + 0.5),
                     FLAGS.size)
+    if img.shape[2] == 4:
+        img = img[:,:,:3]
     img = transform.resize(img, newshape)
     # now, cut the margin
     if img.shape[0] > FLAGS.size:

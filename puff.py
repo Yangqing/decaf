@@ -27,18 +27,15 @@ class Puff(object):
         self._fid = None
         # the current index of the data.
         self._curr = None
-        self.open(name, start, end)
+        self.open(name)
+        if start or end:
+            self.set_range(start, end)
 
-    def open(self, name, start, end):
-        """Opens a puff data: it is composed of two files, name.puff and name.icing.
-        """
-        icing = pickle.load(open(name + '.icing'))
-        self._shape = icing['shape']
-        self._dtype = icing['dtype']
-        self._num_data = icing['num']
-        self._step = reduce(mul, self._shape, 1)
-        self._fid = open(name + '.puff', 'rb')
+    def set_range(self, start, end):
+        """sets the range that we will read data from."""
         # determine the local start and end range
+        if start > self._num_data:
+            raise ValueError('Invalid start index.')
         self._start = start
         if end > start and end <= self._num_data:
             self._end = end
@@ -46,10 +43,33 @@ class Puff(object):
             self._end = self._num_data
         else:
             raise ValueError('Invalid end index.')
-        if self._start:
-            self.seek(self._start)
+        self.seek(self._start)
         self._num_local_data = self._end - self._start
         self._curr = self._start
+
+    def num_data(self):
+        """Return the number of data."""
+        return self._num_data
+
+    def num_local_data(self):
+        """Returns the number of local data."""
+        return self._num_local_data
+
+    def open(self, name):
+        """Opens a puff data: it is composed of two files, name.puff and
+        name.icing. The open function will set the range to all the data
+        points - use set_range() to specify a custom range to read from.
+        """
+        icing = pickle.load(open(name + '.icing'))
+        self._shape = icing['shape']
+        self._dtype = icing['dtype']
+        self._num_data = icing['num']
+        self._step = reduce(mul, self._shape, 1)
+        self._fid = open(name + '.puff', 'rb')
+        self._start = 0
+        self._end = self._num_data
+        self._num_local_data = self._num_data
+        self._curr = 0
 
     def seek(self, offset):
         """Seek to the beginning of the offset-th data point."""

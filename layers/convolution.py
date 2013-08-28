@@ -20,6 +20,8 @@ class ConvolutionLayer(base.Layer):
                 same number of channels as the data.
             stride: the kernel stride.
             mode: 'valid', 'same', or 'full'.
+            pad: if set, this value will overwrite the mode and we will use 
+                the given pad size. Default None.
             reg: the regularizer to be used to add regularization terms.
                 should be a decaf.base.Regularizer instance. Default None. 
             filler: a filler to initialize the weights. Should be a
@@ -42,14 +44,11 @@ class ConvolutionLayer(base.Layer):
         self._num_kernels = self.spec['num_kernels']
         self._ksize = self.spec['ksize']
         self._stride = self.spec['stride']
-        self._mode = self.spec['mode']
         self._large_mem = self.spec.get('large_mem', False)
         self._reg = self.spec.get('reg', None)
         self._has_bias = self.spec.get('has_bias', True)
         if self._ksize <= 1:
             raise ValueError('Invalid kernel size. Kernel size should > 1.')
-        if self._mode == 'same' and self._ksize % 2 == 0:
-            raise ValueError('The "same" mode should have an odd kernel size.')
         # since the im2col operation often creates large intermediate matrices,
         # we will process them in batches.
         self._padded = base.Blob()
@@ -61,15 +60,19 @@ class ConvolutionLayer(base.Layer):
             self._param = [self._kernels, self._bias]
         else:
             self._param = [self._kernels]
-        # Constructs the sub layers that actually carry out the convolution.
-        if self._mode == 'valid':
-            self._pad_size = 0
-        elif self._mode == 'full':
-            self._pad_size = self._ksize - 1
-        elif self._mode == 'same':
-            self._pad_size = int(self._ksize / 2)
-        else:
-            raise ValueError('Unknown mode: %s' % self._mode)
+        self._pad_size = self.spec.get('pad', None)
+        if self._pad_size is None:
+            self._mode = self.spec['mode']
+            if self._mode == 'same' and self._ksize % 2 == 0:
+                raise ValueError('The "same" mode should have an odd kernel size.')
+            if self._mode == 'valid':
+                self._pad_size = 0
+            elif self._mode == 'full':
+                self._pad_size = self._ksize - 1
+            elif self._mode == 'same':
+                self._pad_size = int(self._ksize / 2)
+            else:
+                raise ValueError('Unknown mode: %s' % self._mode)
     
     def forward(self, bottom, top):
         """Runs the forward pass."""
@@ -85,7 +88,7 @@ class ConvolutionLayer(base.Layer):
             if self._has_bias:
                 self._bias.init_data((self._num_kernels,), bottom_data.dtype)
         # pad the data
-        if self._mode == 'valid':
+        if self._pad_size == 0:
             padded_data = self._padded.mirror(bottom_data)
         else:
             padded_data = self._padded.init_data(
@@ -146,7 +149,7 @@ class ConvolutionLayer(base.Layer):
         if propagate_down:
             bottom_diff = bottom[0].init_diff(setzero=False)
             col_diff = self._col.init_diff()
-            if self._mode == 'valid':
+            if self._pad_size == 0:
                 padded_diff = self._padded.mirror_diff(bottom_diff)
             else:
                 padded_diff = self._padded.init_diff(setzero=False)
@@ -176,7 +179,7 @@ class ConvolutionLayer(base.Layer):
                                             self._ksize, self._stride)
         # finally, copy results to the bottom diff.
         if propagate_down:
-            if self._mode != 'valid':
+            if self._pad_size != 0:
                 bottom_diff[:] = padded_diff[:,
                                              self._pad_size:-self._pad_size,
                                              self._pad_size:-self._pad_size]

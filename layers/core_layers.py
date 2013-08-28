@@ -17,10 +17,13 @@ from decaf.layers.group_convolution import GroupConvolutionLayer
 from decaf.layers.deconvolution import DeconvolutionLayer
 from decaf.layers.dropout import DropoutLayer
 from decaf.layers.flatten import FlattenLayer
+from decaf.layers.identity import IdentityLayer
 from decaf.layers.im2col import Im2colLayer
 from decaf.layers.innerproduct import InnerProductLayer
 from decaf.layers.loss import (SquaredLossLayer,
+                               LogisticLossLayer,
                                MultinomialLogisticLossLayer,
+                               KLDivergenceLossLayer,
                                AutoencoderLossLayer)
 from decaf.layers.normalize import (MeanNormalizeLayer,
                                     ResponseNormalizeLayer,
@@ -29,4 +32,4 @@ from decaf.layers.padding import PaddingLayer
 from decaf.layers.pooling import PoolingLayer
 from decaf.layers.relu import ReLULayer
 from decaf.layers.sigmoid import SigmoidLayer
-
+from decaf.layers.softmax import SoftmaxLayer

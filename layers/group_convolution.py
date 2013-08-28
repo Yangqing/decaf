@@ -27,17 +27,16 @@ class GroupConvolutionLayer(base.Layer):
         self._conv_args = dict(self.spec)
         self._conv_args['name'] = self.spec['name'] + '_sub'
         del self._conv_args['group']
-        self._bottom_sub = base.Blob()
-        self._top_sub = base.Blob()
+        self._bottom_sub = [base.Blob() for i in range(self._group)]
+        self._top_sub = [base.Blob() for i in range(self._group)]
         self._conv_layers = None
-        self._params = None
         self._blocksize = 0
         self._num_kernels = self.spec['num_kernels']
-        if self.spec.get('large_mem', False):
-            raise ValueError('group convolutional layer does not support'
-                             ' large memory mode.')
-        # Note: since the group convolution layer just wraps around the
-        # convolutional layers, very little needs to be done here.
+        # create the convolution layers
+        self._conv_layers = [
+            convolution.ConvolutionLayer(**self._conv_args)
+            for i in range(self._group)]
+        self._param = sum((layer.param() for layer in self._conv_layers), [])
         return
 
     def forward(self, bottom, top):
@@ -50,25 +49,18 @@ class GroupConvolutionLayer(base.Layer):
                                ' divisible by the number of groups (%d).' %
                                (bottom_data.shape[-1], self._group))
         self._blocksize = bottom_data.shape[-1] / self._group
-        if not self._conv_layers:
-            # create the convolution layers
-            self._conv_layers = [
-                convolution.ConvolutionLayer(**self._conv_args)
-                for i in range(self._group)]
-            self._params = sum((layer.param() for layer in self._conv_layers),
-                               [])
-        # Now, create intermediate blobs, and compute forward by group
-        bottom_sub_data = self._bottom_sub.init_data(
-            bottom_data.shape[:-1] + (self._blocksize,),
-            bottom_data.dtype, setdata=False)
         for i in range(self._group):
             in_start = i * self._blocksize
             in_end = in_start + self._blocksize
             out_start = i * self._num_kernels
             out_end = out_start + self._num_kernels
+            # Now, create intermediate blobs, and compute forward by group
+            bottom_sub_data = self._bottom_sub[i].init_data(
+                bottom_data.shape[:-1] + (self._blocksize,),
+                bottom_data.dtype, setdata=False)
             bottom_sub_data[:] = bottom_data[:, :, :, in_start:in_end]
-            self._conv_layers[i].forward([self._bottom_sub], [self._top_sub])
-            top_sub_data = self._top_sub.data()
+            self._conv_layers[i].forward([self._bottom_sub[i]], [self._top_sub[i]])
+            top_sub_data = self._top_sub[i].data()
             if i == 0:
                 top_data = top[0].init_data(
                     top_sub_data.shape[:-1] + \
@@ -83,12 +75,11 @@ class GroupConvolutionLayer(base.Layer):
         top_diff = top[0].diff()
         bottom_data = bottom[0].data()
         # initialize the sub diff
-        top_sub_diff = self._top_sub.init_diff(setzero=False)
-        bottom_sub_data = self._bottom_sub.data()
         if propagate_down:
             bottom_diff = bottom[0].init_diff(setzero=False)
-            bottom_sub_diff = self._bottom_sub.init_diff(setzero=False)
         for i in range(self._group):
+            top_sub_diff = self._top_sub[i].init_diff(setzero=False)
+            bottom_sub_data = self._bottom_sub[i].data()
             in_start = i * self._blocksize
             in_end = in_start + self._blocksize
             out_start = i * self._num_kernels
@@ -98,24 +89,18 @@ class GroupConvolutionLayer(base.Layer):
             bottom_sub_data[:] = bottom_data[:, :, :, in_start:in_end]
             top_sub_diff[:] = top_diff[:, :, :, out_start:out_end]
             loss += self._conv_layers[i].backward(
-                [self._bottom_sub], [self._top_sub], propagate_down)
+                [self._bottom_sub[i]], [self._top_sub[i]], propagate_down)
             if propagate_down:
+                bottom_sub_diff = self._bottom_sub[i].init_diff(setzero=False)
                 bottom_diff[:, :, :, in_start:in_end] = bottom_sub_diff
         return loss
 
     def __getstate__(self):
         """When pickling, we will remove the intermediate data."""
-        self._bottom_sub = base.Blob()
-        self._top_sub = base.Blob()
+        self._bottom_sub = [base.Blob() for i in range(self._group)]
+        self._top_sub = [base.Blob() for i in range(self._group)]
         return self.__dict__
     
-    def params(self):
-        """Return a list of parameters used in the network."""
-        if not self._params:
-            raise RuntimeError('You have to run forward once to get the'
-                               ' parameters.')
-        return self._params
-
     def update(self):
         """updates the parameters."""
         for layer in self._conv_layers:

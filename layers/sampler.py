@@ -1,4 +1,4 @@
-"""Implements the inner product layer."""
+"""Implements the minibatch sampling layer."""
 
 from decaf import base
 import numpy as np
@@ -41,10 +41,6 @@ class BasicMinibatchLayer(base.DataLayer):
         # finally, compute the new index.
         self._index = end_id % size
         
-    def update(self):
-        """Has nothing to update."""
-        pass
-
 
 class RandomPatchLayer(base.DataLayer):
     """A layer that randomly extracts patches from bottom blobs.
@@ -79,7 +75,3 @@ class RandomPatchLayer(base.DataLayer):
                                                 w_index:w_index + psize]
         return
 
-    def update(self):
-        """Has nothing to update."""
-        pass
-    
