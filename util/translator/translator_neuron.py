@@ -1,5 +1,6 @@
 from decaf.util.translator import registerer
 from decaf.layers import core_layers
+import logging
 
 
 def translator_neuron(cuda_layer, output_shapes):
@@ -7,6 +8,11 @@ def translator_neuron(cuda_layer, output_shapes):
     neurontype = cuda_layer['neuron']['type']
     if neurontype == 'relu':
         return core_layers.ReLULayer(
+            name=cuda_layer['name'])
+    elif neurontype == 'dropout':
+        logging.warning('Using Jeff\'s definition of dropout (no scaling'
+                        ' during test). Make sure this is what you need.')
+        return core_layers.IdentityLayer(
             name=cuda_layer['name'])
     else:
         raise NotImplementedError('Neuron type %s not implemented yet.'
