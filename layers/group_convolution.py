@@ -33,8 +33,11 @@ class GroupConvolutionLayer(base.Layer):
         self._params = None
         self._blocksize = 0
         self._num_kernels = self.spec['num_kernels']
-        # Note: since the group convolution layer just wraps around the
-        # convolutional layers, very little needs to be done here.
+        # create the convolution layers
+        self._conv_layers = [
+            convolution.ConvolutionLayer(**self._conv_args)
+            for i in range(self._group)]
+        self._params = sum((layer.param() for layer in self._conv_layers), [])
         return
 
     def forward(self, bottom, top):
@@ -47,13 +50,6 @@ class GroupConvolutionLayer(base.Layer):
                                ' divisible by the number of groups (%d).' %
                                (bottom_data.shape[-1], self._group))
         self._blocksize = bottom_data.shape[-1] / self._group
-        if not self._conv_layers:
-            # create the convolution layers
-            self._conv_layers = [
-                convolution.ConvolutionLayer(**self._conv_args)
-                for i in range(self._group)]
-            self._params = sum((layer.param() for layer in self._conv_layers),
-                               [])
         for i in range(self._group):
             in_start = i * self._blocksize
             in_end = in_start + self._blocksize
@@ -106,13 +102,6 @@ class GroupConvolutionLayer(base.Layer):
         self._top_sub = [base.Blob() for i in range(self._group)]
         return self.__dict__
     
-    def params(self):
-        """Return a list of parameters used in the network."""
-        if not self._params:
-            raise RuntimeError('You have to run forward once to get the'
-                               ' parameters.')
-        return self._params
-
     def update(self):
         """updates the parameters."""
         for layer in self._conv_layers:
