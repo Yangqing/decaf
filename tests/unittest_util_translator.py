@@ -36,7 +36,7 @@ class TestCudaConv(unittest.TestCase):
 
     def _testSingleLayer(self, decaf_name, cuda_name, reshape_size=0,
                          reshape_channels=0, decimal=6):
-        output = self._net.blobs[self._net.provides[decaf_name][0]].data()
+        output = self._net.feature(self._net.provides[decaf_name][0])
         self.assertEqual(output.shape[1:], self._output_shapes[decaf_name])
         ref_data = pickle.load(open(
             os.path.join(_TEST_DATA_DIR, cuda_name, 'data_batch_5')))

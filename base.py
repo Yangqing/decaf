@@ -577,6 +577,14 @@ class Net(object):
             layer.predict(bottom, top)
         return dict([(name, self.blobs[name].data())
                      for name in self._output_blobs])
+    
+    def feature(self, blob_name):
+        """Returns the data in a specific blob name as the intermediate
+        feature for the last run of either forward() or predict(). Note that
+        if the network has not been run with any data, you should not call
+        this function as the returned value will be invalid.
+        """
+        return self.blobs[blob_name].data()
 
     def update(self):
         """Update the parameters using the diff values provided in the
