@@ -15,6 +15,10 @@ import logging
 # OUTPUT_AFFIX is the affix we add to the layer name as the output blob name
 # for the corresponding decaf layer.
 OUTPUT_AFFIX = '_cudanet_out'
+# DATA_TYPENAME is the typename for the data layers at cuda convnet.
+DATA_TYPENAME = 'data'
+# likewise, cost typename
+COST_TYPENAME = 'cost'
 # _translators is a dictionary mapping layer names to functions that does the
 # actual translations.
 _translators = {}
@@ -29,8 +33,6 @@ def default_translator(cuda_layer, output_shapes):
     """A default translator if nothing fits: it will print a warning and then
     return a dummy base.Layer that does nothing.
     """
-    logging.error('Default translator called.'
-                  ' Will return a dummy layer for %s.', cuda_layer['name'])
     input_shape = output_shapes[cuda_layer['inputLayers'][0]['name']]
     output_shapes[cuda_layer['name']] = input_shape
     return core_layers.IdentityLayer(name=cuda_layer['name'])
@@ -50,13 +52,18 @@ def translate_layer(cuda_layer, output_shapes):
         decaf_layer: the corresponding decaf layer, or False if the input is a
             data layer.
     """
-    if cuda_layer['type'] == 'data':
-        # if the layer type is data, it is simply a data layer.
-        return False
     layertype = cuda_layer['type']
-    if layertype in _translators:
+    if layertype == DATA_TYPENAME or layertype.startswith(COST_TYPENAME):
+        # if the layer type is data, it is simply a data layer.
+        logging.info('Ignoring layer %s (type %s)', cuda_layer['name'],
+                     cuda_layer['type'])
+        return False
+    elif layertype in _translators:
         return _translators[layertype](cuda_layer, output_shapes)
     else:
+        logging.error('No registered translator for %s (type %s),'
+                      ' Will return a dummy layer.',
+                      cuda_layer['name'], cuda_layer['type'])
         return default_translator(cuda_layer, output_shapes)
 
 
@@ -76,13 +83,12 @@ def translate_cuda_network(cuda_layers, output_shapes):
     for cuda_layer in cuda_layers:
         decaf_layer = translate_layer(cuda_layer, output_shapes)
         if not decaf_layer:
-            # This is a data layer.
-            logging.info('Considering %s as an input blob.', cuda_layer['name'])
+            # This layer should be ignored.
             continue
         # Now, let's figure out the parent of the layer
         needs = []
         for idx in cuda_layer['inputs']:
-            if cuda_layers[idx]['type'] == 'data':
+            if cuda_layers[idx]['type'] == DATA_TYPENAME:
                 needs.append(cuda_layers[idx]['name'])
             else:
                 needs.append(cuda_layers[idx]['name'] + OUTPUT_AFFIX)

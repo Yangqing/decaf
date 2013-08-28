@@ -18,3 +18,4 @@ import translator_conv
 import translator_fc
 import translator_neuron
 import translator_pool
+import translator_softmax

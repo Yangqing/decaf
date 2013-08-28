@@ -14,7 +14,7 @@ CUDA_FOLDER=$HOME/codes/cuda-convnet
 TEST_FOLDER=$PWD
 cd $CUDA_FOLDER
 
-RESULTS_DIR='./results'
+RESULTS_DIR=$TEST_FOLDER/result
 
 if [ -e "$RESULTS_DIR" ]; then
 	echo "results dir exists: $RESULTS_DIR"
@@ -23,8 +23,8 @@ if [ -e "$RESULTS_DIR" ]; then
 fi
 mkdir -p ${RESULTS_DIR}
 
-LAYER_DEF_FILE='./example-layers/layers-80sec.cfg'
-LAYER_PARAM_FILE='./example-layers/layer-params-80sec.cfg'
+LAYER_DEF_FILE="$TEST_FOLDER/layers.cfg"
+LAYER_PARAM_FILE="$TEST_FOLDER/layer-params.cfg"
 TEST_RANGE='5'
 TRAIN_RANGE='1-4'
 GPUID='1'
@@ -46,14 +46,14 @@ RESULTS_SUBDIR=`ls -1 $RESULTS_DIR`
 RESULTS_FILE=`ls -1 $RESULTS_DIR/$RESULTS_SUBDIR`
 
 
-for LAYER in data conv1 pool1 pool1_neuron conv2 conv2_neuron pool2 conv3 conv3_neuron pool3 fc64 fc64_neuron fc10 probs
+for LAYER in data conv1 pool1 pool1_neuron rnorm1 conv2 conv2_neuron pool2 conv3 conv3_neuron pool3 fc64 fc64_neuron fc10 probs
 do
     echo "Outputting Layer $LAYER"
     python \
         shownet.py \
         -f $RESULTS_DIR/$RESULTS_SUBDIR \
         --write-features=$LAYER \
-        --feature-path=$RESULTS_DIR/80sec-$LAYER \
+        --feature-path=$RESULTS_DIR/$LAYER \
 	    --test-range=$TEST_RANGE \
 	    --train-range=$TRAIN_RANGE
 done
@@ -70,4 +70,5 @@ exit()
 # Now copy the data
 echo "Copying Data"
 cp -r $RESULTS_DIR/* $TEST_FOLDER
+rm -rf $RESULTS_DIR
 echo "Done."

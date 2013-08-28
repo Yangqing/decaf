@@ -9,7 +9,8 @@ def translator_cmrnorm(cuda_layer, output_shapes):
         name=cuda_layer['name'],
         size=cuda_layer['size'],
         k=1, # TODO: check if this is the actual hard-coded value for k
-        alpha = cuda_layer['scale'],
+        alpha = cuda_layer['scale'] * cuda_layer['size'],
         beta = cuda_layer['pow'])
 
 registerer.register_translator('cmrnorm', translator_cmrnorm)
+

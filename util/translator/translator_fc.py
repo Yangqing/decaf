@@ -20,7 +20,9 @@ def translator_fc(cuda_layer, output_shapes):
     # weight
     weight = cuda_layer['weights'][0]
     if weight.shape[0] != input_size or weight.shape[1] != num_output:
-        raise ValueError('Incorrect shapes.')
+        raise ValueError('Incorrect shapes: weight shape %s, input shape %s,'
+                         ' num_output %d' %
+                         (weight.shape, input_shape, num_output))
     if len(input_shape) == 3:
         # The original input is an image, so we will need to reshape it
         weight = weight.reshape(

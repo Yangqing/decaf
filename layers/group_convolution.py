@@ -30,14 +30,13 @@ class GroupConvolutionLayer(base.Layer):
         self._bottom_sub = [base.Blob() for i in range(self._group)]
         self._top_sub = [base.Blob() for i in range(self._group)]
         self._conv_layers = None
-        self._params = None
         self._blocksize = 0
         self._num_kernels = self.spec['num_kernels']
         # create the convolution layers
         self._conv_layers = [
             convolution.ConvolutionLayer(**self._conv_args)
             for i in range(self._group)]
-        self._params = sum((layer.param() for layer in self._conv_layers), [])
+        self._param = sum((layer.param() for layer in self._conv_layers), [])
         return
 
     def forward(self, bottom, top):
