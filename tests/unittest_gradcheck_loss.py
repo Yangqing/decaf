@@ -90,5 +90,39 @@ class TestLossGrad(unittest.TestCase):
         # also, check if weight works.
         self._testWeight(layer, [input_blob, target_blob])
 
+    def testKLDivergenceLossGrad(self):
+        np.random.seed(1701)
+        layer = core_layers.KLDivergenceLossLayer(name='loss')
+        checker = gradcheck.GradChecker(1e-6)
+        shape = (4,5)
+        # For the input, we make sure it is not too close to 0 (which would
+        # create numerical issues).
+        input_blob = base.Blob(shape,
+                               filler=fillers.RandFiller(min=0.1, max=0.9))
+        # normalize input blob
+        input_data = input_blob.data()
+        input_data /= input_data.sum(1)[:, np.newaxis]
+        # check index input
+        target_blob = base.Blob(shape[:1], dtype=np.int,
+                                filler=fillers.RandIntFiller(high=shape[1]))
+        result = checker.check(layer, [input_blob, target_blob], [],
+                               check_indices = [0])
+        print(result)
+        self.assertTrue(result[0])
+        # also, check if weight works.
+        self._testWeight(layer, [input_blob, target_blob])
+        
+        # check full input
+        target_blob = base.Blob(shape, filler=fillers.RandFiller())
+        # normalize target
+        target_data = target_blob.data()
+        target_data /= target_data.sum(1)[:, np.newaxis]
+        result = checker.check(layer, [input_blob, target_blob], [],
+                               check_indices = [0])
+        print(result)
+        self.assertTrue(result[0])
+        # also, check if weight works.
+        self._testWeight(layer, [input_blob, target_blob])
+
 if __name__ == '__main__':
     unittest.main()

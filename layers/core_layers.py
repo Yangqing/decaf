@@ -23,6 +23,7 @@ from decaf.layers.innerproduct import InnerProductLayer
 from decaf.layers.loss import (SquaredLossLayer,
                                LogisticLossLayer,
                                MultinomialLogisticLossLayer,
+                               KLDivergenceLossLayer,
                                AutoencoderLossLayer)
 from decaf.layers.normalize import (MeanNormalizeLayer,
                                     ResponseNormalizeLayer,
