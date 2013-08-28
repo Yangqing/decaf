@@ -31,4 +31,4 @@ from decaf.layers.padding import PaddingLayer
 from decaf.layers.pooling import PoolingLayer
 from decaf.layers.relu import ReLULayer
 from decaf.layers.sigmoid import SigmoidLayer
-
+from decaf.layers.softmax import SoftmaxLayer
