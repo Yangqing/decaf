@@ -27,8 +27,8 @@ class GroupConvolutionLayer(base.Layer):
         self._conv_args = dict(self.spec)
         self._conv_args['name'] = self.spec['name'] + '_sub'
         del self._conv_args['group']
-        self._bottom_sub = [base.Blob() for i in range(self._group)]
-        self._top_sub = [base.Blob() for i in range(self._group)]
+        self._bottom_sub = [base.Blob() for _ in range(self._group)]
+        self._top_sub = [base.Blob() for _ in range(self._group)]
         self._conv_layers = None
         self._blocksize = 0
         self._num_kernels = self.spec['num_kernels']
@@ -59,7 +59,8 @@ class GroupConvolutionLayer(base.Layer):
                 bottom_data.shape[:-1] + (self._blocksize,),
                 bottom_data.dtype, setdata=False)
             bottom_sub_data[:] = bottom_data[:, :, :, in_start:in_end]
-            self._conv_layers[i].forward([self._bottom_sub[i]], [self._top_sub[i]])
+            self._conv_layers[i].forward([self._bottom_sub[i]],
+                                         [self._top_sub[i]])
             top_sub_data = self._top_sub[i].data()
             if i == 0:
                 top_data = top[0].init_data(
@@ -97,8 +98,8 @@ class GroupConvolutionLayer(base.Layer):
 
     def __getstate__(self):
         """When pickling, we will remove the intermediate data."""
-        self._bottom_sub = [base.Blob() for i in range(self._group)]
-        self._top_sub = [base.Blob() for i in range(self._group)]
+        self._bottom_sub = [base.Blob() for _ in range(self._group)]
+        self._top_sub = [base.Blob() for _ in range(self._group)]
         return self.__dict__
     
     def update(self):

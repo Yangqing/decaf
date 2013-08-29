@@ -103,7 +103,7 @@ class JeffNet(object):
             image = np.tile(image[:, :, np.newaxis], (1, 1, 3))
         elif image.shape[2] == 4:
             # An RGBA image. We will only use the first 3 channels.
-            image = image[:,:,:3]
+            image = image[:, :, :3]
         # Now, reshape the image if necessary
         height, width = image.shape[:2]
         if height < width:

@@ -64,7 +64,8 @@ class ConvolutionLayer(base.Layer):
         if self._pad_size is None:
             self._mode = self.spec['mode']
             if self._mode == 'same' and self._ksize % 2 == 0:
-                raise ValueError('The "same" mode should have an odd kernel size.')
+                raise ValueError(
+                    'The "same" mode should have an odd kernel size.')
             if self._mode == 'valid':
                 self._pad_size = 0
             elif self._mode == 'full':

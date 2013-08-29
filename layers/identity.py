@@ -1,9 +1,6 @@
 """Implements a dummy identity layer."""
 
 from decaf import base
-from decaf.layers import fillers
-import numpy as np
-import numexpr
 
 class IdentityLayer(base.Layer):
     """A layer that does nothing but mirroring things."""

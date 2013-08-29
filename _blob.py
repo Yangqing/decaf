@@ -29,6 +29,9 @@ class Blob(object):
 
     @staticmethod
     def blob_like(source_blob):
+        """Create a blob that is similar to the source blob (same shape, same
+        dtype, and same filler).
+        """
         return Blob(source_blob._data.shape, source_blob._data.dtype,
                     source_blob._filler)
 
@@ -127,7 +130,7 @@ class Blob(object):
         if not(self.has_data() and other_blob.has_data() and
                self._data.dtype == other_blob._data.dtype and
                self._data.shape == other_blob._data.shape):
-            raise DecafError('Attempting to swap incompatible blobs.')
+            raise ValueError('Attempting to swap incompatible blobs.')
         self._data, other_blob._data = other_blob._data, self._data
     
     def __getstate__(self):
