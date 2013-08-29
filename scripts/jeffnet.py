@@ -10,7 +10,7 @@ from skimage import transform
 
 _JEFFNET_FILE = os.path.join(os.path.dirname(__file__),
                              'imagenet.jeffnet.epoch72')
-_META_FILE = os.path.join(os.path.dirname(__file__), 'batches.meta.withmean')
+_META_FILE = os.path.join(os.path.dirname(__file__), 'imagenet.jeffnet.meta')
 
 # This is a legacy flag specifying if the network is trained with vertically
 # flipped images, which does not hurt performance but requires us to flip
