@@ -86,8 +86,8 @@ class JeffNet(object):
         center = int(indices[1] / 2)
         if center_only:
             return np.ascontiguousarray(
-                image[center:center + INPUT_DIM,
-                       center:center + INPUT_DIM])
+                image[np.newaxis, center:center + INPUT_DIM,
+                      center:center + INPUT_DIM], dtype=np.float32)
         else:
             images = np.empty((10, INPUT_DIM, INPUT_DIM, 3),
                               dtype=np.float32)
@@ -103,7 +103,7 @@ class JeffNet(object):
             images[5:] = images[:5, ::-1]
             return images
 
-    def classify(self, image):
+    def classify(self, image, center_only=False):
         """Classifies an input image.
         
         Input:
@@ -137,7 +137,7 @@ class JeffNet(object):
         # subtract the mean
         image -= self._data_mean
         # oversample the images
-        images = JeffNet.oversample(image)
+        images = JeffNet.oversample(image, center_only)
         predictions = self.classify_direct(images)
         return predictions.mean(0)
 
