@@ -101,6 +101,9 @@ class JeffNet(object):
         """
         if image.ndim == 2:
             image = np.tile(image[:, :, np.newaxis], (1, 1, 3))
+        elif image.shape[2] == 4:
+            # An RGBA image. We will only use the first 3 channels.
+            image = image[:,:,:3]
         # Now, reshape the image if necessary
         height, width = image.shape[:2]
         if height < width:
@@ -135,8 +138,8 @@ class JeffNet(object):
             names: the top k prediction names.
         """
         indices = scores.argsort()
-        return (indices[:-k:-1],
-                [self.label_names[i] for i in indices[:-k:-1]])
+        return (indices[:-(k+1):-1],
+                [self.label_names[i] for i in indices[:-(k+1):-1]])
 
 
 def main():
