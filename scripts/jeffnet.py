@@ -18,9 +18,12 @@ _META_FILE = os.path.join(os.path.dirname(__file__), 'batches.meta.withmean')
 _JEFFNET_FLIP = True
 
 # Due to implementational differences between the CPU and GPU codes, our net
-# takes in 230x230 images - which supports convolution with 11x11 patches and
-# stride 4 to a 55x55 output without any missing pixels.
-INPUT_SHAPE = (230, 230, 3)
+# takes in 227x227 images - which supports convolution with 11x11 patches and
+# stride 4 to a 55x55 output without any missing pixels. As a note, the GPU
+# code takes 224 * 224 images, and does convolution with the same setting and
+# no padding. As a result, the last image location is only convolved with 8x8
+# image regions.
+INPUT_SHAPE = 227
 
 class JeffNet(object):
     """A wrapper that returns the jeffnet interface to classify images."""
@@ -58,7 +61,7 @@ class JeffNet(object):
         images are already of the right form.
 
         Input:
-            images: a numpy array of size (num x 230 x 230 x 3), dtype
+            images: a numpy array of size (num x 227 x 227 x 3), dtype
                 float32, c_contiguous, and has the mean subtracted and the
                 image flipped if necessary.
         Output:
@@ -68,26 +71,37 @@ class JeffNet(object):
         return self._net.predict(data=images)['probs_cudanet_out']
 
     @staticmethod
-    def oversample(image):
+    def oversample(image, center_only=False):
         """Oversamples an image. Currently the indices are hard coded to the
         4 corners and the center of the image, as well as their flipped ones,
         a total of 10 images.
 
         Input:
             image: an image of size (256 x 256 x 3) and has data type uint8.
+            center_only: if True, only return the center image.
         Output:
-            images: the output of size (10 x 256 x 256 x 3)
+            images: the output of size (10 x 227 x 227 x 3)
         """
-        indices = [0, 26]
-        images = np.empty((10, 230, 230, 3), dtype=np.float32)
-        curr = 0
-        for i in indices:
-            for j in indices:
-                images[curr] = image[i:i+230, j:j+230]
-                curr += 1
-                images[4] = image[13:243, 13:243]
-        images[5:] = images[:5, ::-1]
-        return images
+        indices = [0, 256 - _INPUT_SHAPE]
+        center = int(indices / 2)
+        if center_only:
+            return np.ascontiguousarray(
+                image[center:center + _INPUT_SHAPE,
+                       center:center + _INPUT_SHAPE])
+        else:
+            images = np.empty((10, _INPUT_SHAPE, _INPUT_SHAPE, 3),
+                              dtype=np.float32)
+            curr = 0
+            for i in indices:
+                for j in indices:
+                    images[curr] = image[i:i + _INPUT_SHAPE,
+                                         j:j + _INPUT_SHAPE]
+                    curr += 1
+            images[4] = image[center:center + _INPUT_SHAPE,
+                              center:center + _INPUT_SHAPE]
+            # flipped version
+            images[5:] = images[:5, ::-1]
+            return images
 
     def classify(self, image):
         """Classifies an input image.
