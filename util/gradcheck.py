@@ -80,12 +80,27 @@ class GradChecker(unittest.TestCase):
         decaf_net.forward_backward()
         return blobs_diff_to_vec(decaf_net.params())
 
+    # pylint: disable=R0913
     @staticmethod
     def _func(x_init, layer, input_blobs, output_blobs, check_data, idx,
              checked_blobs):
         """The function. It returns the output at index idx, or if idx is
         negative, computes an overall loss by taking the squared sum of all
         output values.
+        
+        Input:
+            x_init: the feature values.
+            layer: the layer to be checked.
+            input_blobs: the input blobs.
+            output_blobs: the output blobs.
+            check_data: if True, check the gradient with respect to the input
+                data.
+            idx: how we compute the loss function. If negative, the loss is
+                the squared sum of all output. Note that the regularization
+                term of the layer is always added to the loss.
+            checked_blobs: when check_data is True, checked_blobs is a sublist
+                of the input blobs whose gradients we need to check. Any input
+                blob not in the checked_blobs would not be checked.
         """
         if check_data:
             vec_to_blobs(x_init, checked_blobs)
@@ -106,10 +121,11 @@ class GradChecker(unittest.TestCase):
         else:
             return output[idx] + additional_loss
 
+    #pylint: disable=R0913
     @staticmethod
     def _grad(x_init, layer, input_blobs, output_blobs, check_data, idx,
               checked_blobs):
-        """The coarse gradient."""
+        """The coarse gradient. See _func for documentation."""
         if check_data:
             vec_to_blobs(x_init, checked_blobs)
         else:

@@ -70,7 +70,8 @@ class InnerProductLayer(base.Layer):
         # If necessary, compute the bottom Blob gradient.
         if propagate_down:
             bottom_diff = bottom[0].init_diff(setzero=False)
-            blasdot.dot_lastdim(top_diff, self._weight.data().T, out=bottom_diff)
+            blasdot.dot_lastdim(top_diff, self._weight.data().T,
+                                out=bottom_diff)
         if self._reg is not None:
             return self._reg.reg(self._weight)
         else:

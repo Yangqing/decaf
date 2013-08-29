@@ -2,9 +2,9 @@
 """Efficient dot functions by calling the basic blas functions from scipy."""
 
 import numpy as np
-# TODO: check the backward compatibility to old scipy versions.
 from scipy.linalg.blas import fblas
 
+# pylint: disable=R0912
 def _gemm_f_contiguous(alpha, A, B, out):
     '''A gemm function that uses scipy fblas functions, avoiding matrix copy
     when the input is transposed.

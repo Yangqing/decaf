@@ -1,3 +1,4 @@
+# pylint: disable=C0103, C0111, W0613
 """This implements some dummy functions that mimics the MPI behavior when the
 size is 1. It is here solely to provide (probably limited) ability to run single
 noded tasks when one cannot install mpi or mpi4py.
