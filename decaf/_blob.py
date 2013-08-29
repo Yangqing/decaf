@@ -76,7 +76,8 @@ class Blob(object):
     
     def data(self):
         """Returns a view of the data."""
-        return self._data.view()
+        if self._data is not None:
+            return self._data.view()
 
     def has_diff(self):
         """Checks if the blob has diff."""
