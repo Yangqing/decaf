@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="A imagenet classification demo.">
+    <meta name="author" content="Yangqing Jia (jiayq@eecs.berkeley.edu)">
+    <link rel="shortcut icon" href="{{ url_for('static', filename='favicon.ico') }}">
+
+    <title>Decaf Classification Demo</title>
+
+    <!-- Bootstrap core CSS -->
+    <link href="//netdna.bootstrapcdn.com/bootstrap/3.0.0/css/bootstrap.min.css"
+    rel="stylesheet">
+  </head>
+
+  <body>
+    <!-- Begin page content -->
+    <div class="container">
+      <div class="page-header">
+        <h1>Decaf Classification Demo</h1>
+      </div>
+      <p class="lead">Paste an image URL in the following box and have it classified by decaf.</p>
+      <p> or, simply <a href="/?imageurl=http%3A%2F%2Fi.telegraph.co.uk%2Fmultimedia%2Farchive%2F02351%2Fcross-eyed-cat_2351472k.jpg">click here</a> for a simple cat example.</p>
+      <!-- Begin form -->
+      <form role="form" method="get">
+        <div class="form-group">
+          <label for="imageurl">Image URL</label>
+          <input type="text" class="form-control" name="imageurl" id="imageurl" placeholder="url">
+        </div>
+        <button type="submit" class="btn btn-default">Submit</button>
+      </form>
+      <!-- <p><a href={{ url_for('about') }}>about this demo</a></p>-->
+      {% if has_result %}
+      <hr>
+      {% if not result[0] %}
+      <!-- we have error in the result. -->
+      <div class="alert alert-danger">{{ result[1] }}</div>
+      {% else %}
+      <div class="media">
+        <a class="pull-left" href="{{ imageurl }}" target="_blank"><img class="media-object" width="256" height="256" src="{{ imageurl }}"></a>
+        <div class="media-body">
+          <h3 class="media-heading">Predictions:</h3>
+          <ul class="list-group">
+            {% for single_pred in result[1] %}
+            <li class="list-group-item">
+            <span class="badge">{{ single_pred[1] }}</span>
+            <h4 class="list-group-item-heading">{{ single_pred[0] }}</h4>
+            </li>
+            {% endfor %}
+          </ul>
+        </div>
+      </div>
+      <p> Classification took {{ result[2] }} seconds. </p>
+      {% endif %}
+      {% endif %}
+    </div>
+
+    <hr>
+    <div id="footer">
+      <div class="container">
+        <p>Decaf module by <a href="http://www.eecs.berkeley.edu/~jiayq/">Yangqing Jia</a>
+        and <a href="{{ url_for('static', filename='jeffnet.png') }}">JeffNet</a> courtesy <a href="http://jeffdonahue.com/">Jeff Donahue</a>.</p>
+      </div>
+    </div>
+
+  </body>
+</html>
