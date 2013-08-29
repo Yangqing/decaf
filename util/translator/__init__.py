@@ -8,7 +8,8 @@ Some of the network components are written by Jeff Donahue at our lab at UC
 Berkeley, so it may not work directly with Alex's released code.
 """
 
-# first of all, import the registerer 
+# first of all, import the registerer
+# pylint: disable=W0401
 from registerer import *
 from conversions import *
 

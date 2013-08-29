@@ -1,8 +1,11 @@
-from decaf.util.translator import conversions, registerer
+"""Translates the convolution and group convolution layers."""
+from decaf.util.translator import registerer
 from decaf.layers import core_layers
 import numpy as np
 
+#pylint: disable=R0914
 def translator_conv(cuda_layer, output_shapes):
+    """Translates the convolution and group convolution layers."""
     group = cuda_layer['groups'][0]
     num_kernels = cuda_layer['filters']
     if num_kernels % group:

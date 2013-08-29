@@ -19,14 +19,14 @@ OUTPUT_AFFIX = '_cudanet_out'
 DATA_TYPENAME = 'data'
 # likewise, cost typename
 COST_TYPENAME = 'cost'
-# _translators is a dictionary mapping layer names to functions that does the
+# _TRANSLATORS is a dictionary mapping layer names to functions that does the
 # actual translations.
-_translators = {}
+_TRANSLATORS = {}
 
 
 def register_translator(name, translator):
     """Registers a translator."""
-    _translators[name] = translator
+    _TRANSLATORS[name] = translator
 
 
 def default_translator(cuda_layer, output_shapes):
@@ -58,8 +58,8 @@ def translate_layer(cuda_layer, output_shapes):
         logging.info('Ignoring layer %s (type %s)', cuda_layer['name'],
                      cuda_layer['type'])
         return False
-    elif layertype in _translators:
-        return _translators[layertype](cuda_layer, output_shapes)
+    elif layertype in _TRANSLATORS:
+        return _TRANSLATORS[layertype](cuda_layer, output_shapes)
     else:
         logging.error('No registered translator for %s (type %s),'
                       ' Will return a dummy layer.',

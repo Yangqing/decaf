@@ -1,10 +1,16 @@
+"""Translates the neuron layers."""
 from decaf.util.translator import registerer
 from decaf.layers import core_layers
 import logging
 
 
 def translator_neuron(cuda_layer, output_shapes):
-    output_shapes[cuda_layer['name']] = output_shapes[cuda_layer['inputLayers'][0]['name']]
+    """Translates the neuron layers.
+    Note: not all neuron layers are supported. We only implemented those that
+    are needed for imagenet.
+    """
+    output_shapes[cuda_layer['name']] = \
+        output_shapes[cuda_layer['inputLayers'][0]['name']]
     neurontype = cuda_layer['neuron']['type']
     if neurontype == 'relu':
         return core_layers.ReLULayer(

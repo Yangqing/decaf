@@ -1,8 +1,10 @@
+"""Translates the pooling layers."""
 from decaf.util.translator import registerer
 from decaf.layers import core_layers
 import math
 
 def translator_pool(cuda_layer, output_shapes):
+    """Translates the pooling layers."""
     method = cuda_layer['pool']
     if method == 'max':
         pass
