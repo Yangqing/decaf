@@ -59,6 +59,8 @@ def translate_layer(cuda_layer, output_shapes):
                      cuda_layer['type'])
         return False
     elif layertype in _TRANSLATORS:
+        logging.info('Translating layer %s (type %s)', cuda_layer['name'],
+                     cuda_layer['type'])
         return _TRANSLATORS[layertype](cuda_layer, output_shapes)
     else:
         logging.error('No registered translator for %s (type %s),'

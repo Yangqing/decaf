@@ -50,7 +50,7 @@ def draw_net(decaf_net, ext='png'):
         for blobname in blobnames:
             pydot_graph.add_edge(
                 pydot.Edge(pydot_nodes[blobname], pydot_nodes[layername]))
-    return pydot_graph.create(format=format)
+    return pydot_graph.create(format=ext)
 
 def draw_net_to_file(decaf_net, filename):
     """Draws a decaf net, and saves it to file using the format given as the

@@ -21,7 +21,7 @@
         <h1>Decaf Classification Demo</h1>
       </div>
       <p class="lead">Paste an image URL in the following box and have it classified by decaf.</p>
-      <p> or, simply <a href="/?imageurl=http%3A%2F%2Fi.telegraph.co.uk%2Fmultimedia%2Farchive%2F02351%2Fcross-eyed-cat_2351472k.jpg">click here</a> for a example of classifying a cat.</p>
+      <p> or, simply <a href="/?imageurl=http%3A%2F%2Fi.telegraph.co.uk%2Fmultimedia%2Farchive%2F02351%2Fcross-eyed-cat_2351472k.jpg">click here</a> for a simple cat example.</p>
       <!-- Begin form -->
       <form role="form" method="get">
         <div class="form-group">
@@ -30,7 +30,7 @@
         </div>
         <button type="submit" class="btn btn-default">Submit</button>
       </form>
-
+      <!-- <p><a href={{ url_for('about') }}>about this demo</a></p>-->
       {% if has_result %}
       <hr>
       {% if not result[0] %}
@@ -60,7 +60,7 @@
     <div id="footer">
       <div class="container">
         <p>Decaf module by <a href="http://www.eecs.berkeley.edu/~jiayq/">Yangqing Jia</a>
-        and JeffNet courtesy <a href="http://jeffdonahue.com/">Jeff Donahue</a>.</p>
+        and <a href="{{ url_for('static', filename='jeffnet.png') }}">JeffNet</a> courtesy <a href="http://jeffdonahue.com/">Jeff Donahue</a>.</p>
       </div>
     </div>
 

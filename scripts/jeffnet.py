@@ -23,7 +23,7 @@ _JEFFNET_FLIP = True
 # code takes 224 * 224 images, and does convolution with the same setting and
 # no padding. As a result, the last image location is only convolved with 8x8
 # image regions.
-INPUT_SHAPE = 227
+INPUT_DIM = 227
 
 class JeffNet(object):
     """A wrapper that returns the jeffnet interface to classify images."""
@@ -48,7 +48,7 @@ class JeffNet(object):
             raise RuntimeError('Cannot find JeffNet files.')
         # First, translate the network
         self._net = translator.translate_cuda_network(
-            cuda_jeffnet, {'data': INPUT_SHAPE})
+            cuda_jeffnet, {'data': (INPUT_DIM, INPUT_DIM, 3)})
         # Then, get the labels and image means.
         self.label_names = meta['label_names']
         self._data_mean = translator.img_cudaconv_to_decaf(
@@ -82,23 +82,23 @@ class JeffNet(object):
         Output:
             images: the output of size (10 x 227 x 227 x 3)
         """
-        indices = [0, 256 - _INPUT_SHAPE]
-        center = int(indices / 2)
+        indices = [0, 256 - INPUT_DIM]
+        center = int(indices[1] / 2)
         if center_only:
             return np.ascontiguousarray(
-                image[center:center + _INPUT_SHAPE,
-                       center:center + _INPUT_SHAPE])
+                image[center:center + INPUT_DIM,
+                       center:center + INPUT_DIM])
         else:
-            images = np.empty((10, _INPUT_SHAPE, _INPUT_SHAPE, 3),
+            images = np.empty((10, INPUT_DIM, INPUT_DIM, 3),
                               dtype=np.float32)
             curr = 0
             for i in indices:
                 for j in indices:
-                    images[curr] = image[i:i + _INPUT_SHAPE,
-                                         j:j + _INPUT_SHAPE]
+                    images[curr] = image[i:i + INPUT_DIM,
+                                         j:j + INPUT_DIM]
                     curr += 1
-            images[4] = image[center:center + _INPUT_SHAPE,
-                              center:center + _INPUT_SHAPE]
+            images[4] = image[center:center + INPUT_DIM,
+                              center:center + INPUT_DIM]
             # flipped version
             images[5:] = images[:5, ::-1]
             return images
@@ -158,12 +158,14 @@ class JeffNet(object):
 
 def main():
     """A simple demo showing how to run jeffnet."""
-    from decaf.util import smalldata
+    from decaf.util import smalldata, visualize
     logging.getLogger().setLevel(logging.INFO)
     net = JeffNet()
     lena = smalldata.lena()
     scores = net.classify(lena)
     print 'prediction:', net.top_k_prediction(scores, 5)
+    visualize.draw_net_to_file(net._net, 'jeffnet.png')
+    print 'Network structure written to jeffnet.png'
 
 
 if __name__ == '__main__':
