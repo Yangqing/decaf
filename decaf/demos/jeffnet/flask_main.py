@@ -2,11 +2,18 @@
 from decaf.scripts import jeffnet
 import flask
 from flask import Flask, url_for, request
+import gflags
 import logging
 from skimage import io
 import StringIO
-import urllib
+import sys
 import time
+import urllib
+
+
+gflags.DEFINE_string('net_file', '', 'The network file learned from cudaconv')
+gflags.DEFINE_string('meta_file', '', 'The meta file for imagenet.')
+flags = gflags.FLAGS
 
 # Obtain the flask app object
 app = Flask(__name__)
@@ -60,6 +67,8 @@ def classify_image_url(imageurl):
     return (True, meta, str(endtime-starttime))
         
 if __name__ == '__main__':
+    gflags.FLAGS(sys.argv)
     logging.getLogger().setLevel(logging.INFO)
-    app.net = jeffnet.JeffNet()
+    app.net = jeffnet.JeffNet(net_file=FLAGS.net_file,
+                              meta_file=FLAGS.meta_file)
     app.run(host='0.0.0.0')

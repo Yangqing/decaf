@@ -27,18 +27,18 @@ INPUT_DIM = 227
 
 class JeffNet(object):
     """A wrapper that returns the jeffnet interface to classify images."""
-    def __init__(self, jeffnet_file=None, meta_file=None):
+    def __init__(self, net_file=None, meta_file=None):
         """Initializes JeffNet.
 
         Input:
-            jeffnet_file: the trained network file.
+            net_file: the trained network file.
             meta_file: the meta information for images.
         """
         logging.info('Initializing jeffnet...')
         try:
-            if not jeffnet_file:
+            if not net_file:
                 # use the internal jeffnet file.
-                jeffnet_file = _JEFFNET_FILE
+                net_file = _JEFFNET_FILE
             if not meta_file:
                 # use the internal meta file.
                 meta_file = _META_FILE
