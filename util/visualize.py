@@ -11,9 +11,13 @@ LAYER_STYLE = {'shape': 'record', 'fillcolor': '#DFECF3',
 BLOB_STYLE = {'shape': 'record', 'fillcolor': '#FEF9E3',
               'style': 'rounded,filled'}
 
-def draw_net(decaf_net, format='png'):
-    """Draws a decaf net and returns the image string with the given format.
-    The format is defaulted to 'png'.
+def draw_net(decaf_net, ext='png'):
+    """Draws a decaf net and returns the image string encoded using the given
+    extension.
+    
+    Input:
+        decaf_net: a decaf net.
+        ext: the image extension. Default 'png'.
     """
     pydot_graph = pydot.Dot(graph_type='digraph')
     pydot_nodes = {}
@@ -52,9 +56,9 @@ def draw_net_to_file(decaf_net, filename):
     """Draws a decaf net, and saves it to file using the format given as the
     file extension.
     """
-    format = os.path.splitext(filename)[-1][1:]
+    ext = os.path.splitext(filename)[-1][1:]
     with open(filename, 'w') as fid:
-        fid.write(draw_net(decaf_net, format))
+        fid.write(draw_net(decaf_net, ext))
 
 
 class PatchVisualizer(object):
@@ -144,18 +148,21 @@ class PatchVisualizer(object):
             edge_len = int(edge_len)
             return (edge_len, edge_len)
 
-_default_visualizer = PatchVisualizer()
+_DEFAULT_VISUALIZER = PatchVisualizer()
 
 
 # Wrappers to utility functions that directly points to functions in the
 # default visualizer.
 
 def show_single(*args, **kwargs):
-    return _default_visualizer.show_single(*args, **kwargs)
+    """Wrapper of PatchVisualizer.show_single()"""
+    return _DEFAULT_VISUALIZER.show_single(*args, **kwargs)
 
 def show_multiple(*args, **kwargs):
-    return _default_visualizer.show_multiple(*args, **kwargs)
+    """Wrapper of PatchVisualizer.show_multiple()"""
+    return _DEFAULT_VISUALIZER.show_multiple(*args, **kwargs)
 
 def show_channels(*args, **kwargs):
-    return _default_visualizer.show_channels(*args, **kwargs)
+    """Wrapper of PatchVisualizer.show_channels()"""
+    return _DEFAULT_VISUALIZER.show_channels(*args, **kwargs)
 
