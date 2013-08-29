@@ -13,7 +13,7 @@ import urllib
 
 gflags.DEFINE_string('net_file', '', 'The network file learned from cudaconv')
 gflags.DEFINE_string('meta_file', '', 'The meta file for imagenet.')
-flags = gflags.FLAGS
+FLAGS = gflags.FLAGS
 
 # Obtain the flask app object
 app = Flask(__name__)
