@@ -123,8 +123,8 @@ class PatchVisualizer(object):
     
     def show_channels(self, patch, bg_func = np.min):
         """ This function shows the channels of a patch. The incoming patch
-        should have shape [w, h, num_channels], and each channel will be
-        visualized as a separate gray patch.
+        should have shape [height, width, num_channels], and each channel will
+        be visualized as a separate gray patch.
         """
         if len(patch.shape) != 3:
             raise ValueError, "The input patch shape isn't correct."
