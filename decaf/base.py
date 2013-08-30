@@ -377,6 +377,9 @@ class Net(object):
 
     @staticmethod
     def _make_output_name(layer):
+        """Make an output name for a layer, assuming that it has only one
+        output.
+        """
         return '%s_%s_out' % (DECAF_PREFIX, layer.name)
 
     def add_layers(self, layers, needs=None, provides=None):
@@ -564,25 +567,44 @@ class Net(object):
             loss += layer_loss
         return loss
 
-    def predict(self, **kwargs):
+    def predict(self, output_blobs = None, **kwargs):
         """Use the network to perform prediction. Note that your network
         should have at least one output blob. All input blobs need to be
         provided using the kwargs.
+        
+        Input:
+            output_blobs: a list of output blobs to return. If None, all the 
+                blobs that do not have layers following them are considered
+                output and are returned.
+            kwargs: any input data that the network needs. All the blobs in
+                the network that do not have a layer generating them should
+                be provided.
+        Output:
+            result: a dictionary where the keys are the output blob names, and
+                the values are the numpy arrays storing the blob content.
         """
         if not self._finished:
             raise DecafError('Call finish() before you use the network.')
-        for name, arr in kwargs.iteritems():
-            self.blobs[name].mirror(arr)
+        for name in self._input_blobs:
+            self.blobs[name].mirror(kwargs[name])
         for _, layer, bottom, top in self._forward_order:
             layer.predict(bottom, top)
+        if not output_blobs:
+            output_blobs = self._output_blobs
         return dict([(name, self.blobs[name].data())
-                     for name in self._output_blobs])
+                     for name in output_blobs])
     
     def feature(self, blob_name):
         """Returns the data in a specific blob name as the intermediate
         feature for the last run of either forward() or predict(). Note that
         if the network has not been run with any data, you should not call
         this function as the returned value will be invalid.
+        
+        Optionally, use predict() and provide a set of output blob names to
+        obtain multiple features directly.
+        
+        Input:
+            blob_name: the blob name to return.
         """
         return self.blobs[blob_name].data()
 
