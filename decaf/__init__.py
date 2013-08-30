@@ -10,3 +10,7 @@ perform end-to-end training in a distributed fashion.
 
 __author__ = 'Yangqing Jia'
 __email__  = 'jiayq84@gmail.com'
+
+import base
+import layers
+import opt

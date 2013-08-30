@@ -70,8 +70,8 @@ def _set_dll_funcs():
 try:
     _DLL = ct.CDLL('libmkl_rt.so')
 except OSError:
-    logging.error('decaf.util.pyvml: unable to load the mkl library. '
-                  'Using fallback options.')
+    logging.warning('decaf.util.pyvml: unable to load the mkl library. '
+                    'Using fallback options.')
     # implement necessary fallback options.
     # Yangqing's note: I am not writing all the fallbacks, only the necessary
     # ones are provided.
