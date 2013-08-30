@@ -76,7 +76,7 @@ class Blob(object):
     
     def data(self):
         """Returns a view of the data."""
-        if self._data is not None:
+        if self.has_data():
             return self._data.view()
 
     def has_diff(self):
@@ -84,8 +84,9 @@ class Blob(object):
         return self._diff is not None
 
     def diff(self):
-        """Returns the diff."""
-        return self._diff.view()
+        """Returns a view of the diff."""
+        if self.has_diff():
+            return self._diff.view()
 
     def update(self):
         """Update the data field by SUBTRACTING diff to it.
@@ -136,16 +137,15 @@ class Blob(object):
     
     def __getstate__(self):
         """When pickling, we will simply store the data field and the
-        filler of this blob."""
-        if self.has_data():
-            return self.data(), self._filler
-        else:
-            return (None,)
+        filler of this blob. We do NOT store the diff, since it is often
+        binded to a specific run and does not bear much value.
+        """
+        return self.data(), self._filler
     
     def __setstate__(self, state):
         """Recovers the state."""
         if state[0] is None:
-            Blob.__init__(self)
+            Blob.__init__(self, state[1])
         else:
             Blob.__init__(self, state[0].shape, state[0].dtype, state[1])
             self._data[:] = state[0]
