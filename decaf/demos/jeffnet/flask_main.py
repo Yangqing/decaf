@@ -36,7 +36,7 @@ def index():
 
 @app.route('/about')
 def about():
-    return 'Under Construction.'
+    return flask.render_template('about.html')
 
 def classify_image_url(imageurl):
     try:
