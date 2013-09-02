@@ -35,6 +35,12 @@ class TestBlob(unittest.TestCase):
         s = pickle.dumps(blob)
         blob_recover = pickle.loads(s)
         npt.assert_array_almost_equal(blob.data(), blob_recover.data())
+        # Test pickling an empty blob
+        blob = base.Blob()
+        s = pickle.dumps(blob)
+        blob_recover = pickle.loads(s)
+        self.assertFalse(blob_recover.has_data())
+        self.assertFalse(blob_recover.has_diff())
 
     def testBlobSwap(self):
         blob_a = base.Blob((4,3))

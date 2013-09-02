@@ -137,10 +137,16 @@ class Blob(object):
     def __getstate__(self):
         """When pickling, we will simply store the data field and the
         filler of this blob."""
-        return self.data(), self._filler
+        if self.has_data():
+            return self.data(), self._filler
+        else:
+            return (None,)
     
     def __setstate__(self, state):
         """Recovers the state."""
-        Blob.__init__(self, state[0].shape, state[0].dtype, state[1])
-        self._data[:] = state[0]
+        if state[0] is None:
+            Blob.__init__(self)
+        else:
+            Blob.__init__(self, state[0].shape, state[0].dtype, state[1])
+            self._data[:] = state[0]
 
