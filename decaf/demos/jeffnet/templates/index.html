@@ -7,7 +7,7 @@
     <meta name="author" content="Yangqing Jia (jiayq@eecs.berkeley.edu)">
     <link rel="shortcut icon" href="{{ url_for('static', filename='favicon.ico') }}">
 
-    <title>Decaf Classification Demo</title>
+    <title>Decaf Image Classification</title>
 
     <!-- Bootstrap core CSS -->
     <link href="//netdna.bootstrapcdn.com/bootstrap/3.0.0/css/bootstrap.min.css"
@@ -18,10 +18,11 @@
     <!-- Begin page content -->
     <div class="container">
       <div class="page-header">
-        <h1>Decaf Classification Demo</h1>
+        <h1>Decaf</h1>
+        <a href="{{ url_for('about') }}">About this demo</a>
       </div>
       <p class="lead">Paste an image URL in the following box and have it classified by decaf.</p>
-      <p> or, simply <a href="/?imageurl=http%3A%2F%2Fi.telegraph.co.uk%2Fmultimedia%2Farchive%2F02351%2Fcross-eyed-cat_2351472k.jpg">click here</a> for a simple cat example.</p>
+      <p> or, <a href="/?imageurl=http%3A%2F%2Fi.telegraph.co.uk%2Fmultimedia%2Farchive%2F02351%2Fcross-eyed-cat_2351472k.jpg">click here</a> for a simple cat example.</p>
       <!-- Begin form -->
       <form role="form" method="get">
         <div class="form-group">
@@ -59,8 +60,7 @@
     <hr>
     <div id="footer">
       <div class="container">
-        <p>Decaf module by <a href="http://www.eecs.berkeley.edu/~jiayq/">Yangqing Jia</a>
-        and <a href="{{ url_for('static', filename='jeffnet.png') }}">JeffNet</a> courtesy <a href="http://jeffdonahue.com/">Jeff Donahue</a>.</p>
+        <p>&copy; Copyright 2013</p>
       </div>
     </div>
 
