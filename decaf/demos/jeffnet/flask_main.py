@@ -1,5 +1,6 @@
 """The main routine that starts a jeffnet demo."""
 from decaf.scripts import jeffnet
+import datetime
 import flask
 from flask import Flask, url_for, request
 import gflags
@@ -60,6 +61,7 @@ def classify_upload():
         # We will save the file to disk for possible data collection.
         imagefile = request.files['imagefile']
         filename = os.path.join(FLAGS.upload_folder,
+                                str(datetime.datetime.now()).replace(' ', '_') + \
                                 secure_filename(imagefile.filename))
         imagefile.save(filename)
         logging.info('Saving to %s.', filename)

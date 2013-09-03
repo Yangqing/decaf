@@ -23,27 +23,7 @@
       </div>
       <p class="lead">Paste an image URL in the following box and have it classified by decaf.</p>
       <p> Too lazy? <a href="/classify_url?imageurl=http%3A%2F%2Fi.telegraph.co.uk%2Fmultimedia%2Farchive%2F02351%2Fcross-eyed-cat_2351472k.jpg">Just click here</a> for a simple cat example.</p>
-      
-      <form role="form" action="classify_url" method="get">
-        <div class="form-group">
-          <label for="imageurl">Provide an Image URL:</label>
-          <div class="input-group">
-            <input type="text" class="form-control" name="imageurl" id="imageurl" placeholder="url">
-            <span class="input-group-btn">
-              <input class="btn btn-primary" value="Classify URL" type="submit" id="classifyurl"></input>
-            </span>
-          </div><!-- /input-group -->
-        </div>
-      </form>
-      
-      <form class="form-inline" role="form" action="classify_upload" method="post" enctype="multipart/form-data">
-        <div class="form-group">
-          <label for="imagefile">Or upload a local image:</label>
-          <input type="file" name="imagefile" id="imagefile">
-        </div>
-        <input type="submit" class="btn btn-primary" value="Classify File" id="classifyfile"></input>
-      </form>
-      
+
       {% if has_result %}
       <hr>
       {% if not result[0] %}
@@ -66,7 +46,29 @@
       </div>
       <p> Classification took {{ result[2] }} seconds. </p>
       {% endif %}
+      <hr>
       {% endif %}
+     
+      <form role="form" action="classify_url" method="get">
+        <div class="form-group">
+          <label for="imageurl">Provide an Image URL:</label>
+          <div class="input-group">
+            <input type="text" class="form-control" name="imageurl" id="imageurl" placeholder="url">
+            <span class="input-group-btn">
+              <input class="btn btn-primary" value="Classify URL" type="submit" id="classifyurl"></input>
+            </span>
+          </div><!-- /input-group -->
+        </div>
+      </form>
+      
+      <form class="form-inline" role="form" action="classify_upload" method="post" enctype="multipart/form-data">
+        <div class="form-group">
+          <label for="imagefile">Or upload a local image:</label>
+          <input type="file" name="imagefile" id="imagefile">
+        </div>
+        <input type="submit" class="btn btn-primary" value="Classify File" id="classifyfile"></input>
+      </form>
+      
     </div>
 
     <hr>
