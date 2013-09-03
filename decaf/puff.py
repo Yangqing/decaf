@@ -17,6 +17,8 @@ class Puff(object):
             start: (optional) the local range start.
             end: (optional) the local range end.
         """
+        if name.endswith('.puff'):
+            name = name[:-5]
         # shape is the shape of a single data point.
         self._shape = None
         # step is an internal variable that indicates how many bytes we need
