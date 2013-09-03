@@ -22,16 +22,28 @@
         <a href="{{ url_for('about') }}">About this demo</a>
       </div>
       <p class="lead">Paste an image URL in the following box and have it classified by decaf.</p>
-      <p> or, <a href="/?imageurl=http%3A%2F%2Fi.telegraph.co.uk%2Fmultimedia%2Farchive%2F02351%2Fcross-eyed-cat_2351472k.jpg">click here</a> for a simple cat example.</p>
-      <!-- Begin form -->
-      <form role="form" method="get">
+      <p> Too lazy? <a href="/classify_url?imageurl=http%3A%2F%2Fi.telegraph.co.uk%2Fmultimedia%2Farchive%2F02351%2Fcross-eyed-cat_2351472k.jpg">Just click here</a> for a simple cat example.</p>
+      
+      <form role="form" action="classify_url" method="get">
         <div class="form-group">
-          <label for="imageurl">Image URL</label>
-          <input type="text" class="form-control" name="imageurl" id="imageurl" placeholder="url">
+          <label for="imageurl">Provide an Image URL:</label>
+          <div class="input-group">
+            <input type="text" class="form-control" name="imageurl" id="imageurl" placeholder="url">
+            <span class="input-group-btn">
+              <input class="btn btn-primary" value="Classify URL" type="submit" id="classifyurl"></input>
+            </span>
+          </div><!-- /input-group -->
         </div>
-        <button type="submit" class="btn btn-default">Submit</button>
       </form>
-      <!-- <p><a href={{ url_for('about') }}>about this demo</a></p>-->
+      
+      <form class="form-inline" role="form" action="classify_upload" method="post" enctype="multipart/form-data">
+        <div class="form-group">
+          <label for="imagefile">Or upload a local image:</label>
+          <input type="file" name="imagefile" id="imagefile">
+        </div>
+        <input type="submit" class="btn btn-primary" value="Classify File" id="classifyfile"></input>
+      </form>
+      
       {% if has_result %}
       <hr>
       {% if not result[0] %}
@@ -39,7 +51,7 @@
       <div class="alert alert-danger">{{ result[1] }}</div>
       {% else %}
       <div class="media">
-        <a class="pull-left" href="{{ imageurl }}" target="_blank"><img class="media-object" width="256" height="256" src="{{ imageurl }}"></a>
+        <a class="pull-left" href="#"><img class="media-object" width="256" height="256" src={{ imagesrc }}></a>
         <div class="media-body">
           <h3 class="media-heading">Predictions:</h3>
           <ul class="list-group">
@@ -63,6 +75,24 @@
         <p>&copy; Copyright 2013</p>
       </div>
     </div>
+    
+    <script type="text/javascript" src="http://code.jquery.com/jquery-2.0.0.js"></script>
+    <script type="text/javascript">
+      $(document).ready(
+        function(){
+          $('#classifyfile').attr('disabled',true);
+          $('#imagefile').change(
+            function(){
+              if ($(this).val()){
+                $('#classifyfile').removeAttr('disabled');
+              } else {
+                $('#classifyfile').attr('disabled',true);
+              }
+            }
+          );
+        }
+      );
+    </script>
 
   </body>
 </html>

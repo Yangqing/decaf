@@ -4,49 +4,92 @@ import flask
 from flask import Flask, url_for, request
 import gflags
 import logging
+import numpy as np
+import os
+from PIL import Image as PILImage
 from skimage import io
-import StringIO
+import cStringIO as StringIO
 import sys
 import time
 import urllib
+from werkzeug import secure_filename
 
+
+UPLOAD_FOLDER = '/Users/jiayq/Downloads/upload'
+ALLOWED_IMAGE_EXTENSIONS = set(['png', 'bmp', 'jpg', 'jpe', 'jpeg', 'gif'])
 
 gflags.DEFINE_string('net_file', '', 'The network file learned from cudaconv')
 gflags.DEFINE_string('meta_file', '', 'The meta file for imagenet.')
+gflags.DEFINE_string('upload_folder', UPLOAD_FOLDER, 'The folder to store the uploaded images.')
 FLAGS = gflags.FLAGS
 
 # Obtain the flask app object
 app = Flask(__name__)
 
-@app.route('/', methods=['GET', 'POST'])
+@app.route('/')
 def index():
-    imageurl = request.args.get('imageurl', '')
-    if imageurl == '':
-        # Simply render the default page.
-        has_result = False
-        result = []
-    else:
-        has_result = True
-        # get the results.
-        result = classify_image_url(imageurl)
     return flask.render_template('index.html',
-                                 has_result=has_result,
+                                 has_result=False)
+
+@app.route('/classify_url', methods=['GET'])
+def classify_url():
+    # classify image using the URL
+    try:
+        string_buffer = StringIO.StringIO(
+            urllib.urlopen(request.args.get('imageurl', '')).read())
+        image = io.imread(string_buffer)
+    except Exception as err:
+        # For any exception we encounter in reading the image, we will just
+        # not continue.
+        logging.info('URL Image open error: %s', err)
+        return flask.render_template('index.html',
+                                     has_result=True,
+                                     result=(False, 'Cannot open image from URL.'))
+    result = classify_image(image)
+    return flask.render_template('index.html',
+                                 has_result=True,
                                  result=result,
-                                 imageurl=imageurl)
+                                 imagesrc=request.args.get('imageurl', ''))
+
+@app.route('/classify_upload', methods=['POST'])                                     
+def classify_upload():
+    # classify image using the image name
+    try:
+        # We will save the file to disk for possible data collection.
+        imagefile = request.files['imagefile']
+        filename = os.path.join(FLAGS.upload_folder,
+                                secure_filename(imagefile.filename))
+        imagefile.save(filename)
+        logging.info('Saving to %s.', filename)
+        image = jeffnet.JeffNet.extract(io.imread(filename)).astype(np.uint8)
+    except Exception as err:
+        logging.info('Uploaded mage open error: %s', err)
+        return flask.render_template('index.html',
+                                     has_result=True,
+                                     result=(False, 'Cannot open uploaded image.'))
+    result = classify_image(image)
+    return flask.render_template('index.html',
+                                 has_result=True,
+                                 result=result,
+                                 imagesrc=embed_image_html(image))
+
+def embed_image_html(image):
+    """Creates an image embedded in HTML base64 format."""
+    image_pil = PILImage.fromarray(image)
+    string_buf = StringIO.StringIO()
+    image_pil.save(string_buf, format='png')
+    data = string_buf.getvalue().encode('base64').replace('\n', '')
+    return 'data:image/png;base64,' + data
 
 @app.route('/about')
 def about():
     return flask.render_template('about.html')
 
-def classify_image_url(imageurl):
-    try:
-        string_buffer = StringIO.StringIO(urllib.urlopen(imageurl).read())
-        image = io.imread(string_buffer)
-    except Exception as err:
-        # For any exception we encounter in reading the image, we will just
-        # not continue.
-        logging.info('Image open error: %s', err)
-        return (False, 'Cannot open image.')
+def allowed_file(filename):
+    return ('.' in filename and
+            filename.rsplit('.', 1)[1] in ALLOWED_IMAGE_EXTENSIONS)
+
+def classify_image(image):
     # let's classify the image.
     try:
         starttime = time.time()
@@ -58,17 +101,18 @@ def classify_image_url(imageurl):
         meta = [(p, '%.5f' % scores[i]) for i, p in zip(indices, predictions)]
         logging.info('Image: %s', imageurl)
         logging.info('result: %s', str(meta))
+        meta = [('dummy', '0.01')]
     except Exception as err:
         logging.info('Classification error: %s', err)
         return (False, 'Error classifying the image.'
                        ' Please send the url to Yangqing!')
     # If everything is successful, return the results
     endtime = time.time()
-    return (True, meta, str(endtime-starttime))
-        
+    return (True, meta, '%.3f' % (endtime-starttime))
+
 if __name__ == '__main__':
     gflags.FLAGS(sys.argv)
     logging.getLogger().setLevel(logging.INFO)
     app.net = jeffnet.JeffNet(net_file=FLAGS.net_file,
                               meta_file=FLAGS.meta_file)
-    app.run(host='0.0.0.0')
+    app.run(host='0.0.0.0', debug=True)

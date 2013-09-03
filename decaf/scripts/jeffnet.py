@@ -102,16 +102,12 @@ class JeffNet(object):
             # flipped version
             images[5:] = images[:5, ::-1]
             return images
-
-    def classify(self, image, center_only=False):
-        """Classifies an input image.
-        
-        Input:
-            image: an image of 3 channels and has data type uint8. Only the
-                center region will be used for classification.
-        Output:
-            scores: a numpy vector of size 1000 containing the
-                predicted scores for the 1000 classes.
+    
+    @staticmethod
+    def extract(image):
+        """Extracts the 256x256 region that will be used for classification.
+        The output would be an image of size 256x256, depth float32, and in
+        the range [0, 255].
         """
         if image.ndim == 2:
             image = np.tile(image[:, :, np.newaxis], (1, 1, 3))
@@ -125,15 +121,29 @@ class JeffNet(object):
         else:
             newshape = (int(height * float(256) / width + 0.5), 256)
         image = transform.resize(image, newshape)
-        # since skimage transforms the image scale to [0,1), we need to
-        # rescale the images.
-        image *= 255.
-        if _JEFFNET_FLIP:
-            # Flip the image if necessary, maintaining the c_contiguous order
-            image = image[::-1, :].copy()
         h_offset = (image.shape[0] - 256) / 2
         w_offset = (image.shape[1] - 256) / 2
         image = image[h_offset:h_offset+256, w_offset:w_offset+256]
+        # since skimage transforms the image scale to [0,1), we need to
+        # rescale the images.
+        image *= 255.
+        return image
+
+    def classify(self, image, center_only=False):
+        """Classifies an input image.
+        
+        Input:
+            image: an image of 3 channels and has data type uint8. Only the
+                center region will be used for classification.
+        Output:
+            scores: a numpy vector of size 1000 containing the
+                predicted scores for the 1000 classes.
+        """
+        # first, extract the 256x256 center.
+        image = JeffNet.extract(image)
+        if _JEFFNET_FLIP:
+            # Flip the image if necessary, maintaining the c_contiguous order
+            image = image[::-1, :].copy()
         # subtract the mean
         image -= self._data_mean
         # oversample the images
