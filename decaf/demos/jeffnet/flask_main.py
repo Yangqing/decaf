@@ -15,7 +15,7 @@ import urllib
 from werkzeug import secure_filename
 
 
-UPLOAD_FOLDER = '/Users/jiayq/Downloads/upload'
+UPLOAD_FOLDER = '/tscratch/tmp/jiayq/decaf'
 ALLOWED_IMAGE_EXTENSIONS = set(['png', 'bmp', 'jpg', 'jpe', 'jpeg', 'gif'])
 
 gflags.DEFINE_string('net_file', '', 'The network file learned from cudaconv')
@@ -34,9 +34,10 @@ def index():
 @app.route('/classify_url', methods=['GET'])
 def classify_url():
     # classify image using the URL
+    imageurl = request.args.get('imageurl', '')
     try:
         string_buffer = StringIO.StringIO(
-            urllib.urlopen(request.args.get('imageurl', '')).read())
+            urllib.urlopen(imageurl).read())
         image = io.imread(string_buffer)
     except Exception as err:
         # For any exception we encounter in reading the image, we will just
@@ -45,11 +46,12 @@ def classify_url():
         return flask.render_template('index.html',
                                      has_result=True,
                                      result=(False, 'Cannot open image from URL.'))
+    logging.info('Image: %s', imageurl)
     result = classify_image(image)
     return flask.render_template('index.html',
                                  has_result=True,
                                  result=result,
-                                 imagesrc=request.args.get('imageurl', ''))
+                                 imagesrc=imageurl)
 
 @app.route('/classify_upload', methods=['POST'])                                     
 def classify_upload():
@@ -99,20 +101,23 @@ def classify_image(image):
         # for the progress bar visualization.
         max_score = scores[indices[0]]
         meta = [(p, '%.5f' % scores[i]) for i, p in zip(indices, predictions)]
-        logging.info('Image: %s', imageurl)
         logging.info('result: %s', str(meta))
-        meta = [('dummy', '0.01')]
     except Exception as err:
         logging.info('Classification error: %s', err)
-        return (False, 'Error classifying the image.'
-                       ' Please send the url to Yangqing!')
+        return (False, 'Oops, something wrong happened wieh classifying the'
+                       ' image. Maybe try another one?')
     # If everything is successful, return the results
     endtime = time.time()
     return (True, meta, '%.3f' % (endtime-starttime))
 
 if __name__ == '__main__':
     gflags.FLAGS(sys.argv)
+    # try to make the upload directory.
+    try:
+        os.makedirs(UPLOAD_FOLDER)
+    except Exception as err:
+        pass
     logging.getLogger().setLevel(logging.INFO)
     app.net = jeffnet.JeffNet(net_file=FLAGS.net_file,
                               meta_file=FLAGS.meta_file)
-    app.run(host='0.0.0.0', debug=True)
+    app.run(host='0.0.0.0')
