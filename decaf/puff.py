@@ -9,7 +9,14 @@ class Puff(object):
     """The puff class. It defines a simple interface that stores numpy arrays in
     its raw form.
     """
-    def __init__(self, name, start = 0, end = 0):
+    def __init__(self, name, start = None, end = None):
+        """Initializes the puff object.
+
+        Input:
+            name: the puff filename to be read.
+            start: (optional) the local range start.
+            end: (optional) the local range end.
+        """
         # shape is the shape of a single data point.
         self._shape = None
         # step is an internal variable that indicates how many bytes we need
@@ -18,38 +25,46 @@ class Puff(object):
         # num_data is the total number of data in the file
         self._num_data = None
         # the following variables are used to slice a puff
-        self._num_local_data = None
         self._start = None
         self._end = None
+        # the current index of the data.
+        self._curr = None
+        # the number of local data
+        self._num_local_data = None
         # dtype is the data type of the data
         self._dtype = None
         # the fid for the opened file
         self._fid = None
-        # the current index of the data.
-        self._curr = None
         self.open(name)
-        if start or end:
-            self.set_range(start, end)
+        self.set_range(start, end)
 
     def set_range(self, start, end):
         """sets the range that we will read data from."""
-        # determine the local start and end range
-        if start > self._num_data:
-            raise ValueError('Invalid start index.')
-        self._start = start
-        if end > start and end <= self._num_data:
-            self._end = end
-        elif end == 0:
-            self._end = self._num_data
-        else:
-            raise ValueError('Invalid end index.')
-        self.seek(self._start)
+        if start is not None:
+            if start > self._num_data:
+                raise ValueError('Invalid start index.')
+            else:
+                self._start = start
+                self.seek(self._start)
+                self._curr = self._start
+        if end is not None:
+            if end > start and end <= self._num_data:
+                self._end = end
+            else:
+                raise ValueError('Invalid end index.')
         self._num_local_data = self._end - self._start
-        self._curr = self._start
 
     def num_data(self):
         """Return the number of data."""
         return self._num_data
+    
+    def shape(self):
+        """Return the shape of a single data point."""
+        return self._shape
+
+    def dtype(self):
+        """Return the dtype of the data."""
+        return self._dtype
 
     def num_local_data(self):
         """Returns the number of local data."""
