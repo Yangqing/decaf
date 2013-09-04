@@ -155,6 +155,17 @@ class JeffNet(object):
         return (indices[:-(k+1):-1],
                 [self.label_names[i] for i in indices[:-(k+1):-1]])
 
+    def feature(self, blob_name):
+        """Returns the feature of a specific blob.
+        Input:
+            blob_name: the name of the blob requested.
+        Output:
+            array: the numpy array storing the feature.
+        """
+        # We will copy the feature matrix in case further calls overwrite
+        # it.
+        return self._net.feature(blob_name).copy()
+
 
 def main():
     """A simple demo showing how to run jeffnet."""
