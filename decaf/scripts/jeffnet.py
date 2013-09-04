@@ -42,8 +42,8 @@ class JeffNet(object):
             if not meta_file:
                 # use the internal meta file.
                 meta_file = _META_FILE
-            cuda_jeffnet = pickle.load(open(_JEFFNET_FILE))
-            meta = pickle.load(open(_META_FILE))
+            cuda_jeffnet = pickle.load(open(net_file))
+            meta = pickle.load(open(meta_file))
         except IOError:
             raise RuntimeError('Cannot find JeffNet files.')
         # First, translate the network
@@ -164,6 +164,17 @@ class JeffNet(object):
         indices = scores.argsort()
         return (indices[:-(k+1):-1],
                 [self.label_names[i] for i in indices[:-(k+1):-1]])
+
+    def feature(self, blob_name):
+        """Returns the feature of a specific blob.
+        Input:
+            blob_name: the name of the blob requested.
+        Output:
+            array: the numpy array storing the feature.
+        """
+        # We will copy the feature matrix in case further calls overwrite
+        # it.
+        return self._net.feature(blob_name).copy()
 
 
 def main():
