@@ -42,8 +42,8 @@ class JeffNet(object):
             if not meta_file:
                 # use the internal meta file.
                 meta_file = _META_FILE
-            cuda_jeffnet = pickle.load(open(_JEFFNET_FILE))
-            meta = pickle.load(open(_META_FILE))
+            cuda_jeffnet = pickle.load(open(net_file))
+            meta = pickle.load(open(meta_file))
         except IOError:
             raise RuntimeError('Cannot find JeffNet files.')
         # First, translate the network
