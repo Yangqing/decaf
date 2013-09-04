@@ -28,7 +28,7 @@
       <hr>
       {% if not result[0] %}
       <!-- we have error in the result. -->
-      <div class="alert alert-danger">{{ result[1] }}</div>
+      <div class="alert alert-danger">{{ result[1] }} Did you provide a valid URL or a valid image file? </div>
       {% else %}
       <div class="media">
         <a class="pull-left" href="#"><img class="media-object" width="256" height="256" src={{ imagesrc }}></a>

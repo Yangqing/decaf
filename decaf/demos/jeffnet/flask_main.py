@@ -15,6 +15,10 @@ import time
 import urllib
 from werkzeug import secure_filename
 
+# tornado
+from tornado.wsgi import WSGIContainer
+from tornado.httpserver import HTTPServer
+from tornado.ioloop import IOLoop
 
 UPLOAD_FOLDER = '/tscratch/tmp/jiayq/decaf'
 ALLOWED_IMAGE_EXTENSIONS = set(['png', 'bmp', 'jpg', 'jpe', 'jpeg', 'gif'])
@@ -122,4 +126,8 @@ if __name__ == '__main__':
     logging.getLogger().setLevel(logging.INFO)
     app.net = jeffnet.JeffNet(net_file=FLAGS.net_file,
                               meta_file=FLAGS.meta_file)
-    app.run(host='0.0.0.0')
+    #app.run(host='0.0.0.0')
+    http_server = HTTPServer(WSGIContainer(app))
+    http_server.listen(5001)
+    IOLoop.instance().start()
+
