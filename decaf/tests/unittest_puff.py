@@ -56,6 +56,27 @@ class TestPuff(unittest.TestCase):
         self.assertRaises(
             TypeError, writer.write_batch, np.random.rand(4,2))
 
+    def testPuffIteration(self):
+        fname = tempfile.mktemp()
+        data = np.random.rand(10,3)
+        puff.write_puff(data, fname)
+        puff_recovered = puff.Puff(fname)
+        count = 0
+        for elem in puff_recovered:
+            count += 1
+        self.assertEqual(count, 10)
+        for i, elem in zip(range(10), puff_recovered):
+            npt.assert_array_almost_equal(data[i], elem)
+        # test local slicing
+        puff_recovered.set_range(3,7)
+        count = 0
+        for elem in puff_recovered:
+            count += 1
+        self.assertEqual(count, 4)
+        for i, elem in zip(range(4), puff_recovered):
+            npt.assert_array_almost_equal(data[i+3], elem)
+
+
     def testPuffReadBoundary(self):
         fname = tempfile.mktemp()
         data = np.random.rand(4,3)

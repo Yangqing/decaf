@@ -35,10 +35,13 @@ class Puff(object):
         self._num_local_data = None
         # dtype is the data type of the data
         self._dtype = None
+        # iter_count is used to record the iteration status 
+        self._iter_count = 0
         # the fid for the opened file
         self._fid = None
         self.open(name)
         self.set_range(start, end)
+
 
     def set_range(self, start, end):
         """sets the range that we will read data from."""
@@ -55,6 +58,24 @@ class Puff(object):
             else:
                 raise ValueError('Invalid end index.')
         self._num_local_data = self._end - self._start
+
+    def reset(self):
+        """Reset the puff pointer to the start of the local range."""
+        self.seek(self._start)
+
+    def __iter__(self):
+        """A simple iterator to go through the data."""
+        self.seek(self._start)
+        self._iter_count = 0
+        return self
+
+    def next(self):
+        """The next function."""
+        if self._curr == self._start and self._iter_count:
+            raise StopIteration
+        else:
+            self._iter_count += 1
+            return self.read(1)[0]
 
     def num_data(self):
         """Return the number of data."""
@@ -165,4 +186,49 @@ def write_puff(arr, name):
     """Write a single numpy array to puff format."""
     writer = PuffStreamedWriter(name)
     writer.write_batch(arr)
+    writer.finish()
+
+def merge_puff(names, output_name, batch_size=None):
+    """Merges a set of puff files, sorted according to their name.
+    Input:
+        names: a set of file names to be merged. The order does not matter,
+            but note that we will sort the names internally.
+        output_name: the output file name.
+        batch_size: if None, read the whole file and write it in a single
+            batch. Otherwise, read and write the given size at a time.
+    """
+    names.sort()
+    writer = PuffStreamedWriter(output_name)
+    if batch_size is None:
+        for name in names:
+            writer.write_batch(Puff(name).read_all())
+    else:
+        for name in names:
+            puff = Puff(name)
+            num = puff.num_data()
+            for curr in range(0, num, batch_size):
+                writer.write_batch(puff.read(batch_size))
+            # write the last batch
+            writer.write_batch(puff.read(num - curr))
+    # Finally, finish the write.
+    writer.finish()
+
+def puffmap(func, puff, output_name, write_batch=None):
+    """A function similar to map() that runs the func on each item of the puff
+    and writes the result to output_name.
+    Input:
+        func: a function that takes in a puff entry and returns a numpy array.
+        puff: the puff file. May be locally sliced.
+        output_name: the output puff file name.
+        write_batch: if True, we will use write_batch() instead of
+            write_single(). This may be useful when each input puff element
+            leads to multiple output elements. Default False.
+    """
+    writer = PuffStreamedWriter(output_name)
+    if write_batch:
+        for elem in puff:
+            writer.write_batch(func(elem))
+    else:
+        for elem in puff:
+            writer.write_single(func(elem))
     writer.finish()
