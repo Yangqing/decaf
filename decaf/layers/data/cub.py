@@ -5,10 +5,10 @@ from decaf.layers.data import ndarraydata
 import numpy as np
 import os
 from scipy import misc
-from skimage import io, transform
+from skimage import io
 
 
-class CUBDataset(ndarraydata.NdarrayDataLayer):
+class CUBDataLayer(ndarraydata.NdarrayDataLayer):
     """ The Caltech-UCSD bird dataset
     """
     def __init__(self, **kwargs):
@@ -87,7 +87,7 @@ class CUBDataset(ndarraydata.NdarrayDataLayer):
     def _load_data(self, root, images, boxes, crop, target_size):
         num_imgs = len(images)
         self._data = np.empty((num_imgs, target_size[0], target_size[1], 3),
-                              dtype=np.float32)
+                              dtype=np.uint8)
         for i in range(num_imgs):
             image = io.imread(os.path.join(root, 'images', images[i]))
             if image.ndim == 2:
@@ -96,7 +96,7 @@ class CUBDataset(ndarraydata.NdarrayDataLayer):
                 image = image[:, :, :3]
             if crop:
                 image = self._crop_image(image, crop, boxes[i])
-            self._data[i] = transform.resize(image, target_size)
+            self._data[i] = misc.imresize(image, target_size)
         return
 
     def _crop_image(self, image, crop, box):

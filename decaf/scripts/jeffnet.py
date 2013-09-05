@@ -6,7 +6,7 @@ from decaf.util import translator
 import logging
 import numpy as np
 import os
-from skimage import transform
+from scipy import misc
 
 _JEFFNET_FILE = os.path.join(os.path.dirname(__file__),
                              'imagenet.jeffnet.epoch72')
@@ -116,18 +116,16 @@ class JeffNet(object):
             image = image[:, :, :3]
         # Now, reshape the image if necessary
         height, width = image.shape[:2]
-        if height < width:
-            newshape = (256, int(width * float(256) / height + 0.5))
-        else:
-            newshape = (int(height * float(256) / width + 0.5), 256)
-        image = transform.resize(image, newshape)
-        h_offset = (image.shape[0] - 256) / 2
-        w_offset = (image.shape[1] - 256) / 2
-        image = image[h_offset:h_offset+256, w_offset:w_offset+256]
-        # since skimage transforms the image scale to [0,1), we need to
-        # rescale the images.
-        image *= 255.
-        return image
+        if height != 256 or width != 256:
+            if height < width:
+                newshape = (256, int(width * float(256) / height + 0.5))
+            else:
+                newshape = (int(height * float(256) / width + 0.5), 256)
+            image = misc.imresize(image, newshape)
+            h_offset = (image.shape[0] - 256) / 2
+            w_offset = (image.shape[1] - 256) / 2
+            image = image[h_offset:h_offset+256, w_offset:w_offset+256]
+        return image.astype(np.float32)
 
     def classify(self, image, center_only=False):
         """Classifies an input image.
@@ -139,6 +137,8 @@ class JeffNet(object):
             scores: a numpy vector of size 1000 containing the
                 predicted scores for the 1000 classes.
         """
+        if image.dtype == np.float32 and image.max() <= 1.:
+            image = (image * 255).astype(np.uint8)
         # first, extract the 256x256 center.
         image = JeffNet.extract(image)
         if _JEFFNET_FLIP:
