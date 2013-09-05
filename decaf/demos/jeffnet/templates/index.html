@@ -7,7 +7,7 @@
     <meta name="author" content="Yangqing Jia (jiayq@eecs.berkeley.edu)">
     <link rel="shortcut icon" href="{{ url_for('static', filename='favicon.ico') }}">
 
-    <title>Decaf Image Classification</title>
+    <title>Decaf Demo</title>
 
     <!-- Bootstrap core CSS -->
     <link href="//netdna.bootstrapcdn.com/bootstrap/3.0.0/css/bootstrap.min.css"
@@ -18,10 +18,10 @@
     <!-- Begin page content -->
     <div class="container">
       <div class="page-header">
-        <h1>Decaf</h1>
+        <h1>Decaf Image Classifier</h1>
         <a href="{{ url_for('about') }}">About this demo</a>
       </div>
-      <p class="lead">Paste an image URL in the following box and have it classified by decaf.</p>
+      <p class="lead"> Provide an image and have it classified by decaf.</p>
       <p> Too lazy? <a href="/classify_url?imageurl=http%3A%2F%2Fi.telegraph.co.uk%2Fmultimedia%2Farchive%2F02351%2Fcross-eyed-cat_2351472k.jpg">Just click here</a> for a simple cat example.</p>
 
       {% if has_result %}
