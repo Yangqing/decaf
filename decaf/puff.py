@@ -220,7 +220,12 @@ def merge_puff(names, output_name, batch_size=None, delete=None):
             writer.write_batch(puff.read(num - curr))
     if delete:
         for name in names:
-            os.remove(name)
+            if name.endswith('.puff'):
+                shortname = name[:-5]
+            else:
+                shortname = name
+            os.remove(shortname + '.puff')
+            os.remove(shortname + '.icing')
     # Finally, finish the write.
     writer.finish()
 
