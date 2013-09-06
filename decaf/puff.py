@@ -2,8 +2,10 @@
 and faster access of numpy arrays.
 """
 import cPickle as pickle
+import logging
 import numpy as np
 from operator import mul
+import os
 
 class Puff(object):
     """The puff class. It defines a simple interface that stores numpy arrays in
@@ -177,6 +179,8 @@ class PuffStreamedWriter(object):
         if self._num_data == 0:
             raise ValueError('Nothing is written!')
         self._fid.close()
+        logging.debug('Output shape: %s, dtype: %s, num: %s',
+                      self._shape, self._dtype, self._num_data)
         with open(self._name + '.icing', 'w') as fid:
             pickle.dump({'shape': self._shape,
                          'dtype': self._dtype,
@@ -188,7 +192,7 @@ def write_puff(arr, name):
     writer.write_batch(arr)
     writer.finish()
 
-def merge_puff(names, output_name, batch_size=None):
+def merge_puff(names, output_name, batch_size=None, delete=None):
     """Merges a set of puff files, sorted according to their name.
     Input:
         names: a set of file names to be merged. The order does not matter,
@@ -196,20 +200,27 @@ def merge_puff(names, output_name, batch_size=None):
         output_name: the output file name.
         batch_size: if None, read the whole file and write it in a single
             batch. Otherwise, read and write the given size at a time.
+        delete: if True, delete the individual files after merging. Default
+            False.
     """
     names.sort()
     writer = PuffStreamedWriter(output_name)
     if batch_size is None:
         for name in names:
+            logging.debug('writing %s', name)
             writer.write_batch(Puff(name).read_all())
     else:
         for name in names:
+            logging.debug('writing %s', name)
             puff = Puff(name)
             num = puff.num_data()
             for curr in range(0, num, batch_size):
                 writer.write_batch(puff.read(batch_size))
             # write the last batch
             writer.write_batch(puff.read(num - curr))
+    if delete:
+        for name in names:
+            os.remove(name)
     # Finally, finish the write.
     writer.finish()
 
