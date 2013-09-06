@@ -454,7 +454,7 @@ class Net(object):
                 (n, self.layers[n],
                  [self.blobs[name] for name in self._actual_needs[n]],
                  [self.blobs[name] for name in self.provides[n]]))
-        logging.debug('Forward order details: %s', str(self._forward_order))
+        # logging.debug('Forward order details: %s', str(self._forward_order))
         self._backward_order = []
         for n in layerorder[::-1]:
             if self.graph.node[n]['need_backward']:
@@ -463,7 +463,7 @@ class Net(object):
                      [self.blobs[name] for name in self._actual_needs[n]],
                      [self.blobs[name] for name in self.provides[n]],
                      self.graph.node[n]['propagate_down']))
-        logging.debug('Backward order details: %s', str(self._backward_order))
+        # logging.debug('Backward order details: %s', str(self._backward_order))
         # store all the parameters
         self._params = []
         for name in layerorder:
