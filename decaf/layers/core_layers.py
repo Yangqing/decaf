@@ -10,6 +10,7 @@ from decaf.layers.data.cifar import CIFARDataLayer
 from decaf.layers.data.mnist import MNISTDataLayer
 from decaf.layers.sampler import (BasicMinibatchLayer,
                                   RandomPatchLayer)
+from decaf.layers.puffsampler import PuffSamplerLayer
 
 # Computation Layers
 from decaf.layers.convolution import ConvolutionLayer
