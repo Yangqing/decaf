@@ -16,10 +16,8 @@ def translator_neuron(cuda_layer, output_shapes):
         return core_layers.ReLULayer(
             name=cuda_layer['name'])
     elif neurontype == 'dropout':
-        logging.warning('Using Jeff\'s definition of dropout (no scaling'
-                        ' during test). Make sure this is what you need.')
-        return core_layers.IdentityLayer(
-            name=cuda_layer['name'])
+        return core_layers.DropoutLayer(
+            name=cuda_layer['name'], ratio=cuda_layer['neuron']['params']['d'])
     else:
         raise NotImplementedError('Neuron type %s not implemented yet.'
                                   % neurontype)

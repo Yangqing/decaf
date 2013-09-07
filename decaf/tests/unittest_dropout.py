@@ -16,12 +16,20 @@ class TestDropout(unittest.TestCase):
         # simulate a diff
         fillers.RandFiller().fill(top.init_diff())
         layer.backward([bottom], [top], True)
-        np.testing.assert_array_equal(top.data()[top.data()!=0],
+        np.testing.assert_array_equal(top.data()[top.data()!=0] * 0.5,
                                       bottom.data()[top.data()!=0])
         np.testing.assert_array_equal(bottom.diff()[top.data() == 0],
                                       0)
         np.testing.assert_array_equal(bottom.diff()[top.data() != 0],
-                                      top.diff()[top.data() != 0])
+                                      top.diff()[top.data() != 0] * 2.)
+        # test if debug_freeze works
+        layer = dropout.DropoutLayer(name='dropout', ratio=0.5,
+                                     debug_freeze=True)
+        layer.forward([bottom], [top])
+        snapshot = top.data().copy()
+        layer.forward([bottom], [top])
+        np.testing.assert_array_equal(snapshot, top.data())
+
 
 if __name__ == '__main__':
     unittest.main()

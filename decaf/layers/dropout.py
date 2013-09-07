@@ -6,7 +6,13 @@ import numpy as np
 import numexpr
 
 class DropoutLayer(base.Layer):
-    """A layer that implements the dropout."""
+    """A layer that implements the dropout.
+    
+    To increase test time efficiency, what we do in dropout is slightly
+    different from the original version: instead of scaling during testing
+    time, we scale up at training time so testing time is simply a mirroring
+    operation.
+    """
 
     def __init__(self, **kwargs):
         """Initializes a Dropout layer.
@@ -27,20 +33,20 @@ class DropoutLayer(base.Layer):
         # Get features and output
         features = bottom[0].data()
         output = top[0].init_data(features.shape, features.dtype, setdata=False)
-        if not (self.spec.get('debug_freeze', False) and self._mask.has_data()):
+        if not self._mask.has_data():
             mask = self._mask.init_data(features.shape, np.bool)
-        else:
+        elif self.spec.get('debug_freeze', False):
             mask = self._mask.data()
-        numexpr.evaluate('features * mask', out=output)
+        else:
+            mask = self._mask.init_data(features.shape, np.bool)
+        upscale = 1. / self.spec['ratio']
+        numexpr.evaluate('features * mask * upscale', out=output)
 
     def predict(self, bottom, top):
-        """The dropout predict pass. It will not randomly shut off features,
-        but will instead scale data according to the ratio.
+        """The dropout predict pass. Under our definition, it is simply a
+        mirror operation.
         """
-        features = bottom[0].data()
-        output = top[0].init_data(features.shape, features.dtype, setdata=False)
-        ratio = self.spec['ratio']
-        numexpr.evaluate('features * ratio', out=output)
+        top[0].mirror(bottom[0])
 
     def backward(self, bottom, top, propagate_down):
         """Computes the backward pass."""
@@ -49,7 +55,8 @@ class DropoutLayer(base.Layer):
         top_diff = top[0].diff()
         bottom_diff = bottom[0].init_diff(setzero=False)
         mask = self._mask.data()
-        numexpr.evaluate('top_diff * mask', out=bottom_diff) 
+        upscale = 1. / self.spec['ratio']
+        numexpr.evaluate('top_diff * mask * upscale', out=bottom_diff) 
         return 0.
 
     def update(self):
