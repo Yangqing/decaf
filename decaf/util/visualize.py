@@ -127,9 +127,53 @@ class PatchVisualizer(object):
         be visualized as a separate gray patch.
         """
         if len(patch.shape) != 3:
-            raise ValueError, "The input patch shape isn't correct."
+            raise ValueError("The input patch shape %s isn't correct."
+                             % str(patch.shape))
         patch_reordered = np.swapaxes(patch.T, 1, 2)
         return self.show_multiple(patch_reordered, bg_func = bg_func)
+
+    def show_blob(self, blob):
+        """This function shows a blob by trying really hard to figure out what
+        type of blob it is, and what is the best way to visualize it.
+        """
+        if isinstance(blob, base.Blob):
+            data = blob.data()
+        else:
+            data = blob
+        # TODO: figure out how to find the best function of the bg function.
+        bg_func = np.max
+        if data.ndim == 4:
+            # We will first see if the first dim has shape 1, in which case we
+            # will just call the 3-dim version.
+            if data.shape[0] == 1:
+                return self.show_blobs(data[0], bg_func=bg_func)
+            elif data.shape[-1] == 3:
+                # see if it could be visualized as color images
+                return self.show_multiple(data, bg_func=bg_func)
+            elif data.shape[-1] == 1:
+                # see if it could be visualized as grayscale images
+                return self.show_multiple(data[:,:,:,0], bg_func=bg_func)
+            else:
+                # We will show the blob organized as a two-dimensional tiling of
+                # blocks, where the rows are data points and cols are channels.
+                num, height, width, channels = data.shape
+                data = data.swapaxes(2,3).swapaxes(1,2)
+                data = data.reshape(num*channels, height, width)
+                return self.show_multiple(data, ncols=channels, bg_func=bg_func)
+        elif data.ndim == 3:
+            # We will first see if the last dim has shape 1 or 3.
+            if data.shape[-1] == 1:
+                return self.show_single(data[:,:,0])
+            elif data.shape[-1] == 3:
+                return self.show_single(data)
+            else:
+                # If not, we will show the data channel by channel.
+                return self.show_channels(data, bg_func=bg_func)
+        elif data.ndim == 2:
+            # When the data dimension is 2, we do nothing but simply showing
+            # the image.
+            return self.show_single(data)
+
     
     def get_patch_shape(self, patch):
         """Gets the patch shape of a single patch. Basically it tries to
@@ -166,3 +210,6 @@ def show_channels(*args, **kwargs):
     """Wrapper of PatchVisualizer.show_channels()"""
     return _DEFAULT_VISUALIZER.show_channels(*args, **kwargs)
 
+def show_blob(*args, **kwargs):
+    """Wrapper of PatchVisualizer.show_blob()"""
+    return _DEFAULT_VISUALIZER.show_blob(*args, **kwargs)
