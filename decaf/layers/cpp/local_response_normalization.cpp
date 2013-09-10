@@ -1,6 +1,9 @@
 #include <cmath>
 #include <cstdlib>
 #include <cstring>
+#ifdef DECAF_USE_MKL
+#include <mkl_vml.h>
+#endif // DECAF_USE_MKL
 #include <omp.h>
 #include "local_response_normalization.h"
 
@@ -18,15 +21,15 @@ inline void _lrn_forward(const Dtype* bottom, Dtype* top, Dtype* scale,
     {
     Dtype * padded_square = new Dtype[padded_channels];
     memset(padded_square, 0, sizeof(Dtype) * padded_channels);
+    Dtype alpha_over_size = alpha / size;
 #pragma omp for
     for (int data_id = 0; data_id < num_data; ++data_id) {
         const Dtype* bottom_datum = bottom + data_id * channels;
-        Dtype* top_datum = top + data_id * channels;
         Dtype* scale_datum = scale + data_id * channels;
         // first, compute x_i^2
         for (int i = 0; i < channels; ++i) {
             padded_square[i+pre_pad] = bottom_datum[i] * bottom_datum[i] 
-                    * alpha / size; 
+                    * alpha_over_size; 
         }
         // Now, compute the running scale.
         Dtype accum_scale = 0.;
@@ -37,11 +40,36 @@ inline void _lrn_forward(const Dtype* bottom, Dtype* top, Dtype* scale,
             accum_scale += padded_square[i + size - 1];
             scale_datum[i] = k + accum_scale;
             accum_scale -= padded_square[i];
-            top_datum[i] = bottom_datum[i] * pow(scale_datum[i], -beta);
         }
     }
     delete[] padded_square;
     } // pragma omp parallel
+#ifdef DECAF_USE_MKL
+    // Compute the output using mkl
+    int count = channels * num_data;
+    switch(sizeof(Dtype)) {
+    case 4:
+        vsPowx(count, (const float*)scale, -beta,
+               (float*)top);
+        vsMul(count, (const float*)top,
+              (const float*)bottom,
+              (float*)top);
+        break;
+    case 8:
+        vdPowx(count, (const double*)scale, -beta,
+               (double*)top);
+        vdMul(count, (const double*)top,
+              (const double*)bottom,
+              (double*)top);
+        break;
+    }
+#else
+    // Now, compute the output
+#pragma omp parallel for
+    for (int i = 0; i < channels * num_data; ++i) {
+        top[i] = bottom[i] * pow(scale[i], -beta);
+    }
+#endif // DECAF_USE_MKL
 }
 
 
