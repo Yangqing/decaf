@@ -1,26 +1,34 @@
 """Puff defines a purely unformatted file format accompanying decaf for easier
 and faster access of numpy arrays.
 """
+import bisect
 import cPickle as pickle
+import glob
 import logging
 import numpy as np
 from operator import mul
 import os
 
+
 class Puff(object):
     """The puff class. It defines a simple interface that stores numpy arrays in
     its raw form.
     """
-    def __init__(self, name, start = None, end = None):
+    def __init__(self, names, start = None, end = None):
         """Initializes the puff object.
 
         Input:
-            name: the puff filename to be read.
+            names: the wildcard names matching multiple puff files.
             start: (optional) the local range start.
             end: (optional) the local range end.
         """
-        if name.endswith('.puff'):
-            name = name[:-5]
+        if not names.endswith('.puff'):
+            names = names + '.puff'
+        # convert names to a list of files
+        files = glob.glob(names)
+        if not len(files):
+            raise ValueError('No file found for the given wildcard: %s.' % names)
+        files.sort()
         # shape is the shape of a single data point.
         self._shape = None
         # step is an internal variable that indicates how many bytes we need
@@ -33,17 +41,19 @@ class Puff(object):
         self._end = None
         # the current index of the data.
         self._curr = None
+        self._curr_fid = None
         # the number of local data
         self._num_local_data = None
         # dtype is the data type of the data
         self._dtype = None
         # iter_count is used to record the iteration status 
         self._iter_count = 0
-        # the fid for the opened file
-        self._fid = None
-        self.open(name)
+        # the fids for the opened file. We will assume that there are not too
+        # many files so we will keep them open all the time.
+        self._fids = []
+        self._fid_starts = []
+        self.open(files)
         self.set_range(start, end)
-
 
     def set_range(self, start, end):
         """sets the range that we will read data from."""
@@ -95,27 +105,50 @@ class Puff(object):
         """Returns the number of local data."""
         return self._num_local_data
 
-    def open(self, name):
+    def open(self, names):
         """Opens a puff data: it is composed of two files, name.puff and
         name.icing. The open function will set the range to all the data
         points - use set_range() to specify a custom range to read from.
         """
-        icing = pickle.load(open(name + '.icing'))
-        self._shape = icing['shape']
-        self._dtype = icing['dtype']
-        self._num_data = icing['num']
-        self._step = reduce(mul, self._shape, 1)
-        self._fid = open(name + '.puff', 'rb')
+        self._fids = []
+        self._fid_starts = []
+        count = 0
+        for name in names:
+            logging.debug('opening %s', name)
+            icing = pickle.load(open(name[:-5] + '.icing'))
+            if not self._dtype:
+                # The first file. Will record the meta information
+                self._shape = icing['shape']
+                self._dtype = icing['dtype']
+                self._step = reduce(mul, self._shape, 1)
+            else:
+                if (self._shape != icing['shape'] or
+                    self._dtype != icing['dtype']):
+                    raise ValueError('Shards do not have the same data shape or dtype!')
+            self._fids.append(open(name, 'rb'))
+            self._fid_starts.append(count)
+            count += icing['num']
+        # add a closing fid location
+        self._fid_starts.append(count)
+        # set all the pointers.
+        self._num_data = count
         self._start = 0
         self._end = self._num_data
         self._num_local_data = self._num_data
         self._curr = 0
+        self._curr_fid = 0
 
     def seek(self, offset):
         """Seek to the beginning of the offset-th data point."""
         if offset < self._start or offset >= self._end:
-            raise ValueError('Offset should lie in the data range.')
-        self._fid.seek(offset * self._step * self._dtype.itemsize)
+            raise ValueError('Offset (%d) should lie in the data range'
+                             ' [%d, %d).' % (offset, self._start, self._end))
+        # we need to find out which file we are at
+        index = bisect.bisect_right(self._fid_starts, offset) - 1
+        self._curr_fid = index
+        self._fids[self._curr_fid].seek(
+            (offset - self._fid_starts[index]) * self._step \
+            * self._dtype.itemsize)
         self._curr = offset
 
     def read(self, count):
@@ -123,16 +156,31 @@ class Puff(object):
         if count > self._num_local_data:
             raise ValueError('Not enough data points to read: count %d, limit'
                              ' %d.' % (count, self._num_local_data))
-        if self._curr + count <= self._end:
-            data = np.fromfile(self._fid, self._dtype, count * self._step)
-            self._curr += count
-            if self._curr == self._end:
-                # When everything is read, we restart from the head.
-                self.seek(self._start)
-        else:
+        fid = self._fids[self._curr_fid]
+        fid_end = self._fid_starts[self._curr_fid + 1]
+        if self._curr + count > self._end:
+            # first, if the range goes over the local end, we will need to
+            # read it in two (or more nested) batches.
             part = self._end - self._curr
-            data = np.vstack((self.read(part),
-                              self.read(count - part)))
+            if self._shape:
+                data = np.vstack((self.read(part), self.read(count - part)))
+            else:
+                data = np.hstack((self.read(part), self.read(count - part)))
+        elif self._curr + count > fid_end:
+            # second, if the current batch goes over the current fid, we will
+            # need to read it in two or more batches.
+            part = fid_end - self._curr
+            if self._shape:
+                data = np.vstack((self.read(part), self.read(count - part)))
+            else:
+                data = np.hstack((self.read(part), self.read(count - part)))
+        else:
+            # if nothing happens, we will simply read a single chunk.
+            data = np.fromfile(fid, self._dtype, count * self._step)
+            self._curr += count
+            # If depleted, we will seek to the next file.
+            if self._curr == fid_end or self._curr == self._end:
+                self.seek(max(self._curr % self._end, self._start))
         return data.reshape((count,) + self._shape)
 
     def read_all(self):
@@ -186,11 +234,13 @@ class PuffStreamedWriter(object):
                          'dtype': self._dtype,
                          'num': self._num_data}, fid)
 
+
 def write_puff(arr, name):
     """Write a single numpy array to puff format."""
     writer = PuffStreamedWriter(name)
     writer.write_batch(arr)
     writer.finish()
+
 
 def merge_puff(names, output_name, batch_size=None, delete=None):
     """Merges a set of puff files, sorted according to their name.
@@ -202,6 +252,8 @@ def merge_puff(names, output_name, batch_size=None, delete=None):
             batch. Otherwise, read and write the given size at a time.
         delete: if True, delete the individual files after merging. Default
             False.
+    Note that you usually do not need to merge puffs, since puff naturally
+    supports sharding.
     """
     names.sort()
     writer = PuffStreamedWriter(output_name)
@@ -228,6 +280,7 @@ def merge_puff(names, output_name, batch_size=None, delete=None):
             os.remove(shortname + '.icing')
     # Finally, finish the write.
     writer.finish()
+
 
 def puffmap(func, puff, output_name, write_batch=None):
     """A function similar to map() that runs the func on each item of the puff
