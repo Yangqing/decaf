@@ -3,7 +3,6 @@
 from decaf import base
 from decaf.layers import fillers
 import numpy as np
-import numexpr
 
 class DropoutLayer(base.Layer):
     """A layer that implements the dropout.
@@ -40,7 +39,8 @@ class DropoutLayer(base.Layer):
         else:
             mask = self._mask.init_data(features.shape, np.bool)
         upscale = 1. / self.spec['ratio']
-        numexpr.evaluate('features * mask * upscale', out=output)
+        output[:] = features * mask
+        output *= upscale
 
     def predict(self, bottom, top):
         """The dropout predict pass. Under our definition, it is simply a
@@ -56,7 +56,8 @@ class DropoutLayer(base.Layer):
         bottom_diff = bottom[0].init_diff(setzero=False)
         mask = self._mask.data()
         upscale = 1. / self.spec['ratio']
-        numexpr.evaluate('top_diff * mask * upscale', out=bottom_diff) 
+        bottom_diff[:] = top_diff * mask
+        bottom_diff *= upscale
         return 0.
 
     def update(self):
