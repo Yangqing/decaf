@@ -2,11 +2,10 @@
 Donahue using the cuda convnet code.
 """
 import cPickle as pickle
-from decaf.util import translator
+from decaf.util import translator, transform
 import logging
 import numpy as np
 import os
-from scipy import misc
 
 _JEFFNET_FILE = os.path.join(os.path.dirname(__file__),
                              'imagenet.jeffnet.epoch72')
@@ -103,30 +102,6 @@ class JeffNet(object):
             images[5:] = images[:5, ::-1]
             return images
     
-    @staticmethod
-    def extract(image):
-        """Extracts the 256x256 region that will be used for classification.
-        The output would be an image of size 256x256, depth float32, and in
-        the range [0, 255].
-        """
-        if image.ndim == 2:
-            image = np.tile(image[:, :, np.newaxis], (1, 1, 3))
-        elif image.shape[2] == 4:
-            # An RGBA image. We will only use the first 3 channels.
-            image = image[:, :, :3]
-        # Now, reshape the image if necessary
-        height, width = image.shape[:2]
-        if height != 256 or width != 256:
-            if height < width:
-                newshape = (256, int(width * float(256) / height + 0.5))
-            else:
-                newshape = (int(height * float(256) / width + 0.5), 256)
-            image = misc.imresize(image, newshape)
-            h_offset = (image.shape[0] - 256) / 2
-            w_offset = (image.shape[1] - 256) / 2
-            image = image[h_offset:h_offset+256, w_offset:w_offset+256]
-        return image.astype(np.float32)
-
     def classify(self, image, center_only=False):
         """Classifies an input image.
         
@@ -137,10 +112,10 @@ class JeffNet(object):
             scores: a numpy vector of size 1000 containing the
                 predicted scores for the 1000 classes.
         """
-        if image.dtype == np.float32 and image.max() <= 1.:
-            image = (image * 255).astype(np.uint8)
         # first, extract the 256x256 center.
-        image = JeffNet.extract(image)
+        image = transform.scale_and_extract(transform.as_rgb(image), 256)
+        # convert to [0,255] float32
+        image = image.astype(np.float32) * 255.
         if _JEFFNET_FLIP:
             # Flip the image if necessary, maintaining the c_contiguous order
             image = image[::-1, :].copy()
