@@ -28,9 +28,7 @@ inline void _im2col_forward(const Dtype* data_im,
             const Dtype* pointer_im = data_im + (hstart * width + idxw * stride) * nchannels;
             for (int i = hstart; i < hstart + psize; ++i) {
                 // copy image[i, idxw:idxw+psize, :]
-                for (int j = 0; j < step_col; ++j) {
-                    pointer_col[j] = pointer_im[j];
-                }
+                memcpy(pointer_col, pointer_im, sizeof(Dtype) * step_col);
                 pointer_col += step_col;
                 pointer_im += step_im;
             }
