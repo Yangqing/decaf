@@ -17,6 +17,7 @@ inline void _lrn_forward(const Dtype* bottom, Dtype* top, Dtype* scale,
     // Iterates over the data.
     int padded_channels = channels + size - 1;
     int pre_pad = (size - 1) / 2;
+
 #pragma omp parallel
     {
     Dtype * padded_square = new Dtype[padded_channels];
@@ -44,6 +45,7 @@ inline void _lrn_forward(const Dtype* bottom, Dtype* top, Dtype* scale,
     }
     delete[] padded_square;
     } // pragma omp parallel
+
 #ifdef DECAF_USE_MKL
     // Compute the output using mkl
     int count = channels * num_data;
