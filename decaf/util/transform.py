@@ -20,7 +20,6 @@ def scale_and_extract(image, height, width=None):
     if not width:
         width = height
     ratio = max(height / float(image.shape[0]), width / float(image.shape[1]))
-    print 'ratio:', ratio
     image_reshape = transform.resize(
         image, (int(image.shape[0] * ratio), int(image.shape[1] * ratio)))
     h_offset = (image_reshape.shape[0] - height) / 2
