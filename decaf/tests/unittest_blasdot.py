@@ -5,7 +5,7 @@ import unittest
 class TestBlasdot(unittest.TestCase):
     """Test the blasdot module
     """
-    def setUp(self):
+    def setUp(self, dtype=None):
         self.test_matrices = [
             (np.random.rand(1,1),
              np.random.rand(1,1)),
@@ -19,6 +19,8 @@ class TestBlasdot(unittest.TestCase):
              np.random.rand(5,4)),
             (np.random.rand(5,4),
              np.random.rand(4,5))]
+        if dtype:
+            self.test_matrices = [m.astype(dtype) for m in self.test_matrices]
         # Add the order-f case
         self.test_matrices += \
             [(a.copy(order='F'), b) for a, b in self.test_matrices] + \
@@ -55,7 +57,7 @@ class TestBlasdot(unittest.TestCase):
 class TestBlasdotGPU(TestBlasdot):
     def setUp(self):
         blasdot.switch_backend('gpu')
-        TestBlasdot.setUp(self)
+        TestBlasdot.setUp(self, dtype=np.float32)
         
 if __name__ == '__main__':
     unittest.main()
