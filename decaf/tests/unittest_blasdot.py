@@ -52,4 +52,6 @@ class TestBlasdot(unittest.TestCase):
         
 if __name__ == '__main__':
     unittest.main()
+    blasdot.switch_backend('gpu')
+    unittest.main()
 

@@ -39,11 +39,6 @@ def CUDA_CHECK(error, msg):
         raise DecafCudaError('%s (error code %u)' % (msg, error))
 
 
-def cudaSetDevice(device):
-    CUDA_CHECK(_CUDA.cudaSetDevice(ct.c_int(device)),
-               'cudaSetDevice failed.')
-
-
 def cudaMemcpy(dst, src):
     if isinstance(src, CudaMemory):
         count = src.size()
@@ -72,7 +67,6 @@ def cudaMemcpy(dst, src):
     # carry out the memcpy
     CUDA_CHECK(_CUDA.cudaMemcpy(dst, src, ct.c_int(count), ct.c_int(kind)),
                'cudaMemcpy failed.')
-
 
 #####################################################
 # Cublas.
@@ -124,12 +118,9 @@ class CudaMemory(object):
 
 
 #####################################################
-# Cublas.
+# Cublas gemm.
 #####################################################
-_CUBLAS.cublasSgemm.restype = ct.c_uint
-_CUBLAS.cublasDgemm.restype = ct.c_uint
-
-def _gemm_cuda_f_contiguous(alpha, A, B, out):
+def _gemm_f_contiguous(alpha, A, B, out):
     '''A gemm function that uses scipy fblas functions, avoiding matrix copy
     when the input is transposed.
     
@@ -144,11 +135,11 @@ def _gemm_cuda_f_contiguous(alpha, A, B, out):
     if A.dtype != B.dtype:
         raise TypeError('The data type of the matrices should be the same.')
     if A.dtype == np.float32:
-        gemm = _CUBLAS.cublasSgemm
+        gemm = _CUBLAS.cublasSgemm_v2
         alpha = ct.c_float(alpha)
         beta = ct.c_float(0)
     elif A.dtype == np.float64:
-        gemm = _CUBLAS.cublasDgemm
+        gemm = _CUBLAS.cublasDgemm_v2
         alpha = ct.c_double(alpha)
         beta = ct.c_double(0)
     else:
@@ -182,7 +173,6 @@ def _gemm_cuda_f_contiguous(alpha, A, B, out):
     cudaC = CudaMemory(out.nbytes)
     cudaMemcpy(cudaA, A)
     cudaMemcpy(cudaB, B)
-    print _CUBLAS_HANDLER
     CUDA_CHECK(gemm(
         _CUBLAS_HANDLER, c_enum(trans_a), c_enum(trans_b), ct.c_int(m),
         ct.c_int(n), ct.c_int(k), ct.byref(alpha), cudaA.pointer(),
@@ -192,33 +182,7 @@ def _gemm_cuda_f_contiguous(alpha, A, B, out):
     cudaMemcpy(out, cudaC)
     return out
 
-
-def _gemm_cuda_c_contiguous(alpha, A, B, out):
+def _gemm_c_contiguous(alpha, A, B, out):
     """A wrapper that computes C_CONTIGUOUS gemm results."""
-    _gemm_cuda_f_contiguous(alpha, B.T, A.T, out=out.T)
+    _gemm_f_contiguous(alpha, B.T, A.T, out=out.T)
     return out
-
-def dot(A, B, out=None):
-    '''
-    a simple wrapper that mimics np.dot (if A and B are both matrices!)
-    This function solves the problem that np.dot copies matrices when
-    working on transposed matrices.
-    Input:
-        A, B: two matrices. should be either c-contiguous or f-contiguous
-        out: (optional) the output matrix. If it is passed, the matrix should
-            have the right shape and should be C_CONTIGUOUS.
-    Output:
-        out: the output matrix
-    Raises:
-        TypeError, if the type of matrices is wrong.
-    '''
-    if out == None:
-        out = np.empty((A.shape[0], B.shape[1]), A.dtype, B.dtype)
-    # Numpy seems to have bugs dealing with the flags of 1x1 matrices. Thus,
-    # if we encounter 1x1 matrices, we manually deal with the calculation.
-    if out.size == 1:
-        out[:] = np.dot(A.flat, B.flat)
-    elif out.flags.f_contiguous:
-        out = _gemm_cuda_f_contiguous(1.0, A, B, out=out)
-    else:
-        out = _gemm_cuda_c_contiguous(1.0, A, B, out=out)
