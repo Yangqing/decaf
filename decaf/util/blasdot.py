@@ -27,19 +27,23 @@ def _gemm_f_contiguous(alpha, A, B, out):
         raise TypeError('Unfit data type.')
     if A.shape[1] != B.shape[0]:
         raise ValueError("Matrices are not aligned")
-    if A.flags.c_contiguous and B.flags.c_contiguous:
-        gemm(alpha, a=A.T, b=B.T, trans_a=True, trans_b=True, c=out,
-             overwrite_c=True)
-    elif A.flags.c_contiguous and B.flags.f_contiguous:
-        gemm(alpha, a=A.T, b=B, trans_a=True, c=out, overwrite_c=True)
-    elif A.flags.f_contiguous and B.flags.c_contiguous:
-        gemm(alpha, a=A, b=B.T, trans_b=True, c=out, overwrite_c=True)
-    elif A.flags.f_contiguous and B.flags.f_contiguous:
-        gemm(alpha, a=A, b=B, c=out, overwrite_c=True)
+    if A.flags.c_contiguous:
+        A = A.T
+        trans_a = True
+    elif A.flags.f_contiguous:
+        trans_a = False
     else:
-        raise ValueError('Incorrect matrix flags.')
+        raise ValueError('Incorrect matrix flags for A.')
+    if B.flags.c_contiguous:
+        B = B.T
+        trans_b = True
+    elif B.flags.f_contiguous:
+        trans_b = False
+    else:
+        raise ValueError('Incorrect matrix flags for B.')
+    gemm(alpha, a=A, b=B, trans_a=trans_a, trans_b=trans_b, c=out,
+         overwrite_c=True)
     return out
-
 
 def _gemm_c_contiguous(alpha, A, B, out):
     """A wrapper that computes C_CONTIGUOUS gemm results."""

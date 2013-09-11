@@ -68,7 +68,11 @@ def _set_dll_funcs():
 # The main pyvml routine.
 #################################################
 try:
-    _DLL = ct.CDLL('libmkl_rt.so')
+    # Try to load the mkl dynamic library. This does not support windows yet.
+    try:
+        _DLL = ct.CDLL('libmkl_rt.so')
+    except OSError:
+        _DLL = ct.CDLL('libmkl_rt.dylib')
 except OSError:
     logging.warning('decaf.util.pyvml: unable to load the mkl library. '
                     'Using fallback options.')
