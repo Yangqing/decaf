@@ -48,10 +48,15 @@ class TestBlasdot(unittest.TestCase):
             blasdot.dot(A, B, out = result)
             self.assertTrue(result.flags.f_contiguous)
             np.testing.assert_array_almost_equal(result, result_ref)
-    
+
+
+@unittest.skipIf(not blasdot._HAS_GPU, 
+                 'No cuda gpu found.')
+class TestBlasdotGPU(TestBlasdot):
+    def setUp(self):
+        blasdot.switch_backend('gpu')
+        TestBlasdot.setUp(self)
         
 if __name__ == '__main__':
-    unittest.main()
-    blasdot.switch_backend('gpu')
     unittest.main()
 
