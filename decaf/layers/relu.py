@@ -1,6 +1,7 @@
 """Implements the ReLU layer."""
 
 from decaf import base
+from decaf.layers.cpp import wrapper
 
 class ReLULayer(base.Layer):
     """A layer that implements the Regularized Linear Unit (ReLU) operation
@@ -17,8 +18,9 @@ class ReLULayer(base.Layer):
         # Get features and output
         features = bottom[0].data()
         output = top[0].init_data(features.shape, features.dtype)
-        output[:] = features
-        output *= (features > 0)
+        wrapper.relu_forward(features, output)
+        #output[:] = features
+        #output *= (features > 0)
 
     def backward(self, bottom, top, propagate_down):
         """Computes the backward pass."""

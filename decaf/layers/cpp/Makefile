@@ -1,7 +1,7 @@
 CC = g++
 CCFLAGS = -fPIC -O3 -Wall -ffast-math -msse -msse2 -fopenmp
 LINKFLAGS = -shared -Wl -fopenmp -lgomp
-INPUT = im2col.cpp fastpool.cpp local_response_normalization.cpp
+INPUT = im2col.cpp fastpool.cpp local_response_normalization.cpp neuron.cpp
 TARGET = libcpputil.so
 
 # If we are going to use MKL, we include additional flags

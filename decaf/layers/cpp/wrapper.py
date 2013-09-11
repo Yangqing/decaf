@@ -146,3 +146,14 @@ def lrn_backward(bottom, top, bottom_diff, top_diff, scale, size, k, alpha,
                      ct.c_double(alpha),
                      ct.c_double(beta),
                      ct.c_int(_OMP_NUM_THREADS))
+
+################################################################################
+# local contrast normalization operation
+################################################################################
+_DLL.relu_forward.restype = None
+
+def relu_forward(bottom, top):
+    _DLL.relu_forward(ct.c_int(bottom.itemsize),
+                      bottom.ctypes.data_as(ct.c_void_p),
+                      top.ctypes.data_as(ct.c_void_p),
+                      ct.c_int(bottom.size))
