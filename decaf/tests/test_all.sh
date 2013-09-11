@@ -2,13 +2,13 @@
 
 # First, do single-machine test
 echo 'Testing single-machine mode...'
-nosetests *.py
+nosetests -v *.py
 
 # Second, test when there is no mpi
 echo 'Simulating no mpi case...'
 PYTHONPATH_SAV=$PYTHONPATH
 PYTHONPATH=$PWD/nompi:$PYTHONPATH
-nosetests *.py
+nosetests -v *.py
 PYTHONPATH=$PYTHONPATH_SAV
 
 # third, test when mpi exists.
