@@ -20,7 +20,8 @@ class TestBlasdot(unittest.TestCase):
             (np.random.rand(5,4),
              np.random.rand(4,5))]
         if dtype:
-            self.test_matrices = [m.astype(dtype) for m in self.test_matrices]
+            self.test_matrices = [(m[0].astype(dtype), m[1].astype(dtype))
+                                  for m in self.test_matrices]
         # Add the order-f case
         self.test_matrices += \
             [(a.copy(order='F'), b) for a, b in self.test_matrices] + \
