@@ -63,7 +63,8 @@ echo "Dumping layer from $RESULTS_DIR/$RESULTS_SUBDIR/$RESULTS_FILE"
 echo "
 import cPickle as pickle
 temp = pickle.load(open('$RESULTS_DIR/$RESULTS_SUBDIR/$RESULTS_FILE'))
-pickle.dump(temp['model_state']['layers'], open('$RESULTS_DIR/layers.pickle', 'w'))
+pickle.dump(temp['model_state']['layers'], open('$RESULTS_DIR/layers.pickle', 'w'),
+            protocol=pickle.HIGHEST_PROTOCOL)
 exit()
 " | python
 
