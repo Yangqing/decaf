@@ -19,6 +19,9 @@ gflags.DEFINE_boolean("single", False,
                       "If True, the input is single image names.")
 gflags.DEFINE_string("feature_name", "fc6_cudanet_out",
                      "The feature name.")
+gflags.DEFINE_integer("randprojection", 0,
+                      "If positive, perform random projection down to the "
+                      " given dimension.")
 FLAGS = gflags.FLAGS
 
 
@@ -32,6 +35,7 @@ class DecafnetMapper(mapreducer.BasicMapper):
         self._net = JeffNet(data_root+'imagenet.jeffnet.epoch90',
                 data_root+'imagenet.jeffnet.meta')
         logging.info('Jeffnet loaded.')
+        self._randproj = None
 
     def map(self, key, value):
         if type(value) is not str:
@@ -50,8 +54,15 @@ class DecafnetMapper(mapreducer.BasicMapper):
                 logging.info(f)
                 _ = self._net.classify(img)
                 feat = self._net.feature(FLAGS.feature_name) 
+                dim = np.prod(feat.shape[1:])
+                if FLAGS.randprojection > 0:
+                    if self._randproj is None:
+                        np.random.seed(1701)
+                        self._randproj = np.random.randn(dim, FLAGS.randprojection).astype(FEATURE_DTYPE)
+                        self._randproj /= dim
+                    feat = np.dot(feat.reshape(feat.shape[0], dim), self._randproj)
                 if features is None:
-                    features = np.zeros((len(files) * 10, feat.shape[1]),
+                    features = np.zeros((len(files) * 10,) + feat.shape[1:],
                                         dtype = FEATURE_DTYPE)
                 features[i*10:(i+1)*10] = feat
             except IOError:
