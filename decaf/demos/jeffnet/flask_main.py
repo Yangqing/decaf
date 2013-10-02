@@ -1,5 +1,6 @@
 """The main routine that starts a jeffnet demo."""
 from decaf.scripts import jeffnet
+from decaf.util import transform
 import datetime
 import flask
 from flask import Flask, url_for, request
@@ -19,6 +20,9 @@ from werkzeug import secure_filename
 from tornado.wsgi import WSGIContainer
 from tornado.httpserver import HTTPServer
 from tornado.ioloop import IOLoop
+
+# local trick
+import exifutil
 
 UPLOAD_FOLDER = '/tscratch/tmp/jiayq/decaf'
 ALLOWED_IMAGE_EXTENSIONS = set(['png', 'bmp', 'jpg', 'jpe', 'jpeg', 'gif'])
@@ -69,7 +73,7 @@ def classify_upload():
                                 secure_filename(imagefile.filename))
         imagefile.save(filename)
         logging.info('Saving to %s.', filename)
-        image = jeffnet.JeffNet.extract(io.imread(filename)).astype(np.uint8)
+        image = exifutil.open_oriented_im(filename)
     except Exception as err:
         logging.info('Uploaded mage open error: %s', err)
         return flask.render_template('index.html',
@@ -84,6 +88,7 @@ def classify_upload():
 def embed_image_html(image):
     """Creates an image embedded in HTML base64 format."""
     image_pil = PILImage.fromarray(image)
+    image_pil = image_pil.resize((256,256))
     string_buf = StringIO.StringIO()
     image_pil.save(string_buf, format='png')
     data = string_buf.getvalue().encode('base64').replace('\n', '')
@@ -124,9 +129,11 @@ if __name__ == '__main__':
     except Exception as err:
         pass
     logging.getLogger().setLevel(logging.INFO)
+    logging.info('Loading net...')
     app.net = jeffnet.JeffNet(net_file=FLAGS.net_file,
                               meta_file=FLAGS.meta_file)
     #app.run(host='0.0.0.0')
+    logging.info('Starting server...')
     http_server = HTTPServer(WSGIContainer(app))
     http_server.listen(5001)
     IOLoop.instance().start()
