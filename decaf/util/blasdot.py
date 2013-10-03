@@ -1,6 +1,7 @@
 # pylint: disable=C0103
 """Efficient dot functions by calling the basic blas functions from scipy."""
 
+from decaf import base
 import numpy as np
 
 # import submodules that implements the blas functions
@@ -8,7 +9,7 @@ import _numpy_blasdot
 try:
     import _cudadot
     _HAS_GPU = True
-except OSError as err:
+except (base.DecafError, OSError) as err:
     _HAS_GPU = False
 
 # The default backend would be the numpy blasdot.
