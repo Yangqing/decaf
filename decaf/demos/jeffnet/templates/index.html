@@ -31,20 +31,44 @@
       <div class="alert alert-danger">{{ result[1] }} Did you provide a valid URL or a valid image file? </div>
       {% else %}
       <div class="media">
-        <a class="pull-left" href="#"><img class="media-object" width="256" height="256" src={{ imagesrc }}></a>
+        <a class="pull-left" href="#"><img class="media-object" width="192" height="192" src={{ imagesrc }}></a>
         <div class="media-body">
-          <h3 class="media-heading">Predictions:</h3>
-          <ul class="list-group">
-            {% for single_pred in result[1] %}
-            <li class="list-group-item">
-            <span class="badge">{{ single_pred[1] }}</span>
-            <h4 class="list-group-item-heading">{{ single_pred[0] }}</h4>
-            </li>
-            {% endfor %}
-          </ul>
+          <div class="bs-example bs-example-tabs">
+            <ul id="myTab" class="nav nav-tabs">
+              <li class="active"><a href="#flatpred" data-toggle="tab">Flat Prediction</a></li>
+              <li><a href="#infopred" data-toggle="tab">Informative Guess</a></li>
+            </ul>
+            <div id="myTabContent" class="tab-content">
+              <div class="tab-pane fade in active" id="flatpred">
+                <ul class="list-group">
+                  {% for single_pred in result[1] %}
+                  <li class="list-group-item">
+                  <span class="badge">{{ single_pred[1] }}</span>
+                  <h4 class="list-group-item-heading">
+                    <a href="https://www.google.com/#q={{ single_pred[0] }}" target="_blank">{{ single_pred[0] }}</a>
+                  </h4>
+                  </li>
+                  {% endfor %}
+                </ul>
+              </div>
+              <div class="tab-pane fade" id="infopred">
+                <ul class="list-group">
+                  {% for single_pred in result[2] %}
+                  <li class="list-group-item">
+                  <span class="badge">{{ single_pred[1] }}</span>
+                  <h4 class="list-group-item-heading">
+                    <a href="https://www.google.com/#q={{ single_pred[0] }}" target="_blank">{{ single_pred[0] }}</a>
+                  </h4>
+                  </li>
+                  {% endfor %}
+                </ul>
+              </div>
+            </div>
+          </div>
+          
         </div>
       </div>
-      <p> Classification took {{ result[2] }} seconds. </p>
+      <p> Classification took {{ result[3] }} seconds. </p>
       {% endif %}
       <hr>
       {% endif %}
@@ -79,6 +103,7 @@
     </div>
     
     <script type="text/javascript" src="http://code.jquery.com/jquery-2.0.0.js"></script>
+    <script src="//netdna.bootstrapcdn.com/bootstrap/3.0.0/js/bootstrap.min.js"></script>
     <script type="text/javascript">
       $(document).ready(
         function(){

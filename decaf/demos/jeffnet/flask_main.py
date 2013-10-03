@@ -1,4 +1,5 @@
 """The main routine that starts a jeffnet demo."""
+import cPickle as pickle
 from decaf.scripts import jeffnet
 from decaf.util import transform
 import datetime
@@ -29,6 +30,7 @@ ALLOWED_IMAGE_EXTENSIONS = set(['png', 'bmp', 'jpg', 'jpe', 'jpeg', 'gif'])
 
 gflags.DEFINE_string('net_file', '', 'The network file learned from cudaconv')
 gflags.DEFINE_string('meta_file', '', 'The meta file for imagenet.')
+gflags.DEFINE_string('bet_file', '', 'The meta file for informative prediction.')
 gflags.DEFINE_string('upload_folder', UPLOAD_FOLDER, 'The folder to store the uploaded images.')
 FLAGS = gflags.FLAGS
 
@@ -113,13 +115,21 @@ def classify_image(image):
         max_score = scores[indices[0]]
         meta = [(p, '%.5f' % scores[i]) for i, p in zip(indices, predictions)]
         logging.info('result: %s', str(meta))
+        # Compute expected information gain
+        expected_infogain = np.dot(app.bet['probmat'],
+                scores[app.bet['idmapping']]) * app.bet['infogain']
+        # sort the scores
+        infogain_sort = expected_infogain.argsort()[::-1]
+        bet_result = [(app.bet['words'][v], '%.5f' % expected_infogain[v])
+                      for v in infogain_sort[:5]]
+        logging.info('bet result: %s', str(bet_result))
     except Exception as err:
         logging.info('Classification error: %s', err)
         return (False, 'Oops, something wrong happened wieh classifying the'
                        ' image. Maybe try another one?')
     # If everything is successful, return the results
     endtime = time.time()
-    return (True, meta, '%.3f' % (endtime-starttime))
+    return (True, meta, bet_result, '%.3f' % (endtime-starttime))
 
 if __name__ == '__main__':
     gflags.FLAGS(sys.argv)
@@ -132,6 +142,11 @@ if __name__ == '__main__':
     logging.info('Loading net...')
     app.net = jeffnet.JeffNet(net_file=FLAGS.net_file,
                               meta_file=FLAGS.meta_file)
+    app.bet = pickle.load(open(FLAGS.bet_file))
+    # A bias to prefer children nodes in single-chain paths
+    # I am setting the value to 0.1 as a quick, simple model - one may want to
+    # use better psychological models on the preference of synsets.
+    app.bet['infogain'] -= np.array(app.bet['preferences']) * 0.1
     #app.run(host='0.0.0.0')
     logging.info('Starting server...')
     http_server = HTTPServer(WSGIContainer(app))
