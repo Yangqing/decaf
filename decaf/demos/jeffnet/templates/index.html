@@ -19,7 +19,8 @@
     <div class="container">
       <div class="page-header">
         <h1>Decaf Image Classifier</h1>
-        <a href="{{ url_for('about') }}">About this demo</a>
+        <a href="{{ url_for('about') }}">[About this demo]</a>
+        <a href="https://docs.google.com/forms/d/1G1LAPEXwgUhh-inXNI-m4GrTyLIvCRKmrqExLj33e4I/viewform">[Sign up for Updates!]</a>
       </div>
       <p class="lead"> Provide an image and have it classified by decaf.</p>
       <p> Too lazy? <a href="/classify_url?imageurl=http%3A%2F%2Fi.telegraph.co.uk%2Fmultimedia%2Farchive%2F02351%2Fcross-eyed-cat_2351472k.jpg">Just click here</a> for a simple cat example.</p>
@@ -68,14 +69,14 @@
           
         </div>
       </div>
-      <p> Classification took {{ result[3] }} seconds. </p>
+      <p> CNN took {{ result[3] }} seconds. </p>
       {% endif %}
       <hr>
       {% endif %}
      
       <form role="form" action="classify_url" method="get">
         <div class="form-group">
-          <label for="imageurl">Provide an Image URL:</label>
+          <label for="imageurl">Image URL:</label>
           <div class="input-group">
             <input type="text" class="form-control" name="imageurl" id="imageurl" placeholder="url">
             <span class="input-group-btn">
@@ -87,7 +88,7 @@
       
       <form class="form-inline" role="form" action="classify_upload" method="post" enctype="multipart/form-data">
         <div class="form-group">
-          <label for="imagefile">Or upload a local image:</label>
+          <label for="imagefile">Or upload an image:</label>
           <input type="file" name="imagefile" id="imagefile">
         </div>
         <input type="submit" class="btn btn-primary" value="Classify File" id="classifyfile"></input>
@@ -98,7 +99,7 @@
     <hr>
     <div id="footer">
       <div class="container">
-        <p>&copy; Copyright 2013</p>
+          <p>Created by <a href="http://www.eecs.berkeley.edu/~jiayq/">Yangqing Jia</a> and <a href="http://jeffdonahue.com/">Jeff Donahue</a> from the <a href="http://berkeleyvision.org">Berkeley Vision Group</a>. &copy; 2013</p>
       </div>
     </div>
     

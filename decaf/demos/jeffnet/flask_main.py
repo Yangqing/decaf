@@ -109,6 +109,7 @@ def classify_image(image):
     try:
         starttime = time.time()
         scores = app.net.classify(image)
+        endtime = time.time()
         indices, predictions = app.net.top_k_prediction(scores, 5)
         # In addition to the prediction text, we will also produce the length
         # for the progress bar visualization.
@@ -128,7 +129,6 @@ def classify_image(image):
         return (False, 'Oops, something wrong happened wieh classifying the'
                        ' image. Maybe try another one?')
     # If everything is successful, return the results
-    endtime = time.time()
     return (True, meta, bet_result, '%.3f' % (endtime-starttime))
 
 if __name__ == '__main__':
